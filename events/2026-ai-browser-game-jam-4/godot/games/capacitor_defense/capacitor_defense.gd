@@ -33,6 +33,13 @@ var message := ""
 var message_time := 0.0
 var hover_node := 1
 var controller_axis_latch := Vector2i.ZERO
+var simulation_speed := 1.0
+var overcharge_meter := 38.0
+var overdrive_time := 0.0
+var synergy_events := 0
+var enemies_grounded := 0
+var perfect_waves := 0
+var wave_started_hp := 20
 
 var path_points := PackedVector2Array([
 	Vector2(-30, 190), Vector2(240, 190), Vector2(240, 535), Vector2(540, 535),
@@ -46,14 +53,16 @@ var packets: Array[Dictionary] = []
 var projectiles: Array[Dictionary] = []
 var particles: Array[Dictionary] = []
 var mode_rects: Array[Rect2] = []
-var launch_rect := Rect2(1038, 608, 224, 62)
+var launch_rect := Rect2(1038, 654, 224, 48)
+var overcharge_rect := Rect2(1038, 592, 224, 52)
+var speed_rects: Array[Rect2] = [Rect2(866, 45, 42, 34), Rect2(914, 45, 42, 34), Rect2(962, 45, 42, 34)]
 var menu_rect := Rect2(1100, 18, 154, 38)
 
 var waves := [
-	{"name": "SCOUT CURRENT", "name_ja": "偵察電流", "count": 8, "hp": 22, "speed": 78.0, "interval": 0.75, "reward": 3},
-	{"name": "BROWNOUT PACK", "name_ja": "電圧低下パック", "count": 11, "hp": 32, "speed": 86.0, "interval": 0.62, "reward": 4},
-	{"name": "SURGE SWARM", "name_ja": "サージ群体", "count": 14, "hp": 38, "speed": 102.0, "interval": 0.48, "reward": 4},
-	{"name": "INSULATOR COLUMN", "name_ja": "絶縁体部隊", "count": 10, "hp": 72, "speed": 66.0, "interval": 0.72, "reward": 6},
+	{"name": "SCOUT CURRENT", "name_ja": "偵察電流", "count": 7, "hp": 22, "speed": 84.0, "interval": 0.52, "reward": 3},
+	{"name": "BROWNOUT PACK", "name_ja": "電圧低下パック", "count": 9, "hp": 34, "speed": 94.0, "interval": 0.44, "reward": 4},
+	{"name": "SURGE SWARM", "name_ja": "サージ群体", "count": 12, "hp": 40, "speed": 112.0, "interval": 0.34, "reward": 4},
+	{"name": "INSULATOR COLUMN", "name_ja": "絶縁体部隊", "count": 9, "hp": 78, "speed": 74.0, "interval": 0.5, "reward": 6},
 	{"name": "BLACKOUT ENGINE", "name_ja": "ブラックアウト機関", "count": 1, "hp": 540, "speed": 46.0, "interval": 0.2, "reward": 40},
 ]
 
@@ -95,6 +104,8 @@ func reset_run() -> void:
 	base_hp = 20
 	wave_index = 0
 	wave_spawned = 0
+	spawn_timer = 0.0
+	packet_timer = 0.0
 	enemies.clear()
 	packets.clear()
 	projectiles.clear()
@@ -102,21 +113,32 @@ func reset_run() -> void:
 	build_grid()
 	build_mode = BuildMode.CABLE
 	hover_node = 1
+	simulation_speed = 1.0
+	overcharge_meter = 38.0
+	overdrive_time = 0.0
+	synergy_events = 0
+	enemies_grounded = 0
+	perfect_waves = 0
+	wave_started_hp = base_hp
+	screen_shake = 0.0
+	screen_flash = 0.0
 	state = GameState.BUILD
 	show_message(loc("ケーブルを配線し、タワーを建てて、ウェーブを開始", "ROUTE CABLES, PLACE TOWERS, THEN LAUNCH THE WAVE"), 4.0)
 	synth.play_chord([196.0, 293.66, 392.0], 0.24, -23.0)
 
 func _process(delta: float) -> void:
-	elapsed += delta
+	var sim_delta := delta * simulation_speed
+	elapsed += sim_delta
 	if message_time > 0.0: message_time -= delta
 	if screen_shake > 0.0: screen_shake = maxf(0.0, screen_shake - delta)
 	if screen_flash > 0.0: screen_flash = maxf(0.0, screen_flash - delta)
+	overdrive_time = maxf(0.0, overdrive_time - sim_delta)
 	if state in [GameState.BUILD, GameState.WAVE]:
-		update_power(delta)
-		update_towers(delta)
-		update_projectiles(delta)
+		update_power(sim_delta)
+		update_towers(sim_delta)
+		update_projectiles(sim_delta)
 	if state == GameState.WAVE:
-		update_wave(delta)
+		update_wave(sim_delta)
 	update_particles(delta)
 	queue_redraw()
 
@@ -129,6 +151,9 @@ func update_wave(delta: float) -> void:
 			spawn_timer = float(wave.interval)
 	update_enemies(delta)
 	if wave_spawned >= int(wave.count) and enemies.is_empty():
+		if base_hp == wave_started_hp:
+			perfect_waves += 1
+			overcharge_meter = minf(100.0, overcharge_meter + 18.0)
 		wave_index += 1
 		if wave_index >= waves.size():
 			state = GameState.WON
@@ -137,7 +162,7 @@ func update_wave(delta: float) -> void:
 		else:
 			state = GameState.BUILD
 			credits += 18 + wave_index * 3
-			show_message(loc("ウェーブ突破 — グリッドクレジット獲得", "WAVE CLEARED — GRID CREDIT AWARDED"), 2.5)
+			show_message(loc("ウェーブ突破 — 無傷ならオーバーチャージ+18", "WAVE CLEARED — PERFECT GRID EARNS +18 OVERCHARGE"), 2.5)
 			synth.confirm()
 
 func spawn_enemy(wave: Dictionary) -> void:
@@ -159,6 +184,8 @@ func update_enemies(delta: float) -> void:
 		var enemy := enemies[index]
 		if enemy.hp <= 0:
 			credits += int(enemy.reward)
+			enemies_grounded += 1
+			overcharge_meter = minf(100.0, overcharge_meter + (28.0 if enemy.boss else 6.0))
 			spawn_particles(path_position(enemy.distance), Palette.AMBER, 12 if not enemy.boss else 42)
 			synth.play_tone(135.0 if enemy.boss else 220.0, 0.12, -19.0, 1)
 			enemies.remove_at(index)
@@ -178,7 +205,7 @@ func update_enemies(delta: float) -> void:
 func update_power(delta: float) -> void:
 	packet_timer -= delta
 	if packet_timer <= 0.0:
-		packet_timer = 0.42
+		packet_timer = 0.30
 		spawn_power_packet()
 	for packet in packets:
 		var route: Array = packet.route
@@ -218,6 +245,7 @@ func deliver_packet(packet: Dictionary) -> void:
 			discharge_capacitor(target)
 	else:
 		node.charge = minf(4.0 + int(node.level), float(node.charge) + 1.0)
+	overcharge_meter = minf(100.0, overcharge_meter + 0.55)
 	spawn_particles(node.pos, Palette.CYAN, 3)
 
 func discharge_capacitor(index: int) -> void:
@@ -230,6 +258,8 @@ func discharge_capacitor(index: int) -> void:
 		if node.building in ["arc", "pulse"] and node.pos.distance_to(capacitor.pos) <= 310.0 and not find_node_path(index, target).is_empty():
 			node.charge = minf(5.0 + int(node.level), float(node.charge) + 2.0 + int(capacitor.level) * 0.5)
 			projectiles.append({"kind": "energy", "from": capacitor.pos, "to": node.pos, "life": 0.24, "max": 0.24})
+	overcharge_meter = minf(100.0, overcharge_meter + 5.0)
+	synergy_events += 1
 	spawn_particles(capacitor.pos, Palette.VIOLET, 22)
 	synth.play_tone(660.0, 0.14, -22.0, 3)
 
@@ -246,23 +276,62 @@ func update_towers(delta: float) -> void:
 		var target: Dictionary = enemies[target_index]
 		var target_pos := path_position(target.distance)
 		node.charge -= 1.0
+		var capacitor_links := adjacent_building_count(index, "capacitor")
+		var grid_multiplier := network_synergy_multiplier()
+		var overdrive_multiplier := 1.5 if overdrive_time > 0.0 else 1.0
 		if node.building == "arc":
-			var damage := 11 + (int(node.level) - 1) * 6
+			var damage := roundi((11 + (int(node.level) - 1) * 6) * grid_multiplier * overdrive_multiplier * (1.0 + capacitor_links * 0.16))
 			target.hp -= damage
 			target.flash = 0.12
-			node.cooldown = maxf(0.28, 0.62 - (int(node.level) - 1) * 0.08)
+			node.cooldown = maxf(0.22, (0.62 - (int(node.level) - 1) * 0.08) * (0.72 if overdrive_time > 0.0 else 1.0))
 			projectiles.append({"kind": "arc", "from": node.pos, "to": target_pos, "life": 0.16, "max": 0.16})
+			if adjacent_building_count(index, "arc") > 0:
+				var chain_index := select_chain_target(target_index, target_pos, 120.0)
+				if chain_index >= 0:
+					var chain_target: Dictionary = enemies[chain_index]
+					chain_target.hp -= roundi(damage * 0.55)
+					chain_target.flash = 0.12
+					projectiles.append({"kind": "arc", "from": target_pos, "to": path_position(chain_target.distance), "life": 0.13, "max": 0.13})
+					synergy_events += 1
 			synth.play_tone(410.0, 0.04, -29.0, 1)
 		else:
-			var damage := 7 + (int(node.level) - 1) * 4
+			var damage := roundi((7 + (int(node.level) - 1) * 4) * grid_multiplier * overdrive_multiplier)
+			var pulse_radius := 76.0 + capacitor_links * 24.0
 			for enemy in enemies:
-				if path_position(enemy.distance).distance_to(target_pos) < 76.0:
+				if path_position(enemy.distance).distance_to(target_pos) < pulse_radius:
 					enemy.hp -= damage
-					enemy.slow = 0.7
+					enemy.slow = 0.7 + capacitor_links * 0.25
 					enemy.flash = 0.15
-			node.cooldown = maxf(0.65, 1.28 - (int(node.level) - 1) * 0.13)
-			projectiles.append({"kind": "pulse", "from": node.pos, "to": target_pos, "life": 0.34, "max": 0.34})
+			node.cooldown = maxf(0.48, (1.28 - (int(node.level) - 1) * 0.13) * (0.72 if overdrive_time > 0.0 else 1.0))
+			projectiles.append({"kind": "pulse", "from": node.pos, "to": target_pos, "radius": pulse_radius, "life": 0.34, "max": 0.34})
+			if capacitor_links > 0:
+				synergy_events += 1
 			synth.play_tone(180.0, 0.08, -27.0, 3)
+
+func adjacent_building_count(index: int, building: String) -> int:
+	var result := 0
+	for neighbor in node_neighbors(index):
+		if nodes[neighbor].active and nodes[neighbor].building == building:
+			result += 1
+	return result
+
+func network_synergy_multiplier() -> float:
+	var found := {"capacitor": false, "arc": false, "pulse": false}
+	for node in nodes:
+		if node.active and found.has(node.building):
+			found[node.building] = true
+	return 1.25 if found.capacitor and found.arc and found.pulse else 1.0
+
+func select_chain_target(excluded: int, origin: Vector2, range_value: float) -> int:
+	var result := -1
+	var furthest := -1.0
+	for index in range(enemies.size()):
+		if index == excluded or enemies[index].hp <= 0:
+			continue
+		if origin.distance_to(path_position(enemies[index].distance)) <= range_value and enemies[index].distance > furthest:
+			furthest = enemies[index].distance
+			result = index
+	return result
 
 func select_target(origin: Vector2, range_value: float) -> int:
 	var result := -1
@@ -398,6 +467,7 @@ func launch_wave() -> void:
 	state = GameState.WAVE
 	wave_spawned = 0
 	spawn_timer = 0.35
+	wave_started_hp = base_hp
 	show_message((loc("ウェーブ %d — %s", "WAVE %d — %s") % [wave_index + 1, wave_name(wave_index)]), 2.0)
 	synth.play_chord([146.83, 220.0, 293.66], 0.2, -21.0)
 
@@ -415,6 +485,38 @@ func cycle_build_mode(direction: int) -> void:
 	build_mode = wrapi(int(build_mode) + direction, 0, BuildMode.size()) as BuildMode
 	synth.click()
 	queue_redraw()
+
+func set_simulation_speed(speed: float) -> void:
+	simulation_speed = clampf(speed, 1.0, 3.0)
+	show_message(loc("シミュレーション速度 ×%d" % int(simulation_speed), "SIMULATION SPEED ×%d" % int(simulation_speed)), 1.0)
+	synth.click()
+
+func cycle_simulation_speed() -> void:
+	set_simulation_speed(1.0 if simulation_speed >= 3.0 else simulation_speed + 1.0)
+
+func activate_overcharge() -> void:
+	if state not in [GameState.BUILD, GameState.WAVE]:
+		return
+	if overcharge_meter < 100.0:
+		show_message(loc("オーバーチャージにはメーター100が必要", "OVERCHARGE REQUIRES A FULL METER"), 1.35)
+		synth.error()
+		return
+	overcharge_meter = 0.0
+	overdrive_time = 5.0
+	for node in nodes:
+		if node.building in ["arc", "pulse"]:
+			node.charge = 5.0 + int(node.level)
+			node.cooldown = 0.0
+			node.pulse = 0.9
+		elif node.building == "capacitor":
+			node.stored = minf(4.0, float(node.stored) + 2.0)
+	for enemy in enemies:
+		enemy.slow = maxf(float(enemy.slow), 2.4)
+	spawn_particles(Vector2(650, 360), Palette.CYAN, 64)
+	screen_flash = 0.45
+	synergy_events += 1
+	show_message(loc("オーバードライブ — 威力150%・連射速度上昇", "OVERDRIVE — 150% DAMAGE AND RAPID FIRE"), 2.0)
+	synth.play_chord([220.0, 329.63, 440.0, 659.25], 0.48, -18.0)
 
 func move_node_focus(direction: Vector2) -> void:
 	if nodes.is_empty():
@@ -482,6 +584,8 @@ func handle_controller_button(button: int) -> void:
 		cycle_build_mode(1)
 	elif button == controller_button("primary"):
 		handle_node(hover_node)
+	elif button == controller_button("combat_action"):
+		activate_overcharge()
 	elif button == controller_button("menu"):
 		launch_wave()
 
@@ -515,6 +619,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				build_mode = int(event.keycode - KEY_1) as BuildMode
 				synth.click()
 			elif event.keycode == KEY_SPACE: handle_node(hover_node)
+			elif event.keycode == KEY_F: cycle_simulation_speed()
+			elif event.keycode in [KEY_R, KEY_V]: activate_overcharge()
 			elif state == GameState.BUILD and event.keycode == KEY_ENTER: launch_wave()
 		elif state in [GameState.WON, GameState.LOST] and event.keycode in [KEY_ENTER, KEY_SPACE, KEY_R]:
 			reset_run()
@@ -534,6 +640,13 @@ func handle_click(point: Vector2) -> void:
 			build_mode = index as BuildMode
 			synth.click()
 			return
+	for index in range(speed_rects.size()):
+		if speed_rects[index].has_point(point):
+			set_simulation_speed(float(index + 1))
+			return
+	if overcharge_rect.has_point(point):
+		activate_overcharge()
+		return
 	if launch_rect.has_point(point):
 		launch_wave()
 		return
@@ -543,7 +656,10 @@ func _draw() -> void:
 	if state == GameState.INTRO:
 		draw_intro()
 		return
+	var shake := capacitor_shake_offset()
+	draw_set_transform(shake)
 	draw_field()
+	draw_set_transform(Vector2.ZERO)
 	draw_sidebar()
 	draw_effects()
 	if state == GameState.WON: draw_result(true)
@@ -551,22 +667,29 @@ func _draw() -> void:
 	if screen_flash > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.with_alpha(Palette.CORAL, screen_flash * 0.24))
 
+func capacitor_shake_offset() -> Vector2:
+	if screen_shake <= 0.0:
+		return Vector2.ZERO
+	return Vector2(randf_range(-7.0, 7.0), randf_range(-4.0, 4.0)) * minf(1.0, screen_shake * 5.0)
+
 func draw_intro() -> void:
 	draw_texture_rect(KEY_ART, Rect2(Vector2.ZERO, VIEW), false)
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.02, 0.03, 0.08, 0.52))
 	draw_string(Palette.UI_FONT, Vector2(62, 76), loc("プロトタイプ 03  //  回路タワーディフェンス", "PROTOTYPE 03  //  CIRCUIT TOWER DEFENSE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.VIOLET)
 	draw_string(Palette.UI_FONT, Vector2(62, 142), "CAPACITOR DEFENSE", HORIZONTAL_ALIGNMENT_LEFT, -1, 51, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(64, 184), loc("電力のないタワーは、ただの建築物だ。", "A tower without charge is only architecture."), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.MUTED)
-	var panel := Rect2(62, 376, 590, 210)
+	var panel := Rect2(62, 350, 620, 248)
 	draw_style_box(Palette.rounded_box(Color(0.035, 0.05, 0.12, 0.94), 20, Palette.VIOLET, 2), panel)
-	draw_string(Palette.UI_FONT, Vector2(88, 416), loc("グリッド手順", "GRID PROTOCOL"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.VIOLET)
-	draw_string(Palette.UI_FONT, Vector2(88, 458), loc("1. シアン色の配線を空ソケットへ延ばす。", "1. Extend cyan cable into empty sockets."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(88, 492), loc("2. タワーを建て、電力パケットの流れを見る。", "2. Build towers. Watch power packets travel."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(88, 526), loc("3. 蓄電器は5個ためると、周囲のタワーへ一気に放電。", "3. Capacitors store five packets, then burst-charge nearby towers."), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 387), loc("グリッド手順", "GRID PROTOCOL"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, Vector2(88, 424), loc("1. 配線を延ばし、蓄電器と攻撃塔を隣接させる。", "1. Route cables, then pair capacitors with attack towers."), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 456), loc("2. 同型アーク塔は連鎖、蓄電器は塔を強化する。", "2. Linked arcs chain; capacitors amplify nearby towers."), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 488), loc("3. Fで1〜3倍速。満充電でRを押しオーバードライブ。", "3. Press F for 1–3× speed. At full charge, press R for overdrive."), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
 	var previous_pad := ControllerConfig.button_label(controller_button("previous_tool"))
 	var next_pad := ControllerConfig.button_label(controller_button("next_tool"))
 	var primary_pad := ControllerConfig.button_label(controller_button("primary"))
-	draw_string(Palette.UI_FONT, Vector2(88, 558), loc("パッド：方向でソケット  •  %s/%sでツール  •  %sで設置" % [previous_pad, next_pad, primary_pad], "PAD: MOVE SOCKET  •  %s/%s TOOL  •  %s BUILD" % [previous_pad, next_pad, primary_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
+	var active_pad := ControllerConfig.button_label(controller_button("combat_action"))
+	draw_string(Palette.UI_FONT, Vector2(88, 522), loc("パッド：方向で選択 • %s/%s ツール • %s 設置" % [previous_pad, next_pad, primary_pad], "PAD: MOVE • %s/%s TOOL • %s BUILD" % [previous_pad, next_pad, primary_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 552), loc("オーバードライブ：R / %s" % active_pad, "OVERDRIVE: R / %s" % active_pad), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CYAN)
 	draw_string(Palette.UI_FONT, Vector2(62, 650), loc("キー・ゲームパッドまたはタップで通電", "PRESS A KEY, GAMEPAD BUTTON, OR TAP TO ENERGIZE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.VIOLET)
 	draw_menu_button()
 
@@ -635,6 +758,8 @@ func draw_node(index: int) -> void:
 			draw_circle(pos + Vector2(-18 + pip * 8, 29), 2.5, charge_color if pip < int(ceil(node.charge)) else Palette.PANEL_2)
 	if node.building != "" and node.building != "reactor":
 		draw_string(Palette.UI_FONT, pos + Vector2(-18, -27), "L%d" % node.level, HORIZONTAL_ALIGNMENT_CENTER, 36, 10, Palette.PAPER)
+		if node.building in ["arc", "pulse"] and adjacent_building_count(index, "capacitor") > 0:
+			draw_arc(pos, 35, 0, TAU, 32, Palette.with_alpha(Palette.VIOLET, 0.8), 2)
 
 func draw_packet(packet: Dictionary) -> void:
 	var route: Array = packet.route
@@ -669,7 +794,7 @@ func draw_projectile(item: Dictionary) -> void:
 		points.append(item.to)
 		draw_polyline(points, Palette.with_alpha(Palette.CYAN, alpha), 4)
 	elif item.kind == "pulse":
-		var radius := 76.0 * (1.0 - alpha * 0.65)
+		var radius := float(item.get("radius", 76.0)) * (1.0 - alpha * 0.65)
 		draw_circle(item.to, radius, Palette.with_alpha(Palette.AMBER, 0.08 * alpha))
 		draw_arc(item.to, radius, 0, TAU, 40, Palette.with_alpha(Palette.AMBER, alpha), 3)
 	else:
@@ -692,6 +817,10 @@ func draw_sidebar() -> void:
 		draw_string(Palette.UI_FONT, Vector2(708, 34), wave_name(wave_index), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.PAPER)
 		var remaining := int(waves[wave_index].count) - wave_spawned + enemies.size() if state == GameState.WAVE else int(waves[wave_index].count)
 		draw_string(Palette.UI_FONT, Vector2(708, 67), (loc("敵 %d体", "%d HOSTILES") % remaining), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.CORAL)
+	for index in range(speed_rects.size()):
+		var selected_speed := is_equal_approx(simulation_speed, float(index + 1))
+		draw_style_box(Palette.rounded_box(Palette.CYAN if selected_speed else Palette.PANEL, 8, Palette.CYAN, 1), speed_rects[index])
+		draw_string(Palette.UI_FONT, Vector2(speed_rects[index].position.x, speed_rects[index].position.y + 23), "%d×" % (index + 1), HORIZONTAL_ALIGNMENT_CENTER, speed_rects[index].size.x, 12, Palette.INK if selected_speed else Palette.PAPER)
 	draw_menu_button()
 
 	draw_string(Palette.UI_FONT, Vector2(1038, 131), loc("グリッド建設", "BUILD GRID"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.PAPER)
@@ -707,25 +836,37 @@ func draw_sidebar() -> void:
 		draw_string(Palette.UI_FONT, Vector2(mode_rects[index].position.x, mode_rects[index].position.y + 29), labels[index][0], HORIZONTAL_ALIGNMENT_CENTER, mode_rects[index].size.x, 13, Palette.INK if selected else Palette.PAPER)
 		draw_string(Palette.UI_FONT, Vector2(mode_rects[index].position.x, mode_rects[index].position.y + 53), labels[index][1], HORIZONTAL_ALIGNMENT_CENTER, mode_rects[index].size.x, 12, Palette.INK if selected else Palette.MUTED)
 
-	var telemetry := Rect2(1038, 440, 224, 142)
+	var telemetry := Rect2(1038, 434, 224, 148)
 	draw_style_box(Palette.rounded_box(Palette.INK, 14, Palette.with_alpha(Palette.CYAN, 0.25), 1), telemetry)
-	draw_string(Palette.UI_FONT, Vector2(1056, 469), loc("電力テレメトリ", "POWER TELEMETRY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(1056, 460), loc("電力テレメトリ", "POWER TELEMETRY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.CYAN)
 	var active_count := 0
 	var stored := 0.0
 	for node in nodes:
 		if node.active: active_count += 1
 		stored += float(node.charge) + float(node.stored)
-	draw_string(Palette.UI_FONT, Vector2(1056, 505), loc("接続ソケット", "LIVE SOCKETS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(1210, 505), str(active_count), HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(1056, 535), loc("蓄電量", "STORED CHARGE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(1210, 535), "%.0f" % stored, HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(1056, 565), loc("送電パケット", "PACKETS IN FLIGHT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(1210, 565), str(packets.size()), HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1056, 489), loc("接続 / 蓄電", "SOCKETS / CHARGE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1190, 489), "%d / %.0f" % [active_count, stored], HORIZONTAL_ALIGNMENT_RIGHT, 52, 13, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1056, 516), loc("送電パケット", "PACKETS IN FLIGHT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1210, 516), str(packets.size()), HORIZONTAL_ALIGNMENT_RIGHT, 35, 13, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1056, 543), loc("ネットワーク共振", "NETWORK RESONANCE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1190, 543), "×%.2f" % network_synergy_multiplier(), HORIZONTAL_ALIGNMENT_RIGHT, 52, 13, Palette.CYAN if network_synergy_multiplier() > 1.0 else Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1056, 570), loc("シナジー発動", "SYNERGY EVENTS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1210, 570), str(synergy_events), HORIZONTAL_ALIGNMENT_RIGHT, 35, 13, Palette.PAPER)
+
+	var active_ready := overcharge_meter >= 100.0
+	var active_color := Palette.CYAN if active_ready else Palette.VIOLET
+	draw_style_box(Palette.rounded_box(Palette.INK, 11, active_color, 2), overcharge_rect)
+	draw_rect(Rect2(overcharge_rect.position + Vector2(7, 31), Vector2((overcharge_rect.size.x - 14) * overcharge_meter / 100.0, 12)), Palette.with_alpha(active_color, 0.9))
+	var active_pad := ControllerConfig.button_label(controller_button("combat_action"))
+	var active_title := loc("R / %s  オーバードライブ" % active_pad, "R / %s  OVERDRIVE" % active_pad)
+	if overdrive_time > 0.0:
+		active_title = loc("出力150%%  %.1f秒" % overdrive_time, "OUTPUT 150%%  %.1fs" % overdrive_time)
+	draw_string(Palette.UI_FONT, Vector2(1048, 614), active_title, HORIZONTAL_ALIGNMENT_CENTER, 204, 12, Palette.PAPER)
 
 	var launch_color := Palette.CORAL if state == GameState.BUILD else Palette.PANEL_2
 	draw_style_box(Palette.rounded_box(launch_color, 14), launch_rect)
 	var launch_pad := ControllerConfig.button_label(controller_button("menu"))
-	draw_string(Palette.UI_FONT, Vector2(launch_rect.position.x, launch_rect.position.y + 38), (loc("%s：ウェーブ開始" % launch_pad, "%s: LAUNCH WAVE" % launch_pad) if state == GameState.BUILD else loc("ウェーブ進行中", "WAVE IN PROGRESS")), HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 15, Palette.INK if state == GameState.BUILD else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(launch_rect.position.x, launch_rect.position.y + 30), (loc("%s：ウェーブ開始" % launch_pad, "%s: LAUNCH WAVE" % launch_pad) if state == GameState.BUILD else loc("ウェーブ進行中", "WAVE IN PROGRESS")), HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 14, Palette.INK if state == GameState.BUILD else Palette.MUTED)
 	if message_time > 0.0:
 		var rect := Rect2(260, 108, 500, 42)
 		draw_style_box(Palette.rounded_box(Color(0.025, 0.05, 0.1, 0.95), 11, Palette.CYAN, 1), rect)
@@ -742,12 +883,12 @@ func draw_result(victory: bool) -> void:
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 26, accent, 3), panel)
 	draw_string(Palette.UI_FONT, Vector2(300, 221), (loc("グリッド充電完了", "GRID FULLY CHARGED") if victory else loc("リアクター停止", "REACTOR BLACKOUT")), HORIZONTAL_ALIGNMENT_CENTER, 680, 34, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(300, 262), (loc("最後のサージを接地した", "THE LAST SURGE HAS BEEN GROUNDED") if victory else loc("回路は持ちこたえられなかった", "THE CIRCUIT COULD NOT HOLD")), HORIZONTAL_ALIGNMENT_CENTER, 680, 16, accent)
-	draw_string(Palette.UI_FONT, Vector2(355, 340), loc("ウェーブ", "WAVES"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(355, 380), "%d / 5" % (5 if victory else wave_index), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(555, 340), loc("コア", "CORE"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(555, 380), "%d / 20" % base_hp, HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(755, 340), loc("グリッド資金", "GRID CREDIT"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(755, 380), str(credits), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(355, 340), loc("接地した敵", "GROUNDED"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(355, 380), str(enemies_grounded), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(555, 340), loc("無傷ウェーブ", "PERFECT WAVES"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(555, 380), "%d / 5" % perfect_waves, HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(755, 340), loc("シナジー", "SYNERGIES"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(755, 380), str(synergy_events), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(accent, 12), Rect2(426, 468, 428, 54))
 	var primary_pad := ControllerConfig.button_label(controller_button("primary"))
 	draw_string(Palette.UI_FONT, Vector2(426, 502), loc("タップ・ENTER・%sで再建" % primary_pad, "TAP, ENTER, OR %s TO REBUILD" % primary_pad), HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)

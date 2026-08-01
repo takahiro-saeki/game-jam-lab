@@ -7,6 +7,7 @@ const SECTION := "gamepad"
 const ACTIONS := [
 	{"id": "primary", "ja": "決定・使用・ジャンプ", "en": "CONFIRM / USE / JUMP"},
 	{"id": "secondary", "ja": "サブ操作・ダッシュ・次ツール", "en": "SECONDARY / DASH / NEXT TOOL"},
+	{"id": "combat_action", "ja": "攻撃・アクティブ能力", "en": "ATTACK / ACTIVE ABILITY"},
 	{"id": "menu", "ja": "ターン終了・ウェーブ開始", "en": "END TURN / LAUNCH WAVE"},
 	{"id": "back", "ja": "戻る", "en": "BACK"},
 	{"id": "language", "ja": "言語切替", "en": "SWITCH LANGUAGE"},
@@ -17,9 +18,10 @@ const ACTIONS := [
 const DEFAULTS := {
 	"primary": JOY_BUTTON_A,
 	"secondary": JOY_BUTTON_X,
+	"combat_action": JOY_BUTTON_Y,
 	"menu": JOY_BUTTON_START,
 	"back": JOY_BUTTON_B,
-	"language": JOY_BUTTON_Y,
+	"language": JOY_BUTTON_BACK,
 	"previous_tool": JOY_BUTTON_LEFT_SHOULDER,
 	"next_tool": JOY_BUTTON_RIGHT_SHOULDER,
 }
@@ -106,6 +108,7 @@ func save_settings() -> void:
 func apply_input_map() -> void:
 	replace_action_buttons("jump", [get_button("primary"), JOY_BUTTON_DPAD_UP])
 	replace_action_buttons("dash", [get_button("secondary"), JOY_BUTTON_DPAD_DOWN])
+	replace_action_buttons("attack", [get_button("combat_action")])
 
 func replace_action_buttons(action: StringName, buttons: Array[int]) -> void:
 	for event in InputMap.action_get_events(action):
