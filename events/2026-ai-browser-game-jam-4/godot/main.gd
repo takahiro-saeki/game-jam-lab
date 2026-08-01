@@ -14,7 +14,8 @@ var synth: JamSynth
 var active_game: Node
 var is_japanese := false
 var menu_time := 0.0
-var hover_index := -1
+var hover_index := 0
+var controller_axis_latch := Vector2i.ZERO
 var card_rects: Array[Rect2] = []
 var stars: Array[Vector3] = []
 var language_rect := Rect2(1074, 32, 162, 38)
@@ -41,6 +42,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if active_game != null:
 		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 			return_to_menu()
+		elif event is InputEventJoypadButton and event.pressed and event.button_index in [JOY_BUTTON_B, JOY_BUTTON_BACK]:
+			return_to_menu()
 		return
 	if event is InputEventMouseMotion:
 		hover_index = card_at(event.position)
@@ -59,15 +62,54 @@ func _unhandled_input(event: InputEvent) -> void:
 			var touched := card_at(event.position)
 			if touched >= 0:
 				launch_game(touched)
+	elif event is InputEventJoypadMotion:
+		handle_controller_motion(event)
+	elif event is InputEventJoypadButton and event.pressed:
+		match event.button_index:
+			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
+				navigate_menu(-1)
+			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
+				navigate_menu(1)
+			JOY_BUTTON_A, JOY_BUTTON_START:
+				launch_game(maxi(0, hover_index))
+			JOY_BUTTON_Y:
+				toggle_language()
 	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_L:
 			toggle_language()
+		elif event.keycode in [KEY_LEFT, KEY_UP]:
+			navigate_menu(-1)
+		elif event.keycode in [KEY_RIGHT, KEY_DOWN]:
+			navigate_menu(1)
+		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
+			launch_game(maxi(0, hover_index))
 		elif event.keycode in [KEY_1, KEY_KP_1]:
 			launch_game(0)
 		elif event.keycode in [KEY_2, KEY_KP_2]:
 			launch_game(1)
 		elif event.keycode in [KEY_3, KEY_KP_3]:
 			launch_game(2)
+
+func navigate_menu(direction: int) -> void:
+	if card_rects.is_empty():
+		return
+	hover_index = wrapi((0 if hover_index < 0 else hover_index) + direction, 0, card_rects.size())
+	synth.click()
+	queue_redraw()
+
+func handle_controller_motion(event: InputEventJoypadMotion) -> void:
+	if event.axis == JOY_AXIS_LEFT_X:
+		if absf(event.axis_value) < 0.45:
+			controller_axis_latch.x = 0
+		elif controller_axis_latch.x == 0:
+			controller_axis_latch.x = 1 if event.axis_value > 0.0 else -1
+			navigate_menu(controller_axis_latch.x)
+	elif event.axis == JOY_AXIS_LEFT_Y:
+		if absf(event.axis_value) < 0.45:
+			controller_axis_latch.y = 0
+		elif controller_axis_latch.y == 0:
+			controller_axis_latch.y = 1 if event.axis_value > 0.0 else -1
+			navigate_menu(controller_axis_latch.y)
 
 func card_at(point: Vector2) -> int:
 	for index in range(card_rects.size()):
@@ -88,7 +130,13 @@ func launch_game(index: int) -> void:
 			active_game = CapacitorDefense.new()
 	active_game.set("is_japanese", is_japanese)
 	active_game.return_to_menu.connect(return_to_menu)
+	if active_game.has_signal("language_changed"):
+		active_game.connect("language_changed", sync_language)
 	add_child(active_game)
+	queue_redraw()
+
+func sync_language(value: bool) -> void:
+	is_japanese = value
 	queue_redraw()
 
 func toggle_language() -> void:
@@ -104,7 +152,7 @@ func return_to_menu() -> void:
 		return
 	active_game.queue_free()
 	active_game = null
-	hover_index = -1
+	hover_index = 0
 	synth.click()
 	queue_redraw()
 
@@ -127,7 +175,7 @@ func _draw() -> void:
 	draw_card(1, "CHARGEBACK", loc("デッキ構築ローグライク", "DECK-BUILDING ROGUELIKE"), CHARGEBACK_ART, Palette.MINT, [loc("不正請求に異議を申し立てる", "Dispute hostile charges"), loc("借金をダメージに変える", "Turn debt into damage"), loc("悪質な請求元を倒す", "Defeat predatory billing")])
 	draw_card(2, "CAPACITOR DEFENSE", loc("回路タワーディフェンス", "CIRCUIT TOWER DEFENSE"), CAPACITOR_ART, Palette.VIOLET, [loc("電力パケットを配線", "Route visible power packets"), loc("蓄電して一気に放電", "Store energy for bursts"), loc("リアクターを守り抜く", "Protect the reactor")])
 
-	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1 / 2 / 3 またはカードをタップ  •  ESCでゲーム実験室へ", "SELECT WITH 1 / 2 / 3 OR TAP A CARD  •  ESC RETURNS TO THIS LAB"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1 / 2 / 3・矢印・ゲームパッドで選択  •  ESC / Bで戻る", "SELECT: 1 / 2 / 3, ARROWS, OR GAMEPAD  •  ESC / B RETURNS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
 
 func draw_card(index: int, title: String, genre: String, texture: Texture2D, accent: Color, bullets: Array[String]) -> void:
 	var rect := card_rects[index]
