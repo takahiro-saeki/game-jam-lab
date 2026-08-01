@@ -9,6 +9,9 @@ func play_tone(frequency: float, duration: float = 0.1, volume_db: float = -16.0
 	if DisplayServer.get_name() == "headless":
 		return
 	var player := AudioStreamPlayer.new()
+	# AudioStreamGenerator is a live stream, not a preloaded sample. Godot's Web
+	# backend otherwise follows the project default and rejects it as unsampleable.
+	player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	var generator := AudioStreamGenerator.new()
 	generator.mix_rate = MIX_RATE
 	generator.buffer_length = maxf(0.2, duration + 0.08)

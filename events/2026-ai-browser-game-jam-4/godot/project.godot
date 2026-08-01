@@ -34,7 +34,7 @@ jump={
 }
 dash={
 "deadzone": 0.3,
-"events": [Object(InputEventKey,"physical_keycode":88), Object(InputEventKey,"physical_keycode":4194325), Object(InputEventKey,"physical_keycode":4194322), Object(InputEventJoypadButton,"button_index":2), Object(InputEventJoypadButton,"button_index":10), Object(InputEventJoypadButton,"button_index":12)]
+"events": [Object(InputEventKey,"physical_keycode":88), Object(InputEventKey,"physical_keycode":4194325), Object(InputEventKey,"physical_keycode":4194322), Object(InputEventJoypadButton,"button_index":2), Object(InputEventJoypadButton,"button_index":12)]
 }
 
 [rendering]

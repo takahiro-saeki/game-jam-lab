@@ -22,12 +22,14 @@ The three concepts share one web build and launcher so they can be compared unde
 - Select a game with `1`, `2`, `3`, the arrow keys, the gamepad D-pad/left stick, or by clicking/tapping its card. Confirm with `Enter`, `Space`, or gamepad `A`.
 - Press `Esc`, gamepad `B`, or use **Game Lab** to return to the launcher.
 - Japanese is selected automatically on Japanese devices. Use the language switch or press `L` / gamepad `Y` to change between Japanese and English.
+- Open **Gamepad Setup** from the launcher (or press `F1` / `C`) to remap confirm/use, dash, menu actions, back, language, and tool cycling. Duplicate assignments are swapped and changes are saved automatically. The D-pad and left stick remain dedicated to movement/navigation.
 
 ### ZERO PERCENT CITY
 
 - Move: `A` / `D`, `←` / `→`, or gamepad D-pad/left stick
 - Jump: `Space` / `Z` / `↑`, or gamepad `A` / D-pad up
-- Dash after unlocking it: `X` / `Shift` / `↓`, or gamepad `X` / right shoulder / D-pad down
+- Dash after unlocking it: `X` / `Shift` / `↓`, or gamepad `X` / D-pad down
+- The first obstruction can be jumped normally or smashed with the newly acquired dash.
 - Touch: left/right, jump, and dash buttons appear on touch devices
 
 ### CHARGEBACK

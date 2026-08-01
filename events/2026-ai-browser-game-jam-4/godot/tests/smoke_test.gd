@@ -4,6 +4,7 @@ const ZeroGame = preload("res://games/zero_percent_city/zero_percent_city.gd")
 const ChargebackGame = preload("res://games/chargeback/chargeback.gd")
 const CapacitorGame = preload("res://games/capacitor_defense/capacitor_defense.gd")
 const Launcher = preload("res://main.gd")
+const ControllerConfig = preload("res://shared/controller_bindings.gd")
 
 var failures: Array[String] = []
 
@@ -19,6 +20,7 @@ func check(condition: bool, description: String) -> void:
 
 func run_tests() -> void:
 	test_input_map()
+	test_controller_bindings()
 	test_launcher()
 	test_zero_percent_city()
 	test_chargeback()
@@ -41,6 +43,18 @@ func test_input_map() -> void:
 	check(action_has_joy_axis("move_left", JOY_AXIS_LEFT_X, -1.0), "left stick moves the player")
 	check(action_has_joy_button("jump", JOY_BUTTON_A), "gamepad A jumps")
 	check(action_has_joy_button("dash", JOY_BUTTON_X), "gamepad X dashes")
+
+func test_controller_bindings() -> void:
+	print("\nCONTROLLER BINDINGS")
+	var config := ControllerConfig.new()
+	config.reset_defaults(false)
+	check(config.get_button("primary") == JOY_BUTTON_A, "default confirm button is A")
+	check(config.rebind("primary", JOY_BUTTON_X, false), "a controller action can be rebound")
+	check(config.get_button("primary") == JOY_BUTTON_X, "new primary binding is stored")
+	check(config.get_button("secondary") == JOY_BUTTON_A, "duplicate binding swaps the previous action")
+	check(action_has_joy_button("jump", JOY_BUTTON_X), "custom primary binding updates jump")
+	check(action_has_joy_button("dash", JOY_BUTTON_A), "swapped secondary binding updates dash")
+	config.reset_defaults(false)
 
 func action_has_key(action: StringName, keycode: Key) -> bool:
 	for event in InputMap.action_get_events(action):
@@ -70,7 +84,18 @@ func test_launcher() -> void:
 	print("\nLAUNCHER")
 	var launcher := Launcher.new()
 	root.add_child(launcher)
+	launcher.controller_config.reset_defaults(false)
+	launcher.controller_bindings = launcher.controller_config.bindings.duplicate(true)
 	launcher.is_japanese = false
+	launcher.open_settings()
+	check(launcher.settings_open, "gamepad setup screen opens from the launcher")
+	launcher.start_rebinding(0)
+	launcher.capture_controller_button(JOY_BUTTON_X, false)
+	check(launcher.controller_button("primary") == JOY_BUTTON_X, "setup screen captures a new controller button")
+	check(launcher.controller_button("secondary") == JOY_BUTTON_A, "setup screen swaps duplicate bindings")
+	launcher.close_settings()
+	launcher.controller_config.reset_defaults(false)
+	launcher.controller_bindings = launcher.controller_config.bindings.duplicate(true)
 	launcher.hover_index = 0
 	launcher._unhandled_input(joy_button(JOY_BUTTON_DPAD_RIGHT))
 	check(launcher.hover_index == 1, "gamepad direction selects a game")
@@ -93,6 +118,10 @@ func test_zero_percent_city() -> void:
 	game.player_pos = game.pickups[0].rect.get_center()
 	game.handle_interactions(0.016)
 	check(game.has_dash, "dash module can be acquired")
+	var first_wall: Rect2 = game.walls[0].rect
+	var standing_center_y := 650.0 - game.PLAYER_SIZE.y * 0.5
+	var jump_apex_bottom := standing_center_y - game.JUMP_SPEED * game.JUMP_SPEED / (2.0 * game.GRAVITY) + game.PLAYER_SIZE.y * 0.5
+	check(jump_apex_bottom + 12.0 < first_wall.position.y, "the first wall has comfortable normal-jump clearance")
 	check(game.break_wall(game.walls[0].rect), "dash wall can be broken")
 	game.has_double_jump = true
 	game.player_pos = Vector2(3446, 114)
@@ -130,6 +159,10 @@ func test_chargeback() -> void:
 	game.deal_damage(2)
 	game.win_encounter()
 	check(game.state == game.GameState.REWARD and game.reward_cards.size() == 3, "victory offers three rewards")
+	game.energy = 0
+	check(game.card_is_available(game.find_card(pool, "bankruptcy")), "reward cards stay bright and selectable without energy")
+	game.state = game.GameState.PLAYER_TURN
+	check(not game.card_is_available(game.find_card(pool, "bankruptcy")), "hand cards still dim when energy is insufficient")
 	game.free()
 
 func test_capacitor_defense() -> void:
