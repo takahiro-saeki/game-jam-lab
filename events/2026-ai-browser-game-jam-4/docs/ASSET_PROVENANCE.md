@@ -21,6 +21,18 @@ Color palette: midnight navy, electric cyan, warning amber, restrained magenta
 Constraints: no text, no logo, no watermark, no photorealism, no extra characters, no recognizable franchise elements
 ```
 
+Gameplay background saved as `godot/assets/keyart/zero-percent-city-gameplay.png`.
+
+```text
+Use case: production gameplay backdrop
+Asset type: wide side-scrolling pixel-art environment
+Primary request: an abandoned near-future megacity after a total energy collapse, with distant towers, broken elevated rail, antennas, emergency lights, violet haze, and wet streets far below
+Style/medium: crisp limited-palette 16-bit/32-bit pixel art with cinematic depth
+Composition/framing: 16:9, quiet central gameplay space and foreground silhouettes restricted to the lower edge so interactive geometry remains readable
+Color palette: near-black navy, deep teal, electric cyan, restrained violet and amber
+Constraints: no characters, enemies, gameplay platforms, logos, words, UI, borders, or recognizable franchise elements
+```
+
 ## CHARGEBACK
 
 Saved as `godot/assets/keyart/chargeback.jpg`.

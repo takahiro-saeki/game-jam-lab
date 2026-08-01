@@ -13,7 +13,7 @@
 2. **CHARGEBACK** — a financial deck-building roguelike where your credit limit is your life.
 3. **CAPACITOR DEFENSE** — a circuit-routing tower defense driven by visible energy packets.
 
-The three concepts share one web build and launcher so they can be compared under identical conditions. The strongest concept will be expanded into the final jam submission.
+The three concepts share one web build and launcher so they can be compared under identical conditions. Each is now a complete, replayable vertical slice with its own progression, build choices, gamepad profile, audiovisual feedback, and results screen.
 
 ## Controls
 
@@ -21,23 +21,27 @@ The three concepts share one web build and launcher so they can be compared unde
 
 - Select a game with `1`, `2`, `3`, the arrow keys, the gamepad D-pad/left stick, or by clicking/tapping its card. Confirm with `Enter`, `Space`, or gamepad `A`.
 - Press `Esc`, gamepad `B`, or use **Game Lab** to return to the launcher.
-- Japanese is selected automatically on Japanese devices. Use the language switch or press `L` / gamepad `Y` to change between Japanese and English.
-- Open **Gamepad Setup** from the launcher (or press `F1` / `C`) to remap confirm/use, dash, menu actions, back, language, and tool cycling. Duplicate assignments are swapped and changes are saved automatically. The D-pad and left stick remain dedicated to movement/navigation.
+- Japanese is selected automatically on Japanese devices. Use the language switch or press `L` / gamepad `View/Share` to change between Japanese and English.
+- Open **Gamepad Setup** from the launcher (or press `F1` / `C`) to remap confirm/use, dash, attack/active ability, menu actions, back, language, and tool cycling. Duplicate assignments are swapped and changes are saved automatically. The D-pad and left stick remain dedicated to movement/navigation.
 
 ### ZERO PERCENT CITY
 
 - Move: `A` / `D`, `←` / `→`, or gamepad D-pad/left stick
 - Jump: `Space` / `Z` / `↑`, or gamepad `A` / D-pad up
 - Dash after unlocking it: `X` / `Shift` / `↓`, or gamepad `X` / D-pad down
+- Normal attack: `C` / `J`, or gamepad `Y`. Chain three attacks for an empowered finisher; dash impacts deal heavier damage.
 - The first obstruction can be jumped normally or smashed with the newly acquired dash.
-- Touch: left/right, jump, and dash buttons appear on touch devices
+- Defeat enemies to recycle power, collect traversal modules, destroy the Core Warden, then reboot the city.
+- Touch: left/right, attack, jump, and dash buttons appear on touch devices.
 
 ### CHARGEBACK
 
 - Click/tap a card, or select one with the arrow keys / D-pad / left stick and play it with `Space` / gamepad `A`.
 - Click **End Turn**, press `Enter` / `E`, or use gamepad `Start`.
 - Keyboard card shortcuts: `1`–`9`.
-- Switch Japanese/English at any time with the in-game language button, `L`, or gamepad `Y`.
+- Choose one of three credit policies before a run. Playing two cards from one archetype triggers its synergy; playing defense, debt, and audit in one turn balances the books.
+- Defeated authorizations award one of three cards, including at least one upgraded card. Press `R` or the configured active-ability button to skip a reward for credit.
+- Switch Japanese/English at any time with the in-game language button, `L`, or the configured language button.
 
 ### CAPACITOR DEFENSE
 
@@ -45,6 +49,9 @@ The three concepts share one web build and launcher so they can be compared unde
 - Select sockets with the arrow keys or gamepad D-pad/left stick, then build with `Space` / gamepad `A`.
 - Extend cables only from a live cyan socket.
 - Place at least one tower, then select **Launch Wave**, press `Enter`, or use gamepad `Start`.
+- Press `F` or select the header controls for `1×`, `2×`, or `3×` simulation speed.
+- Adjacent capacitors amplify towers; adjacent arc towers chain attacks. Building capacitor, arc, and pulse equipment activates network resonance.
+- Deliver packets and ground hostiles to fill Overcharge, then press `R` / `V` or gamepad `Y` for five seconds of rapid-fire Overdrive.
 
 ## Local development
 
@@ -71,7 +78,7 @@ godot --headless --path events/2026-ai-browser-game-jam-4/godot \
 ## AI and asset disclosure
 
 - Game concepts, GDScript implementation, testing, balancing, and documentation were created in collaboration with OpenAI Codex.
-- The three launcher/key-art images were created with OpenAI image generation from original prompts written for this project.
+- The three launcher/key-art images and the ZERO PERCENT CITY gameplay backdrop were created with OpenAI image generation from original prompts written for this project.
 - No third-party game code, trademarked characters, or downloaded art assets are included.
 - Japanese UI text uses Noto Sans JP from Google Fonts under the SIL Open Font License 1.1; the license is included at [`godot/assets/fonts/OFL-NotoSansJP.txt`](godot/assets/fonts/OFL-NotoSansJP.txt).
 - Runtime visuals, particles, UI, and sound effects are generated by the Godot project itself.
@@ -80,4 +87,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-All three vertical slices are complete and independently playable. The next jam decision is which concept receives the final balancing, content, and submission-page pass.
+All three vertical slices are feature-complete and independently playable. Automated smoke coverage verifies keyboard/gamepad bindings, progression gates, combat, policy and card synergies, reward upgrades, tower-network resonance, simulation speed, and Overdrive.

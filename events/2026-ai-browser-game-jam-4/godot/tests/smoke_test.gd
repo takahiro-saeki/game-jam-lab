@@ -43,12 +43,15 @@ func test_input_map() -> void:
 	check(action_has_joy_axis("move_left", JOY_AXIS_LEFT_X, -1.0), "left stick moves the player")
 	check(action_has_joy_button("jump", JOY_BUTTON_A), "gamepad A jumps")
 	check(action_has_joy_button("dash", JOY_BUTTON_X), "gamepad X dashes")
+	check(action_has_key("attack", KEY_C), "C performs a normal attack")
+	check(action_has_joy_button("attack", JOY_BUTTON_Y), "gamepad Y performs the active combat action")
 
 func test_controller_bindings() -> void:
 	print("\nCONTROLLER BINDINGS")
 	var config := ControllerConfig.new()
 	config.reset_defaults(false)
 	check(config.get_button("primary") == JOY_BUTTON_A, "default confirm button is A")
+	check(config.get_button("combat_action") == JOY_BUTTON_Y, "default combat action button is Y")
 	check(config.rebind("primary", JOY_BUTTON_X, false), "a controller action can be rebound")
 	check(config.get_button("primary") == JOY_BUTTON_X, "new primary binding is stored")
 	check(config.get_button("secondary") == JOY_BUTTON_A, "duplicate binding swaps the previous action")
@@ -118,6 +121,10 @@ func test_zero_percent_city() -> void:
 	game.player_pos = game.pickups[0].rect.get_center()
 	game.handle_interactions(0.016)
 	check(game.has_dash, "dash module can be acquired")
+	game.enemies[0].pos = game.player_pos + Vector2(34, 0)
+	var attack_hp: int = game.enemies[0].hp
+	game.begin_attack()
+	check(game.enemies[0].hp == attack_hp - 1, "normal attack damages a hostile")
 	var first_wall: Rect2 = game.walls[0].rect
 	var standing_center_y := 650.0 - game.PLAYER_SIZE.y * 0.5
 	var jump_apex_bottom := standing_center_y - game.JUMP_SPEED * game.JUMP_SPEED / (2.0 * game.GRAVITY) + game.PLAYER_SIZE.y * 0.5
@@ -125,6 +132,9 @@ func test_zero_percent_city() -> void:
 	check(game.break_wall(game.walls[0].rect), "dash wall can be broken")
 	game.has_double_jump = true
 	game.player_pos = Vector2(3446, 114)
+	game.handle_interactions(0.016)
+	check(game.run_state == game.RunState.PLAYING, "city core stays locked until the warden is defeated")
+	game.boss_defeated = true
 	game.handle_interactions(0.016)
 	check(game.run_state == game.RunState.COMPLETE, "city core completes the run")
 	game.free()
@@ -139,7 +149,7 @@ func test_chargeback() -> void:
 	game.toggle_language()
 	check(game.is_japanese and game.deck[0].title == "異議申立て", "in-game language toggle relocalizes cards")
 	check(game.enemy.name == "無料体験ヒドラ", "in-game language toggle relocalizes the encounter")
-	check(game.enemy.hp == 58, "first authorization loads")
+	check(game.enemy.hp == 68, "first authorization loads")
 	var pool: Array[Dictionary] = game.all_cards()
 	game.hand = [game.find_card(pool, "dispute").duplicate()]
 	game.update_card_rects()
@@ -147,23 +157,101 @@ func test_chargeback() -> void:
 	game.shield = 0
 	game.hover_card = 0
 	game.handle_controller_button(JOY_BUTTON_A)
-	check(game.shield == 9 and game.energy == 2, "DISPUTE spends energy and grants block")
+	check(game.shield == 13 and game.counter == 3 and game.energy == 2, "DISPUTE spends energy and activates the selected policy")
 	check(game.hand.is_empty(), "gamepad A plays the selected card")
 	game.hand = [game.find_card(pool, "chargeback").duplicate()]
 	game.energy = 3
 	game.credit = 50
 	var before_hp: int = game.enemy.hp
 	game.play_card(0)
-	check(game.enemy.hp == before_hp - 19, "CHARGEBACK scales with missing credit")
+	check(game.enemy.hp == before_hp - 24, "CHARGEBACK scales with missing credit")
+	game.archetype_counts = {"defense": 0, "debt": 0, "audit": 0}
+	game.archetype_triggered = {"defense": false, "debt": false, "audit": false}
+	game.policy_triggered = true
+	game.hand = [game.find_card(pool, "dispute").duplicate(), game.find_card(pool, "dispute").duplicate()]
+	game.energy = 3
+	game.shield = 0
+	game.play_card(0)
+	game.play_card(0)
+	check(game.shield == 23 and game.total_synergies >= 1, "two cards of one archetype trigger a meaningful synergy")
 	game.enemy.hp = 1
 	game.deal_damage(2)
 	game.win_encounter()
 	check(game.state == game.GameState.REWARD and game.reward_cards.size() == 3, "victory offers three rewards")
 	game.energy = 0
 	check(game.card_is_available(game.find_card(pool, "bankruptcy")), "reward cards stay bright and selectable without energy")
+	var upgraded_rewards := 0
+	for reward in game.reward_cards:
+		if reward.upgraded: upgraded_rewards += 1
+	check(upgraded_rewards >= 1, "every reward set includes an upgraded card")
 	game.state = game.GameState.PLAYER_TURN
 	check(not game.card_is_available(game.find_card(pool, "bankruptcy")), "hand cards still dim when energy is insufficient")
+	game.start_run(2)
+	check(game.policy_id == "forensic" and game.hand.size() == 6, "forensic policy opens with a six-card hand")
 	game.free()
+
+	seed(1337)
+	var full_run := ChargebackGame.new()
+	root.add_child(full_run)
+	full_run.start_run(0)
+	for decision in range(160):
+		if full_run.state == full_run.GameState.PLAYER_TURN:
+			for play in range(14):
+				var choice := choose_chargeback_card(full_run)
+				if choice < 0:
+					break
+				full_run.play_card(choice)
+				if full_run.state != full_run.GameState.PLAYER_TURN:
+					break
+			if full_run.state == full_run.GameState.PLAYER_TURN:
+				full_run.end_turn()
+				full_run.resolve_enemy_turn()
+		elif full_run.state == full_run.GameState.REWARD:
+			var reward_choice := 0
+			for index in range(full_run.reward_cards.size()):
+				if bool(full_run.reward_cards[index].upgraded):
+					reward_choice = index
+					break
+			full_run.take_reward(reward_choice)
+		else:
+			break
+	check(full_run.state == full_run.GameState.WON, "a synergy-aware card strategy can reverse all three authorizations")
+	full_run.free()
+
+func choose_chargeback_card(game: Node) -> int:
+	var best_index := -1
+	var best_score := -999
+	for index in range(game.hand.size()):
+		var item: Dictionary = game.hand[index]
+		if game.effective_card_cost(item) > game.energy:
+			continue
+		var id := str(item.id)
+		var score := 0
+		match id:
+			"dispute": score = 72 if game.shield < game.enemy_intent else 24
+			"freeze": score = 78 if game.shield < game.enemy_intent else 42
+			"fraud_alert": score = 76 if game.shield < game.enemy_intent else 38
+			"paper_trail": score = 82 if game.shield < game.enemy_intent else 48
+			"class_action": score = 46 + game.shield
+			"cashback": score = 55 + (game.max_credit - game.credit)
+			"autopay": score = 75 if game.credit > 30 else -50
+			"audit": score = 70
+			"data_mine": score = 88
+			"recurring": score = 38 + game.cards_played_this_turn * 12
+			"chargeback": score = 58 + (game.max_credit - game.credit)
+			"interest": score = 62
+			"leverage": score = 80 if game.credit > 45 and game.energy <= 1 else -40
+			"compound": score = 44 + (game.max_credit - game.credit)
+			"bankruptcy": score = 74 if game.credit > 34 else -70
+			"limit": score = 68
+			"refund": score = 64 + (game.max_credit - game.credit)
+			_: score = -100
+		if int(item.cost) == 0:
+			score += 12
+		if score > best_score:
+			best_score = score
+			best_index = index
+	return best_index if best_score > 0 else -1
 
 func test_capacitor_defense() -> void:
 	print("\nCAPACITOR DEFENSE")
@@ -194,4 +282,54 @@ func test_capacitor_defense() -> void:
 	game.state = game.GameState.BUILD
 	game.launch_wave()
 	check(game.state == game.GameState.WAVE, "armed grid launches a wave")
+	game.set_simulation_speed(3.0)
+	check(game.simulation_speed == 3.0, "simulation can run at triple speed")
+	game.nodes[3].active = true
+	game.nodes[3].building = "pulse"
+	check(is_equal_approx(game.network_synergy_multiplier(), 1.25), "capacitor, arc, and pulse unlock network resonance")
+	game.overcharge_meter = 100.0
+	game.handle_controller_button(JOY_BUTTON_Y)
+	check(game.overdrive_time > 0.0 and game.overcharge_meter == 0.0, "gamepad active ability triggers overdrive")
 	game.free()
+
+	var full_run := CapacitorGame.new()
+	root.add_child(full_run)
+	full_run.reset_run()
+	full_run.build_mode = full_run.BuildMode.ARC
+	full_run.handle_node(1)
+	full_run.build_mode = full_run.BuildMode.CABLE
+	full_run.handle_node(2)
+	full_run.build_mode = full_run.BuildMode.CAPACITOR
+	full_run.handle_node(2)
+	full_run.build_mode = full_run.BuildMode.CABLE
+	full_run.handle_node(3)
+	full_run.build_mode = full_run.BuildMode.PULSE
+	full_run.handle_node(3)
+	full_run.simulation_speed = 3.0
+	for wave_number in range(full_run.waves.size()):
+		full_run.launch_wave()
+		for tick in range(16000):
+			full_run._process(1.0 / 60.0)
+			if full_run.state != full_run.GameState.WAVE:
+				break
+		if full_run.state in [full_run.GameState.WON, full_run.GameState.LOST]:
+			break
+		improve_test_grid(full_run)
+	check(full_run.state == full_run.GameState.WON, "a sensible synergistic grid can clear all five waves")
+	full_run.free()
+
+func improve_test_grid(game: Node) -> void:
+	# Spend inter-wave rewards the same way a first-time player reasonably might:
+	# improve the original network, then add one more chained arc before the boss.
+	for index in [1, 3, 2]:
+		if int(game.nodes[index].level) < 3:
+			var cost: int = game.cost_for_mode(game.BuildMode.UPGRADE) + (int(game.nodes[index].level) - 1) * 12
+			if game.credits >= cost:
+				game.build_mode = game.BuildMode.UPGRADE
+				game.handle_node(index)
+				return
+	if not game.nodes[4].active and game.credits >= 36:
+		game.build_mode = game.BuildMode.CABLE
+		game.handle_node(4)
+		game.build_mode = game.BuildMode.ARC
+		game.handle_node(4)

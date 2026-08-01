@@ -36,6 +36,10 @@ dash={
 "deadzone": 0.3,
 "events": [Object(InputEventKey,"physical_keycode":88), Object(InputEventKey,"physical_keycode":4194325), Object(InputEventKey,"physical_keycode":4194322), Object(InputEventJoypadButton,"button_index":2), Object(InputEventJoypadButton,"button_index":12)]
 }
+attack={
+"deadzone": 0.3,
+"events": [Object(InputEventKey,"physical_keycode":67), Object(InputEventKey,"physical_keycode":74), Object(InputEventJoypadButton,"button_index":3)]
+}
 
 [rendering]
 

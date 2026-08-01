@@ -21,8 +21,8 @@ var card_rects: Array[Rect2] = []
 var stars: Array[Vector3] = []
 var language_rect := Rect2(1074, 32, 162, 38)
 var settings_button_rect := Rect2(884, 32, 176, 38)
-var settings_close_rect := Rect2(816, 610, 168, 42)
-var settings_reset_rect := Rect2(296, 610, 190, 42)
+var settings_close_rect := Rect2(816, 620, 168, 42)
+var settings_reset_rect := Rect2(296, 620, 190, 42)
 var settings_row_rects: Array[Rect2] = []
 var controller_config
 var controller_bindings: Dictionary = ControllerConfig.default_bindings()
@@ -47,7 +47,7 @@ func _ready() -> void:
 		Rect2(860, 184, 376, 452),
 	]
 	for index in range(ControllerConfig.ACTIONS.size()):
-		settings_row_rects.append(Rect2(296, 188 + index * 54, 688, 46))
+		settings_row_rects.append(Rect2(296, 168 + index * 50, 688, 44))
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -334,9 +334,9 @@ func _draw() -> void:
 	draw_settings_button()
 	draw_language_toggle()
 
-	draw_card(0, "ZERO PERCENT CITY", loc("ミニメトロイドヴァニア", "MINI METROIDVANIA"), ZERO_ART, Palette.CYAN, [loc("借り物の電力で探索", "Explore on borrowed power"), loc("ダッシュと二段ジャンプを解放", "Unlock dash + double jump"), loc("都市のコアを目指す", "Reach the city core")])
-	draw_card(1, "CHARGEBACK", loc("デッキ構築ローグライク", "DECK-BUILDING ROGUELIKE"), CHARGEBACK_ART, Palette.MINT, [loc("不正請求に異議を申し立てる", "Dispute hostile charges"), loc("借金をダメージに変える", "Turn debt into damage"), loc("悪質な請求元を倒す", "Defeat predatory billing")])
-	draw_card(2, "CAPACITOR DEFENSE", loc("回路タワーディフェンス", "CIRCUIT TOWER DEFENSE"), CAPACITOR_ART, Palette.VIOLET, [loc("電力パケットを配線", "Route visible power packets"), loc("蓄電して一気に放電", "Store energy for bursts"), loc("リアクターを守り抜く", "Protect the reactor")])
+	draw_card(0, "ZERO PERCENT CITY", loc("ミニメトロイドヴァニア", "MINI METROIDVANIA"), ZERO_ART, Palette.CYAN, [loc("3段攻撃で電力を奪還", "Recycle power with 3-hit combos"), loc("ダッシュと二段ジャンプを解放", "Unlock dash + double jump"), loc("コア防衛機を撃破", "Break the Core Warden")])
+	draw_card(1, "CHARGEBACK", loc("デッキ構築ローグライク", "DECK-BUILDING ROGUELIKE"), CHARGEBACK_ART, Palette.MINT, [loc("3つの信用方針から選択", "Choose one of 3 credit policies"), loc("カード系統を連携させる", "Chain card archetype synergies"), loc("証拠を強化して持ち込む", "Draft upgraded evidence")])
+	draw_card(2, "CAPACITOR DEFENSE", loc("回路タワーディフェンス", "CIRCUIT TOWER DEFENSE"), CAPACITOR_ART, Palette.VIOLET, [loc("電力パケットを配線", "Route visible power packets"), loc("隣接設備でネットワーク共振", "Build resonant tower networks"), loc("3倍速とオーバードライブ", "3× speed and Overdrive")])
 
 	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1 / 2 / 3・矢印・ゲームパッドで選択  •  F1で操作設定", "SELECT: 1 / 2 / 3, ARROWS, OR GAMEPAD  •  F1 OPENS CONTROLS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
 	if settings_open:
@@ -373,10 +373,10 @@ func draw_settings_button() -> void:
 
 func draw_settings() -> void:
 	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 720)), Color(0.01, 0.02, 0.05, 0.9))
-	var panel := Rect2(260, 76, 760, 600)
+	var panel := Rect2(260, 58, 760, 624)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, Palette.VIOLET, 2), panel)
-	draw_string(Palette.UI_FONT, Vector2(296, 128), loc("ゲームパッド設定", "GAMEPAD SETUP"), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(296, 158), loc("方向キーと左スティックは移動・選択用として固定。変更は自動保存されます。", "D-PAD AND LEFT STICK STAY FIXED. CHANGES SAVE AUTOMATICALLY."), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(296, 106), loc("ゲームパッド設定", "GAMEPAD SETUP"), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(296, 140), loc("方向キーと左スティックは移動・選択用として固定。変更は自動保存されます。", "D-PAD AND LEFT STICK STAY FIXED. CHANGES SAVE AUTOMATICALLY."), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
 	for index in range(ControllerConfig.ACTIONS.size()):
 		var action: Dictionary = ControllerConfig.ACTIONS[index]
 		var row := settings_row_rects[index]
@@ -384,13 +384,13 @@ func draw_settings() -> void:
 		var waiting := str(action.id) == waiting_for_action
 		var accent := Palette.AMBER if waiting else Palette.CYAN if selected else Palette.VIOLET
 		draw_style_box(Palette.rounded_box(Palette.PANEL_2 if selected or waiting else Palette.INK, 12, Palette.with_alpha(accent, 0.95 if selected or waiting else 0.32), 2 if selected or waiting else 1), row)
-		draw_string(Palette.UI_FONT, row.position + Vector2(18, 29), str(action.ja if is_japanese else action.en), HORIZONTAL_ALIGNMENT_LEFT, 420, 15, Palette.PAPER)
-		var button_rect := Rect2(row.position + Vector2(468, 7), Vector2(202, 32))
+		draw_string(Palette.UI_FONT, row.position + Vector2(18, 28), str(action.ja if is_japanese else action.en), HORIZONTAL_ALIGNMENT_LEFT, 420, 15, Palette.PAPER)
+		var button_rect := Rect2(row.position + Vector2(468, 6), Vector2(202, 32))
 		draw_style_box(Palette.rounded_box(accent if waiting else Palette.PANEL, 9, accent, 1), button_rect)
 		var button_text := loc("入力待ち…", "PRESS BUTTON…") if waiting else ControllerConfig.button_label(controller_button(str(action.id)))
 		draw_string(Palette.UI_FONT, button_rect.position + Vector2(0, 22), button_text, HORIZONTAL_ALIGNMENT_CENTER, button_rect.size.x, 13, Palette.INK if waiting else Palette.PAPER)
 	var status := settings_message if settings_message_time > 0.0 else loc("項目を選び、決定ボタンを押してください", "SELECT A ROW, THEN PRESS CONFIRM")
-	draw_string(Palette.UI_FONT, Vector2(296, 588), status, HORIZONTAL_ALIGNMENT_LEFT, 688, 14, Palette.AMBER if not waiting_for_action.is_empty() else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(296, 600), status, HORIZONTAL_ALIGNMENT_LEFT, 688, 14, Palette.AMBER if not waiting_for_action.is_empty() else Palette.MUTED)
 	draw_style_box(Palette.rounded_box(Palette.PANEL_2, 10, Palette.CORAL, 1), settings_reset_rect)
 	draw_string(Palette.UI_FONT, settings_reset_rect.position + Vector2(0, 27), loc("R：初期設定に戻す", "R: RESTORE DEFAULTS"), HORIZONTAL_ALIGNMENT_CENTER, settings_reset_rect.size.x, 14, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(Palette.CYAN, 10), settings_close_rect)

@@ -6,6 +6,7 @@ const Palette = preload("res://shared/palette.gd")
 const Synth = preload("res://shared/synth.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const KEY_ART = preload("res://assets/keyart/zero-percent-city.jpg")
+const GAMEPLAY_BG = preload("res://assets/keyart/zero-percent-city-gameplay.png")
 
 enum RunState { INTRO, PLAYING, COMPLETE, FAILED }
 
@@ -29,6 +30,12 @@ var grounded := false
 var coyote := 0.0
 var dash_time := 0.0
 var dash_cooldown := 0.0
+var attack_time := 0.0
+var attack_cooldown := 0.0
+var attack_chain := 0
+var attack_chain_time := 0.0
+var combat_combo := 0
+var combat_combo_time := 0.0
 var invulnerable := 0.0
 var screen_shake := 0.0
 var screen_flash := 0.0
@@ -38,12 +45,16 @@ var checkpoint := Vector2(130, 600)
 var has_dash := false
 var has_double_jump := false
 var air_jumps := 0
+var kills := 0
+var cells_collected := 0
+var boss_defeated := false
 var message := ""
 var message_time := 0.0
 var particles: Array[Dictionary] = []
 var touch_points: Dictionary = {}
 var touch_jump_was := false
 var touch_dash_was := false
+var touch_attack_was := false
 
 var platforms: Array[Rect2] = []
 var hazards: Array[Rect2] = []
@@ -51,11 +62,13 @@ var stations: Array[Dictionary] = []
 var pickups: Array[Dictionary] = []
 var walls: Array[Dictionary] = []
 var enemies: Array[Dictionary] = []
+var enemy_shots: Array[Dictionary] = []
 
 var left_button := Rect2(28, 580, 92, 92)
 var right_button := Rect2(134, 580, 92, 92)
 var jump_button := Rect2(1052, 564, 96, 96)
 var dash_button := Rect2(1160, 584, 82, 82)
+var attack_button := Rect2(952, 584, 86, 82)
 var menu_button := Rect2(1110, 20, 146, 38)
 
 func _ready() -> void:
@@ -98,24 +111,47 @@ func build_world() -> void:
 		{"rect": Rect2(2470, 500, 42, 150), "broken": false},
 	]
 	enemies = [
-		make_enemy(Vector2(1240, 615), 1140.0, 1370.0, 82.0, false),
-		make_enemy(Vector2(1690, 525), 1590.0, 1770.0, 72.0, false),
-		make_enemy(Vector2(2300, 505), 2230.0, 2455.0, 94.0, false),
-		make_enemy(Vector2(2860, 350), 2780.0, 2930.0, 80.0, true),
-		make_enemy(Vector2(3265, 600), 3200.0, 3500.0, 105.0, false),
+		make_enemy(Vector2(1240, 615), 1140.0, 1370.0, 82.0, false, "crawler", 2),
+		make_enemy(Vector2(1690, 525), 1590.0, 1770.0, 72.0, false, "crawler", 2),
+		make_enemy(Vector2(2300, 505), 2230.0, 2455.0, 94.0, false, "charger", 3),
+		make_enemy(Vector2(2860, 350), 2780.0, 2930.0, 80.0, true, "sentinel", 2),
+		make_enemy(Vector2(3315, 210), 3215.0, 3475.0, 58.0, false, "warden", 12),
 	]
 
-func make_enemy(position: Vector2, left: float, right: float, speed: float, flying: bool) -> Dictionary:
-	return {"pos": position, "left": left, "right": right, "speed": speed, "dir": 1.0, "dead": false, "flying": flying, "phase": position.x * 0.01}
+func make_enemy(position: Vector2, left: float, right: float, speed: float, flying: bool, kind: String = "crawler", hp: int = 2) -> Dictionary:
+	return {
+		"pos": position, "spawn": position, "base_y": position.y, "left": left, "right": right,
+		"speed": speed, "dir": 1.0, "dead": false, "flying": flying, "phase": position.x * 0.01,
+		"kind": kind, "hp": hp, "max_hp": hp, "hit_flash": 0.0, "shot_timer": randf_range(0.7, 1.4),
+	}
 
 func reset_run() -> void:
 	player_pos = Vector2(130, 600)
 	player_vel = Vector2.ZERO
+	grounded = false
+	coyote = 0.0
 	checkpoint = player_pos
 	battery = 100.0
 	has_dash = false
 	has_double_jump = false
 	air_jumps = 0
+	attack_time = 0.0
+	attack_cooldown = 0.0
+	attack_chain = 0
+	attack_chain_time = 0.0
+	dash_time = 0.0
+	dash_cooldown = 0.0
+	invulnerable = 0.0
+	screen_shake = 0.0
+	screen_flash = 0.0
+	combat_combo = 0
+	combat_combo_time = 0.0
+	kills = 0
+	cells_collected = 0
+	boss_defeated = false
+	enemy_shots.clear()
+	particles.clear()
+	touch_points.clear()
 	run_time = 0.0
 	camera_x = 0.0
 	for pickup in pickups:
@@ -124,6 +160,11 @@ func reset_run() -> void:
 		wall.broken = false
 	for enemy in enemies:
 		enemy.dead = false
+		enemy.hp = enemy.max_hp
+		enemy.pos = enemy.spawn
+		enemy.base_y = enemy.spawn.y
+		enemy.hit_flash = 0.0
+		enemy.shot_timer = randf_range(0.7, 1.4)
 	run_state = RunState.PLAYING
 	show_message(loc("電力経路オンライン — 都市のコアを探せ", "POWER ROUTE ONLINE — FIND THE CITY CORE"), 3.0)
 	synth.play_chord([261.63, 392.0, 523.25], 0.24, -24.0)
@@ -143,6 +184,12 @@ func _physics_process(delta: float) -> void:
 		return
 	run_time += delta
 	dash_cooldown = maxf(0.0, dash_cooldown - delta)
+	attack_cooldown = maxf(0.0, attack_cooldown - delta)
+	attack_time = maxf(0.0, attack_time - delta)
+	attack_chain_time = maxf(0.0, attack_chain_time - delta)
+	combat_combo_time = maxf(0.0, combat_combo_time - delta)
+	if attack_chain_time <= 0.0: attack_chain = 0
+	if combat_combo_time <= 0.0: combat_combo = 0
 	invulnerable = maxf(0.0, invulnerable - delta)
 	coyote = 0.11 if grounded else maxf(0.0, coyote - delta)
 
@@ -158,8 +205,13 @@ func _physics_process(delta: float) -> void:
 
 	var wants_jump: bool = Input.is_action_just_pressed("jump") or (bool(touch_state.jump) and not touch_jump_was)
 	var wants_dash: bool = Input.is_action_just_pressed("dash") or (bool(touch_state.dash) and not touch_dash_was)
+	var wants_attack: bool = Input.is_action_just_pressed("attack") or (bool(touch_state.attack) and not touch_attack_was)
 	touch_jump_was = touch_state.jump
 	touch_dash_was = touch_state.dash
+	touch_attack_was = touch_state.attack
+
+	if wants_attack and attack_cooldown <= 0.0 and dash_time <= 0.0:
+		begin_attack()
 
 	if wants_dash and has_dash and dash_cooldown <= 0.0:
 		dash_time = 0.17
@@ -192,6 +244,7 @@ func _physics_process(delta: float) -> void:
 	move_player_x(player_vel.x * delta)
 	move_player_y(player_vel.y * delta)
 	update_enemies(delta)
+	update_enemy_shots(delta)
 	handle_interactions(delta)
 
 	battery -= delta * (1.05 + (0.18 if dash_time > 0.0 else 0.0))
@@ -205,12 +258,13 @@ func _physics_process(delta: float) -> void:
 	camera_x = lerpf(camera_x, target_camera, 1.0 - pow(0.0008, delta))
 
 func get_touch_state() -> Dictionary:
-	var result := {"left": false, "right": false, "jump": false, "dash": false}
+	var result := {"left": false, "right": false, "jump": false, "dash": false, "attack": false}
 	for point in touch_points.values():
 		if left_button.has_point(point): result.left = true
 		if right_button.has_point(point): result.right = true
 		if jump_button.has_point(point): result.jump = true
 		if dash_button.has_point(point): result.dash = true
+		if attack_button.has_point(point): result.attack = true
 	return result
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -303,25 +357,111 @@ func break_wall(rect: Rect2) -> bool:
 			return true
 	return false
 
+func begin_attack() -> void:
+	attack_chain = attack_chain + 1 if attack_chain_time > 0.0 else 1
+	if attack_chain > 3: attack_chain = 1
+	attack_chain_time = 0.82
+	attack_time = 0.18 if attack_chain < 3 else 0.25
+	attack_cooldown = 0.24 if attack_chain < 3 else 0.38
+	var power := 2 if attack_chain == 3 else 1
+	var reach := 82.0 if attack_chain == 3 else 62.0
+	var cost := 1.25 if attack_chain == 3 else 0.55
+	battery = maxf(0.0, battery - cost)
+	var center := player_pos + Vector2(facing * (PLAYER_SIZE.x * 0.5 + reach * 0.5 - 4.0), 0)
+	var hitbox := Rect2(center - Vector2(reach, 50.0) * 0.5, Vector2(reach, 50.0))
+	var hit_any := false
+	for enemy in enemies:
+		if enemy.dead:
+			continue
+		if hitbox.intersects(enemy_rect(enemy)):
+			damage_enemy(enemy, power, facing * (28.0 if attack_chain == 3 else 14.0))
+			hit_any = true
+	spawn_burst(center, Palette.PAPER if attack_chain == 3 else Palette.CYAN, 9 if attack_chain == 3 else 4)
+	if hit_any:
+		synth.play_tone(130.0 + attack_chain * 55.0, 0.1, -18.0, 1)
+	else:
+		synth.play_tone(420.0 + attack_chain * 70.0, 0.055, -25.0, 3)
+
+func enemy_rect(enemy: Dictionary) -> Rect2:
+	var size := Vector2(72, 58) if enemy.kind == "warden" else Vector2(42, 38)
+	return Rect2(Vector2(enemy.pos) - size * 0.5, size)
+
+func damage_enemy(enemy: Dictionary, amount: int, knockback: float = 0.0) -> void:
+	if enemy.dead:
+		return
+	enemy.hp = maxi(0, int(enemy.hp) - amount)
+	enemy.hit_flash = 0.16
+	enemy.pos.x = clampf(float(enemy.pos.x) + knockback, float(enemy.left), float(enemy.right))
+	combat_combo += 1
+	combat_combo_time = 2.4
+	spawn_burst(enemy.pos, Palette.PAPER, 7 + amount * 3)
+	screen_shake = maxf(screen_shake, 0.08 + amount * 0.035)
+	if enemy.hp <= 0:
+		kill_enemy(enemy)
+
+func kill_enemy(enemy: Dictionary) -> void:
+	enemy.dead = true
+	kills += 1
+	var is_boss: bool = str(enemy.kind) == "warden"
+	var restored := 24.0 if is_boss else 7.0 + minf(5.0, combat_combo * 0.6)
+	battery = minf(100.0, battery + restored)
+	spawn_burst(enemy.pos, Palette.AMBER if is_boss else Palette.CORAL, 52 if is_boss else 20)
+	synth.play_chord([130.81, 196.0, 261.63] if is_boss else [196.0, 293.66], 0.32 if is_boss else 0.12, -18.0)
+	if is_boss:
+		boss_defeated = true
+		screen_flash = 0.65
+		show_message(loc("コア防衛機を停止 — 都市コアの封鎖を解除", "CORE WARDEN OFFLINE — CITY CORE UNSEALED"), 4.0)
+	else:
+		show_message(loc("敵性電力を回収 +%d%%" % int(restored), "HOSTILE CHARGE RECYCLED +%d%%" % int(restored)), 1.1)
+
 func update_enemies(delta: float) -> void:
 	for enemy in enemies:
 		if enemy.dead:
 			continue
+		enemy.hit_flash = maxf(0.0, float(enemy.hit_flash) - delta)
 		enemy.pos.x += enemy.dir * enemy.speed * delta
 		if enemy.pos.x <= enemy.left or enemy.pos.x >= enemy.right:
 			enemy.dir *= -1.0
 		enemy.phase += delta * 3.0
 		if enemy.flying:
-			enemy.pos.y += sin(enemy.phase) * 24.0 * delta
-		var enemy_rect := Rect2(enemy.pos - Vector2(19, 18), Vector2(38, 36))
-		if player_rect().intersects(enemy_rect):
+			enemy.pos.y = float(enemy.base_y) + sin(float(enemy.phase)) * 12.0
+		if enemy.kind in ["sentinel", "warden"] and player_pos.distance_to(enemy.pos) < 760.0:
+			enemy.shot_timer = float(enemy.shot_timer) - delta
+			if enemy.shot_timer <= 0.0:
+				fire_enemy_shot(enemy)
+				enemy.shot_timer = 1.05 if enemy.kind == "warden" else 1.75
+		if player_rect().intersects(enemy_rect(enemy)):
 			if dash_time > 0.0:
-				enemy.dead = true
-				battery = minf(100.0, battery + 6.0)
-				spawn_burst(enemy.pos, Palette.CORAL, 16)
-				synth.play_tone(140.0, 0.12, -16.0, 1)
+				damage_enemy(enemy, 4 if enemy.kind == "warden" else 3, facing * 36.0)
+				dash_time = 0.04
 			else:
-				damage_player(12.0)
+				damage_player(18.0 if enemy.kind == "warden" else 12.0)
+
+func fire_enemy_shot(enemy: Dictionary) -> void:
+	var base_direction := Vector2(enemy.pos).direction_to(player_pos)
+	var spreads := [-0.18, 0.0, 0.18] if enemy.kind == "warden" else [0.0]
+	for spread in spreads:
+		var direction := base_direction.rotated(float(spread))
+		enemy_shots.append({
+			"pos": Vector2(enemy.pos), "vel": direction * (325.0 if enemy.kind == "warden" else 255.0),
+			"life": 3.2, "damage": 12.0 if enemy.kind == "warden" else 8.0,
+			"color": Palette.AMBER if enemy.kind == "warden" else Palette.MAGENTA,
+		})
+	synth.play_tone(112.0 if enemy.kind == "warden" else 168.0, 0.1, -23.0, 2)
+
+func update_enemy_shots(delta: float) -> void:
+	for shot in enemy_shots:
+		shot.pos += shot.vel * delta
+		shot.life -= delta
+	for index in range(enemy_shots.size() - 1, -1, -1):
+		var shot: Dictionary = enemy_shots[index]
+		if float(shot.life) <= 0.0:
+			enemy_shots.remove_at(index)
+		elif player_rect().has_point(shot.pos):
+			var shot_damage := float(shot.damage)
+			enemy_shots.remove_at(index)
+			damage_player(shot_damage)
+			return
 
 func handle_interactions(delta: float) -> void:
 	var body := player_rect()
@@ -348,15 +488,19 @@ func handle_interactions(delta: float) -> void:
 					has_double_jump = true
 					show_message(loc("空中セル獲得 — 空中でもう一度ジャンプ", "AERIAL CELL ACQUIRED — JUMP AGAIN IN MID-AIR"), 3.5)
 				"cell":
+					cells_collected += 1
 					show_message(loc("緊急セル +28%", "EMERGENCY CELL +28%"), 1.5)
 			spawn_burst(pickup.rect.get_center(), Palette.MINT, 24)
 			synth.play_chord([523.25, 659.25, 783.99], 0.2, -22.0)
 	var core := Rect2(3400, 78, 92, 72)
 	if body.intersects(core.grow(12.0)):
-		run_state = RunState.COMPLETE
-		spawn_burst(core.get_center(), Palette.CYAN, 50)
-		screen_flash = 0.8
-		synth.play_chord([261.63, 329.63, 392.0, 523.25], 0.8, -21.0)
+		if boss_defeated:
+			run_state = RunState.COMPLETE
+			spawn_burst(core.get_center(), Palette.CYAN, 50)
+			screen_flash = 0.8
+			synth.play_chord([261.63, 329.63, 392.0, 523.25], 0.8, -21.0)
+		elif message_time <= 0.0:
+			show_message(loc("コア封鎖中 — 上層の防衛機を停止せよ", "CORE SEALED — DISABLE THE WARDEN ABOVE"), 2.0)
 
 func damage_player(amount: float) -> void:
 	if invulnerable > 0.0 or run_state != RunState.PLAYING:
@@ -365,6 +509,7 @@ func damage_player(amount: float) -> void:
 	battery = maxf(0.0, battery - amount)
 	player_pos = checkpoint
 	player_vel = Vector2.ZERO
+	enemy_shots.clear()
 	screen_shake = 0.32
 	spawn_burst(player_pos, Palette.CORAL, 18)
 	show_message(loc("システム損傷 — 最後の中継点から復旧", "SYSTEM SHOCK — RESTORED AT LAST RELAY"), 1.8)
@@ -428,19 +573,23 @@ func draw_intro() -> void:
 	draw_string(Palette.UI_FONT, Vector2(64, 80), loc("プロトタイプ 01  //  ミニメトロイドヴァニア", "PROTOTYPE 01  //  MINI METROIDVANIA"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.CYAN)
 	draw_string(Palette.UI_FONT, Vector2(64, 145), "ZERO PERCENT CITY", HORIZONTAL_ALIGNMENT_LEFT, -1, 52, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(67, 188), loc("街は死んだ。借り物の電力は、まだ生きている。", "The city is dead. Your borrowed charge is not."), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.MUTED)
-	var panel := Rect2(64, 392, 550, 190)
+	var panel := Rect2(64, 342, 650, 248)
 	draw_style_box(Palette.rounded_box(Color(0.04, 0.08, 0.14, 0.9), 18, Palette.with_alpha(Palette.CYAN, 0.45), 2), panel)
-	draw_string(Palette.UI_FONT, Vector2(88, 430), loc("ミッション", "MISSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.CYAN)
-	draw_string(Palette.UI_FONT, Vector2(88, 468), loc("バッテリーが尽きる前に都市のコアへ到達せよ。", "Reach the core before your battery hits zero."), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(88, 506), loc("移動  A / D / ←→  •  ジャンプ  SPACE / Z / ↑", "MOVE  A / D / ←→  •  JUMP  SPACE / Z / ↑"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 380), loc("ミッション", "MISSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(88, 418), loc("電力を奪い返し、防衛機を破壊して都市コアを再起動せよ。", "Reclaim charge, destroy the warden, and reboot the city core."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 460), loc("移動  A / D / ←→  •  ジャンプ  SPACE / Z / ↑", "MOVE  A / D / ←→  •  JUMP  SPACE / Z / ↑"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
 	var jump_pad := ControllerConfig.button_label(controller_button("primary"))
 	var dash_pad := ControllerConfig.button_label(controller_button("secondary"))
-	draw_string(Palette.UI_FONT, Vector2(88, 537), loc("ダッシュ  X / SHIFT / ↓  •  パッド  Lスティック / %s / %s" % [jump_pad, dash_pad], "DASH  X / SHIFT / ↓  •  PAD  L-STICK / %s / %s" % [jump_pad, dash_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	var attack_pad := ControllerConfig.button_label(controller_button("combat_action"))
+	draw_string(Palette.UI_FONT, Vector2(88, 495), loc("攻撃  C / J / %s  •  3段目は強攻撃" % attack_pad, "ATTACK  C / J / %s  •  THIRD HIT IS EMPOWERED" % attack_pad), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 530), loc("ダッシュ  X / SHIFT / ↓ / %s  •  パッドジャンプ %s" % [dash_pad, jump_pad], "DASH  X / SHIFT / ↓ / %s  •  PAD JUMP %s" % [dash_pad, jump_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 562), loc("敵を倒すと電力を回収。ダッシュ攻撃は大ダメージ。", "DEFEAT HOSTILES TO RECYCLE POWER. DASH IMPACTS HIT HARD."), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.AMBER)
 	draw_string(Palette.UI_FONT, Vector2(64, 652), loc("キー・ゲームパッドまたはタップで起動", "PRESS A KEY, GAMEPAD BUTTON, OR TAP TO BOOT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.CYAN)
 	draw_menu_button()
 
 func draw_game_world() -> void:
-	draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.INK)
+	draw_texture_rect(GAMEPLAY_BG, Rect2(Vector2.ZERO, VIEW), false)
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.01, 0.025, 0.06, 0.58))
 	for layer in range(3):
 		var parallax := camera_x * (0.12 + layer * 0.13)
 		var color := Palette.with_alpha(Palette.BLUE if layer < 2 else Palette.VIOLET, 0.055 + layer * 0.025)
@@ -491,19 +640,41 @@ func draw_game_world() -> void:
 	for enemy in enemies:
 		if enemy.dead: continue
 		var p := world_point(enemy.pos)
-		draw_circle(p, 23, Palette.with_alpha(Palette.CORAL, 0.13))
-		draw_style_box(Palette.rounded_box(Palette.CORAL, 7), Rect2(p - Vector2(18, 14), Vector2(36, 28)))
-		draw_rect(Rect2(p + Vector2(-10, -5), Vector2(6, 6)), Palette.INK)
-		draw_rect(Rect2(p + Vector2(4, -5), Vector2(6, 6)), Palette.INK)
-		draw_line(p + Vector2(-9, 17), p + Vector2(-13, 25), Palette.CORAL, 3)
-		draw_line(p + Vector2(9, 17), p + Vector2(13, 25), Palette.CORAL, 3)
+		var is_warden: bool = str(enemy.kind) == "warden"
+		var enemy_color := Palette.AMBER if is_warden else Palette.MAGENTA if enemy.kind == "sentinel" else Palette.CORAL
+		if enemy.hit_flash > 0.0: enemy_color = Palette.PAPER
+		var body_size := Vector2(68, 50) if is_warden else Vector2(38, 30)
+		draw_circle(p, 50 if is_warden else 24, Palette.with_alpha(enemy_color, 0.14))
+		if is_warden:
+			draw_arc(p, 45 + sin(run_time * 5.0) * 3.0, 0, TAU, 32, Palette.with_alpha(Palette.AMBER, 0.5), 4)
+		draw_style_box(Palette.rounded_box(enemy_color, 9 if is_warden else 7, Palette.PAPER if is_warden else enemy_color, 2), Rect2(p - body_size * 0.5, body_size))
+		draw_rect(Rect2(p + Vector2(-body_size.x * 0.27, -5), Vector2(7, 7)), Palette.INK)
+		draw_rect(Rect2(p + Vector2(body_size.x * 0.12, -5), Vector2(7, 7)), Palette.INK)
+		if not enemy.flying:
+			draw_line(p + Vector2(-10, body_size.y * 0.5 + 2), p + Vector2(-14, body_size.y * 0.5 + 11), enemy_color, 4)
+			draw_line(p + Vector2(10, body_size.y * 0.5 + 2), p + Vector2(14, body_size.y * 0.5 + 11), enemy_color, 4)
+		var hp_width := 94.0 if is_warden else 38.0
+		draw_rect(Rect2(p + Vector2(-hp_width * 0.5, -body_size.y * 0.5 - 15), Vector2(hp_width, 5)), Palette.INK)
+		draw_rect(Rect2(p + Vector2(-hp_width * 0.5, -body_size.y * 0.5 - 15), Vector2(hp_width * float(enemy.hp) / float(enemy.max_hp), 5)), enemy_color)
+		if is_warden:
+			draw_string(Palette.UI_FONT, p + Vector2(-80, -58), loc("コア防衛機", "CORE WARDEN"), HORIZONTAL_ALIGNMENT_CENTER, 160, 12, Palette.AMBER)
+
+	for shot in enemy_shots:
+		var shot_pos := world_point(shot.pos)
+		draw_circle(shot_pos, 12, Palette.with_alpha(shot.color, 0.16))
+		draw_circle(shot_pos, 5, shot.color)
+		draw_line(shot_pos - Vector2(shot.vel).normalized() * 12.0, shot_pos, Palette.PAPER, 2)
 
 	var core := world_rect(Rect2(3400, 78, 92, 72))
-	draw_circle(core.get_center(), 92 + sin(run_time * 2.5) * 7, Palette.with_alpha(Palette.CYAN, 0.08))
-	draw_circle(core.get_center(), 57, Palette.with_alpha(Palette.CYAN, 0.18))
-	draw_style_box(Palette.rounded_box(Palette.PANEL, 18, Palette.CYAN, 3), core)
-	draw_circle(core.get_center(), 21, Palette.CYAN)
-	draw_line(core.get_center(), core.get_center() + Vector2(0, 490), Palette.with_alpha(Palette.CYAN, 0.12), 5)
+	var core_color := Palette.CYAN if boss_defeated else Palette.CORAL
+	draw_circle(core.get_center(), 92 + sin(run_time * 2.5) * 7, Palette.with_alpha(core_color, 0.08))
+	draw_circle(core.get_center(), 57, Palette.with_alpha(core_color, 0.18))
+	draw_style_box(Palette.rounded_box(Palette.PANEL, 18, core_color, 3), core)
+	draw_circle(core.get_center(), 21, core_color)
+	if not boss_defeated:
+		draw_line(core.position + Vector2(15, 15), core.end - Vector2(15, 15), Palette.CORAL, 6)
+		draw_line(Vector2(core.end.x - 15, core.position.y + 15), Vector2(core.position.x + 15, core.end.y - 15), Palette.CORAL, 6)
+	draw_line(core.get_center(), core.get_center() + Vector2(0, 490), Palette.with_alpha(core_color, 0.12), 5)
 
 	for particle in particles:
 		var p := world_point(particle.pos)
@@ -520,6 +691,13 @@ func draw_player() -> void:
 		for trail in range(4):
 			var trail_rect := Rect2(p - PLAYER_SIZE * 0.5 - Vector2(facing * trail * 15.0, 0), PLAYER_SIZE)
 			draw_style_box(Palette.rounded_box(Palette.with_alpha(accent, 0.18 - trail * 0.03), 8), trail_rect)
+	if attack_time > 0.0:
+		var slash_center := p + Vector2(facing * 27.0, -1)
+		var slash_radius := 40.0 if attack_chain == 3 else 31.0
+		var start_angle := -1.15 if facing > 0.0 else PI - 1.15
+		var end_angle := 1.15 if facing > 0.0 else PI + 1.15
+		draw_arc(slash_center, slash_radius, start_angle, end_angle, 18, Palette.PAPER, 8 if attack_chain == 3 else 5)
+		draw_arc(slash_center, slash_radius + 8, start_angle, end_angle, 18, Palette.with_alpha(Palette.CYAN, 0.5), 3)
 	draw_circle(p, 31, Palette.with_alpha(accent, 0.1))
 	draw_style_box(Palette.rounded_box(Palette.PAPER, 8, accent, 2), Rect2(p - PLAYER_SIZE * 0.5, PLAYER_SIZE))
 	draw_rect(Rect2(p + Vector2(-10, -12), Vector2(20, 12)), Palette.INK)
@@ -546,6 +724,10 @@ func draw_hud() -> void:
 	draw_string(Palette.UI_FONT, Vector2(ability_x, 52), (loc("ダッシュ  %s", "DASH  %s") % (loc("解放", "ON") if has_dash else loc("未解放", "LOCKED"))), HORIZONTAL_ALIGNMENT_CENTER, 128, 14, Palette.PAPER if has_dash else Palette.MUTED)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, Palette.MAGENTA if has_double_jump else Palette.PANEL_2, 2), Rect2(652, 23, 150, 45))
 	draw_string(Palette.UI_FONT, Vector2(652, 52), (loc("空中セル  %s", "AIR CELL  %s") % (loc("解放", "ON") if has_double_jump else loc("未解放", "LOCKED"))), HORIZONTAL_ALIGNMENT_CENTER, 150, 14, Palette.PAPER if has_double_jump else Palette.MUTED)
+	var combat_color := Palette.AMBER if combat_combo >= 3 else Palette.CYAN
+	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, combat_color, 2), Rect2(814, 23, 174, 45))
+	var combat_text := loc("撃破 %d  •  連撃 ×%d", "KILLS %d  •  COMBO ×%d") % [kills, maxi(1, combat_combo)]
+	draw_string(Palette.UI_FONT, Vector2(814, 52), combat_text, HORIZONTAL_ALIGNMENT_CENTER, 174, 13, Palette.PAPER)
 	draw_menu_button()
 	if message_time > 0.0:
 		var message_rect := Rect2(330, 104, 620, 42)
@@ -555,7 +737,7 @@ func draw_hud() -> void:
 		draw_touch_controls()
 
 func draw_touch_controls() -> void:
-	for data in [[left_button, "◀"], [right_button, "▶"], [jump_button, loc("ジャンプ", "JUMP")], [dash_button, loc("ダッシュ", "DASH")]]:
+	for data in [[left_button, "◀"], [right_button, "▶"], [attack_button, loc("攻撃", "HIT")], [jump_button, loc("ジャンプ", "JUMP")], [dash_button, loc("ダッシュ", "DASH")]]:
 		var rect: Rect2 = data[0]
 		var active := false
 		for point in touch_points.values():
@@ -579,8 +761,8 @@ func draw_end_overlay(victory: bool) -> void:
 		draw_string(Palette.UI_FONT, Vector2(310, 373), "%02d:%02d" % [int(run_time) / 60, int(run_time) % 60], HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
 		draw_string(Palette.UI_FONT, Vector2(530, 335), loc("残り電力", "POWER LEFT"), HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
 		draw_string(Palette.UI_FONT, Vector2(530, 373), "%d%%" % int(battery), HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
-		draw_string(Palette.UI_FONT, Vector2(750, 335), loc("モジュール", "MODULES"), HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
-		draw_string(Palette.UI_FONT, Vector2(750, 373), "2 / 2", HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(750, 335), loc("撃破 / セル", "KILLS / CELLS"), HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(750, 373), "%d / %d" % [kills, cells_collected], HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(accent, 12), Rect2(430, 452, 420, 52))
 	draw_string(Palette.UI_FONT, Vector2(430, 485), loc("タップまたはENTERでもう一度", "TAP OR PRESS ENTER TO RUN AGAIN"), HORIZONTAL_ALIGNMENT_CENTER, 420, 16, Palette.INK)
 	draw_menu_button()
