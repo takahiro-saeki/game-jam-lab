@@ -17,6 +17,7 @@ const JUMP_SPEED := 620.0
 const DASH_SPEED := 760.0
 
 var synth: JamSynth
+var is_japanese := false
 var run_state := RunState.INTRO
 var run_time := 0.0
 var player_pos := Vector2(130, 600)
@@ -120,7 +121,7 @@ func reset_run() -> void:
 	for enemy in enemies:
 		enemy.dead = false
 	run_state = RunState.PLAYING
-	show_message("POWER ROUTE ONLINE — FIND THE CITY CORE", 3.0)
+	show_message(loc("電力経路オンライン — 都市のコアを探せ", "POWER ROUTE ONLINE — FIND THE CITY CORE"), 3.0)
 	synth.play_chord([261.63, 392.0, 523.25], 0.24, -24.0)
 
 func _process(delta: float) -> void:
@@ -284,7 +285,7 @@ func break_wall(rect: Rect2) -> bool:
 			spawn_burst(rect.get_center(), Palette.AMBER, 22)
 			screen_shake = 0.22
 			synth.play_tone(92.0, 0.18, -14.0, 1)
-			show_message("OBSTRUCTION PURGED", 1.3)
+			show_message(loc("障害物を破壊", "OBSTRUCTION PURGED"), 1.3)
 			return true
 	return false
 
@@ -327,12 +328,12 @@ func handle_interactions(delta: float) -> void:
 			match pickup.type:
 				"dash":
 					has_dash = true
-					show_message("IMPULSE DRIVE ACQUIRED — DASH WITH X / SHIFT", 3.5)
+					show_message(loc("インパルスドライブ獲得 — X / SHIFTでダッシュ", "IMPULSE DRIVE ACQUIRED — DASH WITH X / SHIFT"), 3.5)
 				"double":
 					has_double_jump = true
-					show_message("AERIAL CELL ACQUIRED — JUMP AGAIN IN MID-AIR", 3.5)
+					show_message(loc("空中セル獲得 — 空中でもう一度ジャンプ", "AERIAL CELL ACQUIRED — JUMP AGAIN IN MID-AIR"), 3.5)
 				"cell":
-					show_message("EMERGENCY CELL +28%", 1.5)
+					show_message(loc("緊急セル +28%", "EMERGENCY CELL +28%"), 1.5)
 			spawn_burst(pickup.rect.get_center(), Palette.MINT, 24)
 			synth.play_chord([523.25, 659.25, 783.99], 0.2, -22.0)
 	var core := Rect2(3400, 78, 92, 72)
@@ -351,7 +352,7 @@ func damage_player(amount: float) -> void:
 	player_vel = Vector2.ZERO
 	screen_shake = 0.32
 	spawn_burst(player_pos, Palette.CORAL, 18)
-	show_message("SYSTEM SHOCK — RESTORED AT LAST RELAY", 1.8)
+	show_message(loc("システム損傷 — 最後の中継点から復旧", "SYSTEM SHOCK — RESTORED AT LAST RELAY"), 1.8)
 	synth.error()
 
 func power_failure() -> void:
@@ -362,6 +363,9 @@ func power_failure() -> void:
 func show_message(text: String, duration: float) -> void:
 	message = text
 	message_time = duration
+
+func loc(japanese: String, english: String) -> String:
+	return japanese if is_japanese else english
 
 func spawn_burst(position: Vector2, color: Color, count: int) -> void:
 	for index in range(count):
@@ -406,16 +410,16 @@ func draw_intro() -> void:
 	draw_texture_rect(KEY_ART, Rect2(Vector2.ZERO, VIEW), false)
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.02, 0.05, 0.1, 0.54))
 	draw_rect(Rect2(0, 0, 1280, 720), Color(0.02, 0.04, 0.09, 0.25))
-	draw_string(ThemeDB.fallback_font, Vector2(64, 80), "PROTOTYPE 01  //  MINI METROIDVANIA", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.CYAN)
-	draw_string(ThemeDB.fallback_font, Vector2(64, 145), "ZERO PERCENT CITY", HORIZONTAL_ALIGNMENT_LEFT, -1, 52, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(67, 188), "The city is dead. Your borrowed charge is not.", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(64, 80), loc("プロトタイプ 01  //  ミニメトロイドヴァニア", "PROTOTYPE 01  //  MINI METROIDVANIA"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(64, 145), "ZERO PERCENT CITY", HORIZONTAL_ALIGNMENT_LEFT, -1, 52, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(67, 188), loc("街は死んだ。借り物の電力は、まだ生きている。", "The city is dead. Your borrowed charge is not."), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.MUTED)
 	var panel := Rect2(64, 392, 550, 190)
 	draw_style_box(Palette.rounded_box(Color(0.04, 0.08, 0.14, 0.9), 18, Palette.with_alpha(Palette.CYAN, 0.45), 2), panel)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 430), "MISSION", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.CYAN)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 468), "Reach the core before your battery hits zero.", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 506), "MOVE  A / D  •  JUMP  SPACE / Z", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 537), "DASH  X / SHIFT  •  TOUCH CONTROLS SUPPORTED", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(64, 652), "PRESS ANY KEY OR TAP TO BOOT", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(88, 430), loc("ミッション", "MISSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(88, 468), loc("バッテリーが尽きる前に都市のコアへ到達せよ。", "Reach the core before your battery hits zero."), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 506), loc("移動  A / D  •  ジャンプ  SPACE / Z", "MOVE  A / D  •  JUMP  SPACE / Z"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 537), loc("ダッシュ  X / SHIFT  •  タッチ操作対応", "DASH  X / SHIFT  •  TOUCH CONTROLS SUPPORTED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(64, 652), loc("キー入力またはタップで起動", "PRESS ANY KEY OR TAP TO BOOT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.CYAN)
 	draw_menu_button()
 
 func draw_game_world() -> void:
@@ -513,53 +517,53 @@ func draw_player() -> void:
 func draw_hud() -> void:
 	var hud := Rect2(22, 18, 470, 72)
 	draw_style_box(Palette.rounded_box(Color(0.035, 0.07, 0.12, 0.92), 14, Palette.with_alpha(Palette.CYAN, 0.25), 1), hud)
-	draw_string(ThemeDB.fallback_font, Vector2(42, 47), "BORROWED POWER", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(42, 47), loc("借用電力", "BORROWED POWER"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
 	draw_style_box(Palette.rounded_box(Palette.INK, 8), Rect2(42, 58, 270, 15))
 	var battery_color := Palette.CYAN if battery > 25.0 else Palette.CORAL
 	draw_style_box(Palette.rounded_box(battery_color, 7), Rect2(42, 58, 270 * battery / 100.0, 15))
-	draw_string(ThemeDB.fallback_font, Vector2(326, 72), "%03d%%" % int(ceil(battery)), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, battery_color)
-	draw_string(ThemeDB.fallback_font, Vector2(401, 48), "CORE", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(401, 72), "%02d:%02d" % [int(run_time) / 60, int(run_time) % 60], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(326, 72), "%03d%%" % int(ceil(battery)), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, battery_color)
+	draw_string(Palette.UI_FONT, Vector2(401, 48), loc("経過", "CORE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(401, 72), "%02d:%02d" % [int(run_time) / 60, int(run_time) % 60], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
 	var ability_x := 512.0
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, Palette.CYAN if has_dash else Palette.PANEL_2, 2), Rect2(ability_x, 23, 128, 45))
-	draw_string(ThemeDB.fallback_font, Vector2(ability_x, 52), "DASH  %s" % ("ON" if has_dash else "LOCKED"), HORIZONTAL_ALIGNMENT_CENTER, 128, 14, Palette.PAPER if has_dash else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(ability_x, 52), (loc("ダッシュ  %s", "DASH  %s") % (loc("解放", "ON") if has_dash else loc("未解放", "LOCKED"))), HORIZONTAL_ALIGNMENT_CENTER, 128, 14, Palette.PAPER if has_dash else Palette.MUTED)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, Palette.MAGENTA if has_double_jump else Palette.PANEL_2, 2), Rect2(652, 23, 150, 45))
-	draw_string(ThemeDB.fallback_font, Vector2(652, 52), "AIR CELL  %s" % ("ON" if has_double_jump else "LOCKED"), HORIZONTAL_ALIGNMENT_CENTER, 150, 14, Palette.PAPER if has_double_jump else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(652, 52), (loc("空中セル  %s", "AIR CELL  %s") % (loc("解放", "ON") if has_double_jump else loc("未解放", "LOCKED"))), HORIZONTAL_ALIGNMENT_CENTER, 150, 14, Palette.PAPER if has_double_jump else Palette.MUTED)
 	draw_menu_button()
 	if message_time > 0.0:
 		var message_rect := Rect2(330, 104, 620, 42)
 		draw_style_box(Palette.rounded_box(Color(0.03, 0.08, 0.13, 0.94), 12, Palette.CYAN, 1), message_rect)
-		draw_string(ThemeDB.fallback_font, Vector2(330, 131), message, HORIZONTAL_ALIGNMENT_CENTER, 620, 15, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(330, 131), message, HORIZONTAL_ALIGNMENT_CENTER, 620, 15, Palette.PAPER)
 	if DisplayServer.is_touchscreen_available() or not touch_points.is_empty():
 		draw_touch_controls()
 
 func draw_touch_controls() -> void:
-	for data in [[left_button, "◀"], [right_button, "▶"], [jump_button, "JUMP"], [dash_button, "DASH"]]:
+	for data in [[left_button, "◀"], [right_button, "▶"], [jump_button, loc("ジャンプ", "JUMP")], [dash_button, loc("ダッシュ", "DASH")]]:
 		var rect: Rect2 = data[0]
 		var active := false
 		for point in touch_points.values():
 			if rect.has_point(point): active = true
 		draw_style_box(Palette.rounded_box(Palette.with_alpha(Palette.CYAN if active else Palette.PANEL_2, 0.72), 22, Palette.with_alpha(Palette.CYAN, 0.5), 2), rect)
-		draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.58), data[1], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 15, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.58), data[1], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 15, Palette.PAPER)
 
 func draw_menu_button() -> void:
 	draw_style_box(Palette.rounded_box(Color(0.04, 0.08, 0.14, 0.9), 10, Palette.with_alpha(Palette.MUTED, 0.5), 1), menu_button)
-	draw_string(ThemeDB.fallback_font, Vector2(menu_button.position.x, menu_button.position.y + 25), "← GAME LAB", HORIZONTAL_ALIGNMENT_CENTER, menu_button.size.x, 14, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(menu_button.position.x, menu_button.position.y + 25), loc("← ゲーム選択", "← GAME LAB"), HORIZONTAL_ALIGNMENT_CENTER, menu_button.size.x, 14, Palette.PAPER)
 
 func draw_end_overlay(victory: bool) -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.015, 0.03, 0.06, 0.78))
 	var panel := Rect2(310, 164, 660, 390)
 	var accent := Palette.CYAN if victory else Palette.CORAL
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, accent, 3), panel)
-	draw_string(ThemeDB.fallback_font, Vector2(310, 220), "CITY CORE RESTORED" if victory else "POWER DEPLETED", HORIZONTAL_ALIGNMENT_CENTER, 660, 34, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(310, 262), "CHARGE ROUTE COMPLETE" if victory else "THE CITY WILL WAIT FOR ANOTHER BOOT", HORIZONTAL_ALIGNMENT_CENTER, 660, 16, accent)
+	draw_string(Palette.UI_FONT, Vector2(310, 220), (loc("都市コア復旧", "CITY CORE RESTORED") if victory else loc("電力切れ", "POWER DEPLETED")), HORIZONTAL_ALIGNMENT_CENTER, 660, 34, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(310, 262), (loc("充電経路を確立した", "CHARGE ROUTE COMPLETE") if victory else loc("街は次の起動を待っている", "THE CITY WILL WAIT FOR ANOTHER BOOT")), HORIZONTAL_ALIGNMENT_CENTER, 660, 16, accent)
 	if victory:
-		draw_string(ThemeDB.fallback_font, Vector2(310, 335), "TIME", HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
-		draw_string(ThemeDB.fallback_font, Vector2(310, 373), "%02d:%02d" % [int(run_time) / 60, int(run_time) % 60], HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
-		draw_string(ThemeDB.fallback_font, Vector2(530, 335), "POWER LEFT", HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
-		draw_string(ThemeDB.fallback_font, Vector2(530, 373), "%d%%" % int(battery), HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
-		draw_string(ThemeDB.fallback_font, Vector2(750, 335), "MODULES", HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
-		draw_string(ThemeDB.fallback_font, Vector2(750, 373), "2 / 2", HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(310, 335), loc("時間", "TIME"), HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(310, 373), "%02d:%02d" % [int(run_time) / 60, int(run_time) % 60], HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(530, 335), loc("残り電力", "POWER LEFT"), HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(530, 373), "%d%%" % int(battery), HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(750, 335), loc("モジュール", "MODULES"), HORIZONTAL_ALIGNMENT_CENTER, 220, 14, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(750, 373), "2 / 2", HORIZONTAL_ALIGNMENT_CENTER, 220, 28, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(accent, 12), Rect2(430, 452, 420, 52))
-	draw_string(ThemeDB.fallback_font, Vector2(430, 485), "TAP OR PRESS ENTER TO RUN AGAIN", HORIZONTAL_ALIGNMENT_CENTER, 420, 16, Palette.INK)
+	draw_string(Palette.UI_FONT, Vector2(430, 485), loc("タップまたはENTERでもう一度", "TAP OR PRESS ENTER TO RUN AGAIN"), HORIZONTAL_ALIGNMENT_CENTER, 420, 16, Palette.INK)
 	draw_menu_button()

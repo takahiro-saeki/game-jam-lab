@@ -2,6 +2,8 @@
 
 Generated with OpenAI's built-in image generation tool on August 1, 2026. The outputs were resized to 1280px-wide JPEGs for the Godot Web build. Generated images contain no requested text, logos, trademarks, or franchise elements.
 
+The Japanese and Latin UI typeface is [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp), distributed by Google Fonts under the SIL Open Font License 1.1. The font file and a copy of its license are stored in `godot/assets/fonts/`.
+
 ## ZERO PERCENT CITY
 
 Saved as `godot/assets/keyart/zero-percent-city.jpg`.
