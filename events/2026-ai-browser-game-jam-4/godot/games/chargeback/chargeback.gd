@@ -11,6 +11,7 @@ enum GameState { INTRO, PLAYER_TURN, ENEMY_TURN, REWARD, WON, LOST }
 const VIEW := Vector2(1280, 720)
 
 var synth: JamSynth
+var is_japanese := false
 var state := GameState.INTRO
 var run_turns := 0
 var encounter := 0
@@ -63,21 +64,24 @@ func _process(delta: float) -> void:
 
 func all_cards() -> Array[Dictionary]:
 	return [
-		card("dispute", "DISPUTE", 1, "Gain 9 BLOCK.", Palette.CYAN),
-		card("freeze", "FREEZE ACCOUNT", 1, "Gain 5 BLOCK. Enemy deals 3 less next turn.", Palette.BLUE),
-		card("cashback", "CASHBACK", 1, "Deal 5. Restore 4 CREDIT.", Palette.MINT),
-		card("chargeback", "CHARGEBACK", 2, "Deal 14 + 1 per 10 missing CREDIT.", Palette.CORAL),
-		card("fraud_alert", "FRAUD ALERT", 1, "Gain 5 BLOCK. Return 8 damage if charged.", Palette.AMBER),
-		card("autopay", "AUTOPAY", 0, "Gain 1 ENERGY. Draw 1. Lose 2 CREDIT.", Palette.VIOLET),
-		card("audit", "FORENSIC AUDIT", 1, "Deal 4. Draw 2.", Palette.MAGENTA),
-		card("interest", "INTEREST TRAP", 1, "Deal 7. Next hit deals +50%.", Palette.CORAL),
-		card("limit", "LIMIT INCREASE", 2, "Max CREDIT +5. Gain 12 BLOCK.", Palette.CYAN),
-		card("refund", "FULL REFUND", 2, "Deal 8. Restore 11 CREDIT.", Palette.MINT),
-		card("bankruptcy", "TACTICAL DEFAULT", 3, "Lose 7 CREDIT. Deal 32.", Palette.AMBER),
+		card("dispute", loc("異議申立て", "DISPUTE"), 1, loc("ブロックを9得る。", "Gain 9 BLOCK."), Palette.CYAN),
+		card("freeze", loc("口座凍結", "FREEZE ACCOUNT"), 1, loc("ブロックを5得る。\n次の敵の請求を\n3減らす。", "Gain 5 BLOCK. Enemy deals 3 less next turn."), Palette.BLUE),
+		card("cashback", loc("キャッシュバック", "CASHBACK"), 1, loc("5ダメージ。\n利用枠を4回復。", "Deal 5. Restore 4 CREDIT."), Palette.MINT),
+		card("chargeback", loc("チャージバック", "CHARGEBACK"), 2, loc("14ダメージ。\n失った利用枠10ごとに\n+1ダメージ。", "Deal 14 + 1 per 10 missing CREDIT."), Palette.CORAL),
+		card("fraud_alert", loc("不正検知", "FRAUD ALERT"), 1, loc("ブロックを5得る。\n請求を受けると8反撃。", "Gain 5 BLOCK. Return 8 damage if charged."), Palette.AMBER),
+		card("autopay", loc("自動引落し", "AUTOPAY"), 0, loc("行動力+1、1枚引く。\n利用枠を2失う。", "Gain 1 ENERGY. Draw 1. Lose 2 CREDIT."), Palette.VIOLET),
+		card("audit", loc("取引監査", "FORENSIC AUDIT"), 1, loc("4ダメージ。\n2枚引く。", "Deal 4. Draw 2."), Palette.MAGENTA),
+		card("interest", loc("利息の罠", "INTEREST TRAP"), 1, loc("7ダメージ。\n次の一撃が\n50%増える。", "Deal 7. Next hit deals +50%."), Palette.CORAL),
+		card("limit", loc("限度額アップ", "LIMIT INCREASE"), 2, loc("最大利用枠+5。\nブロックを12得る。", "Max CREDIT +5. Gain 12 BLOCK."), Palette.CYAN),
+		card("refund", loc("全額返金", "FULL REFUND"), 2, loc("8ダメージ。\n利用枠を11回復。", "Deal 8. Restore 11 CREDIT."), Palette.MINT),
+		card("bankruptcy", loc("戦略的デフォルト", "TACTICAL DEFAULT"), 3, loc("利用枠を7失い、\n32ダメージ。", "Lose 7 CREDIT. Deal 32."), Palette.AMBER),
 	]
 
 func card(id: String, title: String, cost: int, description: String, color: Color) -> Dictionary:
 	return {"id": id, "title": title, "cost": cost, "description": description, "color": color}
+
+func loc(japanese: String, english: String) -> String:
+	return japanese if is_japanese else english
 
 func initial_deck() -> Array[Dictionary]:
 	var pool := all_cards()
@@ -107,9 +111,9 @@ func start_run() -> void:
 
 func start_encounter() -> void:
 	var encounters := [
-		{"name": "FREE TRIAL HYDRA", "subtitle": "CANCEL BUTTON: MISSING", "hp": 58, "max_hp": 58, "patterns": [8, 11, 6, 14], "color": Palette.MAGENTA},
-		{"name": "CONVENIENCE CORP.", "subtitle": "FEE FOR VIEWING THIS FEE", "hp": 88, "max_hp": 88, "patterns": [10, 7, 16, 12], "color": Palette.AMBER},
-		{"name": "MEGACART PRIME", "subtitle": "FINAL AUTHORIZATION PENDING", "hp": 142, "max_hp": 142, "patterns": [12, 18, 9, 24, 15], "color": Palette.CORAL},
+		{"name": loc("無料体験ヒドラ", "FREE TRIAL HYDRA"), "subtitle": loc("解約ボタン：行方不明", "CANCEL BUTTON: MISSING"), "hp": 58, "max_hp": 58, "patterns": [8, 11, 6, 14], "color": Palette.MAGENTA},
+		{"name": loc("手数料コーポ", "CONVENIENCE CORP."), "subtitle": loc("手数料を見るための手数料", "FEE FOR VIEWING THIS FEE"), "hp": 88, "max_hp": 88, "patterns": [10, 7, 16, 12], "color": Palette.AMBER},
+		{"name": loc("メガカート・プライム", "MEGACART PRIME"), "subtitle": loc("最終承認を要求中", "FINAL AUTHORIZATION PENDING"), "hp": 142, "max_hp": 142, "patterns": [12, 18, 9, 24, 15], "color": Palette.CORAL},
 	]
 	enemy = encounters[encounter].duplicate(true)
 	enemy.turn = 0
@@ -121,7 +125,7 @@ func start_encounter() -> void:
 	draw_pile.shuffle()
 	discard_pile.clear()
 	hand.clear()
-	show_banner("AUTHORIZATION %d / 3" % (encounter + 1), 1.8)
+	show_banner((loc("承認案件 %d / 3", "AUTHORIZATION %d / 3") % (encounter + 1)), 1.8)
 	start_player_turn()
 
 func start_player_turn() -> void:
@@ -140,7 +144,7 @@ func set_enemy_intent() -> void:
 		base = maxi(0, base - 3)
 		enemy_weak -= 1
 	enemy_intent = base
-	var names := ["RECURRING CHARGE", "HIDDEN SURCHARGE", "EXPEDITED FEE", "DYNAMIC MARKUP"]
+	var names := [loc("継続請求", "RECURRING CHARGE"), loc("隠れ追加料金", "HIDDEN SURCHARGE"), loc("特急手数料", "EXPEDITED FEE"), loc("変動値上げ", "DYNAMIC MARKUP")]
 	enemy_intent_name = names[int(enemy.turn) % names.size()]
 
 func draw_cards(amount: int) -> void:
@@ -169,7 +173,7 @@ func play_card(index: int) -> void:
 	if state != GameState.PLAYER_TURN or index < 0 or index >= hand.size(): return
 	var played: Dictionary = hand[index]
 	if int(played.cost) > energy:
-		show_banner("INSUFFICIENT AVAILABLE CREDIT", 1.0)
+		show_banner(loc("利用できる行動力が足りない", "INSUFFICIENT AVAILABLE CREDIT"), 1.0)
 		synth.error()
 		return
 	energy -= int(played.cost)
@@ -180,7 +184,7 @@ func play_card(index: int) -> void:
 		"freeze":
 			gain_block(5)
 			enemy_weak += 2
-			float_text(Vector2(880, 250), "FROZEN", Palette.BLUE)
+			float_text(Vector2(880, 250), loc("凍結", "FROZEN"), Palette.BLUE)
 		"cashback":
 			deal_damage(5)
 			restore_credit(4)
@@ -199,7 +203,7 @@ func play_card(index: int) -> void:
 		"interest":
 			deal_damage(7)
 			enemy_vulnerable += 1
-			float_text(Vector2(880, 250), "EXPOSED", Palette.CORAL)
+			float_text(Vector2(880, 250), loc("弱点露出", "EXPOSED"), Palette.CORAL)
 		"limit":
 			max_credit += 5
 			credit = mini(max_credit, credit + 5)
@@ -232,7 +236,7 @@ func deal_damage(base_amount: int) -> void:
 
 func gain_block(amount: int) -> void:
 	shield += amount
-	float_text(Vector2(255, 297), "+%d BLOCK" % amount, Palette.CYAN)
+	float_text(Vector2(255, 297), (loc("ブロック +%d", "+%d BLOCK") % amount), Palette.CYAN)
 	spawn_sparks(Vector2(255, 300), Palette.CYAN, 7)
 
 func restore_credit(amount: int) -> void:
@@ -254,14 +258,14 @@ func end_turn() -> void:
 	update_card_rects()
 	state = GameState.ENEMY_TURN
 	enemy_delay = 0.72
-	show_banner("TRANSACTION PROCESSING…", 0.7)
+	show_banner(loc("取引処理中…", "TRANSACTION PROCESSING…"), 0.7)
 	synth.click()
 
 func resolve_enemy_turn() -> void:
 	var absorbed := mini(shield, enemy_intent)
 	var damage := maxi(0, enemy_intent - shield)
 	if absorbed > 0:
-		float_text(Vector2(285, 302), "BLOCKED %d" % absorbed, Palette.CYAN)
+		float_text(Vector2(285, 302), (loc("%d ブロック", "BLOCKED %d") % absorbed), Palette.CYAN)
 		spawn_sparks(Vector2(300, 300), Palette.CYAN, 10)
 	if damage > 0:
 		lose_credit(damage)
@@ -270,7 +274,7 @@ func resolve_enemy_turn() -> void:
 		synth.play_tone(190.0, 0.09, -21.0, 1)
 	if counter > 0 and enemy_intent > 0:
 		deal_damage(counter)
-		float_text(Vector2(879, 214), "FRAUD REVERSED", Palette.AMBER)
+		float_text(Vector2(879, 214), loc("不正請求を返送", "FRAUD REVERSED"), Palette.AMBER)
 	shield = 0
 	counter = 0
 	enemy.turn = int(enemy.turn) + 1
@@ -293,7 +297,7 @@ func win_encounter() -> void:
 		state = GameState.REWARD
 		credit = mini(max_credit, credit + 9)
 		generate_rewards()
-		show_banner("CHARGE REVERSED — SELECT EVIDENCE", 2.0)
+		show_banner(loc("請求を差し戻した — 証拠を1枚選べ", "CHARGE REVERSED — SELECT EVIDENCE"), 2.0)
 
 func generate_rewards() -> void:
 	var pool := all_cards().duplicate(true)
@@ -406,16 +410,16 @@ func _draw() -> void:
 func draw_intro() -> void:
 	draw_texture_rect(KEY_ART, Rect2(Vector2.ZERO, VIEW), false)
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.02, 0.04, 0.05, 0.55))
-	draw_string(ThemeDB.fallback_font, Vector2(62, 76), "PROTOTYPE 02  //  DECK-BUILDING ROGUELIKE", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.MINT)
-	draw_string(ThemeDB.fallback_font, Vector2(62, 142), "CHARGEBACK", HORIZONTAL_ALIGNMENT_LEFT, -1, 58, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(65, 185), "Your credit line is your lifeline.", HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 76), loc("プロトタイプ 02  //  デッキ構築ローグライク", "PROTOTYPE 02  //  DECK-BUILDING ROGUELIKE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.MINT)
+	draw_string(Palette.UI_FONT, Vector2(62, 142), "CHARGEBACK", HORIZONTAL_ALIGNMENT_LEFT, -1, 58, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(65, 185), loc("利用限度額が、あなたの命綱。", "Your credit line is your lifeline."), HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Palette.MUTED)
 	var panel := Rect2(62, 380, 570, 202)
 	draw_style_box(Palette.rounded_box(Color(0.035, 0.07, 0.075, 0.93), 20, Palette.MINT, 2), panel)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 422), "HOW TO DISPUTE REALITY", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MINT)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 463), "Read the next charge. Spend 3 energy on evidence.", HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 501), "Block fees, recover credit, then weaponize your debt.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 539), "CLICK / TAP CARDS  •  ENTER ENDS TURN", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(62, 650), "PRESS ANY KEY OR TAP TO AUTHORIZE", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.MINT)
+	draw_string(Palette.UI_FONT, Vector2(88, 422), loc("現実に異議を申し立てる方法", "HOW TO DISPUTE REALITY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MINT)
+	draw_string(Palette.UI_FONT, Vector2(88, 463), loc("次の請求額を確認し、行動力3を証拠に使う。", "Read the next charge. Spend 3 energy on evidence."), HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 501), loc("請求を防ぎ、利用枠を戻し、借金を武器に変えよう。", "Block fees, recover credit, then weaponize your debt."), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 539), loc("カードをクリック / タップ  •  ENTERでターン終了", "CLICK / TAP CARDS  •  ENTER ENDS TURN"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 650), loc("キー入力またはタップで承認開始", "PRESS ANY KEY OR TAP TO AUTHORIZE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.MINT)
 	draw_menu_button()
 
 func draw_arena(shake: Vector2) -> void:
@@ -433,10 +437,10 @@ func draw_arena(shake: Vector2) -> void:
 	draw_rect(Rect2(p + Vector2(-88, -43), Vector2(176, 25)), Palette.INK)
 	draw_circle(p + Vector2(-65, -30), 5, Palette.MINT)
 	draw_circle(p + Vector2(-47, -30), 5, Palette.MINT)
-	draw_string(ThemeDB.fallback_font, p + Vector2(-88, 25), "CARD // 000", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.INK)
+	draw_string(Palette.UI_FONT, p + Vector2(-88, 25), loc("カード // 000", "CARD // 000"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.INK)
 	if shield > 0:
 		draw_arc(p, 98, -2.65, -0.48, 38, Palette.CYAN, 7)
-		draw_string(ThemeDB.fallback_font, p + Vector2(-35, -88), "%d BLOCK" % shield, HORIZONTAL_ALIGNMENT_CENTER, 70, 15, Palette.CYAN)
+		draw_string(Palette.UI_FONT, p + Vector2(-35, -88), (loc("防御 %d", "%d BLOCK") % shield), HORIZONTAL_ALIGNMENT_CENTER, 70, 15, Palette.CYAN)
 	# Enemy billing entity.
 	var e := Vector2(882, 270) + shake
 	var enemy_color: Color = enemy.color
@@ -449,7 +453,7 @@ func draw_arena(shake: Vector2) -> void:
 			for line in range(5):
 				draw_rect(Rect2(r.position + Vector2(24, 32 + line * 24), Vector2(128 - line * 9, 5)), Palette.with_alpha(Palette.INK, 0.55))
 			draw_rect(Rect2(r.position + Vector2(24, 166), Vector2(128, 20)), enemy_color)
-			draw_string(ThemeDB.fallback_font, r.position + Vector2(24, 182), "PAY NOW", HORIZONTAL_ALIGNMENT_CENTER, 128, 13, Palette.INK)
+			draw_string(Palette.UI_FONT, r.position + Vector2(24, 182), loc("今すぐ払う", "PAY NOW"), HORIZONTAL_ALIGNMENT_CENTER, 128, 13, Palette.INK)
 	# Projectile preview.
 	if state == GameState.ENEMY_TURN:
 		var progress := clampf(1.0 - enemy_delay / 0.72, 0.0, 1.0)
@@ -459,45 +463,45 @@ func draw_arena(shake: Vector2) -> void:
 
 func draw_interface() -> void:
 	draw_rect(Rect2(0, 0, 1280, 96), Color(0.02, 0.06, 0.055, 0.96))
-	draw_string(ThemeDB.fallback_font, Vector2(26, 34), "AVAILABLE CREDIT", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(26, 34), loc("利用可能枠", "AVAILABLE CREDIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
 	draw_style_box(Palette.rounded_box(Palette.INK, 7), Rect2(26, 48, 280, 18))
 	var credit_color := Palette.MINT if credit > 30 else Palette.CORAL
 	draw_style_box(Palette.rounded_box(credit_color, 7), Rect2(26, 48, 280 * float(credit) / max_credit, 18))
-	draw_string(ThemeDB.fallback_font, Vector2(320, 67), "%d / %d" % [credit, max_credit], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, credit_color)
-	draw_string(ThemeDB.fallback_font, Vector2(465, 34), "ENERGY", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(320, 67), "%d / %d" % [credit, max_credit], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, credit_color)
+	draw_string(Palette.UI_FONT, Vector2(465, 34), loc("行動力", "ENERGY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
 	for pip in range(5):
 		draw_circle(Vector2(480 + pip * 28, 58), 9, Palette.AMBER if pip < energy else Palette.PANEL_2)
-	draw_string(ThemeDB.fallback_font, Vector2(655, 34), "CASE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(655, 65), "%d / 3" % (encounter + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(748, 34), enemy.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(655, 34), loc("案件", "CASE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(655, 65), "%d / 3" % (encounter + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(748, 34), enemy.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(Palette.INK, 6), Rect2(748, 51, 290, 14))
 	draw_style_box(Palette.rounded_box(enemy.color, 6), Rect2(748, 51, 290 * float(enemy.hp) / enemy.max_hp, 14))
-	draw_string(ThemeDB.fallback_font, Vector2(748, 85), enemy.subtitle, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(748, 85), enemy.subtitle, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
 	draw_menu_button()
 
 	var intent_panel := Rect2(1015, 126, 225, 132)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 16, Palette.CORAL, 2), intent_panel)
-	draw_string(ThemeDB.fallback_font, Vector2(1036, 157), "NEXT CHARGE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(1036, 194), "%d" % enemy_intent, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, Palette.CORAL)
-	draw_string(ThemeDB.fallback_font, Vector2(1085, 191), enemy_intent_name, HORIZONTAL_ALIGNMENT_LEFT, 135, 13, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(1036, 231), "BLOCK %d  •  RETURN %d" % [shield, counter], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(1036, 157), loc("次の請求", "NEXT CHARGE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1036, 194), "%d" % enemy_intent, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, Palette.CORAL)
+	draw_string(Palette.UI_FONT, Vector2(1085, 191), enemy_intent_name, HORIZONTAL_ALIGNMENT_LEFT, 135, 13, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1036, 231), (loc("防御 %d  •  反撃 %d", "BLOCK %d  •  RETURN %d") % [shield, counter]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.CYAN)
 
 	if state == GameState.PLAYER_TURN:
 		draw_style_box(Palette.rounded_box(Palette.CORAL, 12), end_turn_rect)
-		draw_string(ThemeDB.fallback_font, Vector2(end_turn_rect.position.x, end_turn_rect.position.y + 34), "END TURN", HORIZONTAL_ALIGNMENT_CENTER, end_turn_rect.size.x, 16, Palette.INK)
+		draw_string(Palette.UI_FONT, Vector2(end_turn_rect.position.x, end_turn_rect.position.y + 34), loc("ターン終了", "END TURN"), HORIZONTAL_ALIGNMENT_CENTER, end_turn_rect.size.x, 16, Palette.INK)
 	for index in range(hand.size()):
 		draw_card(hand[index], card_rects[index], index, index == hover_card)
-	draw_string(ThemeDB.fallback_font, Vector2(26, 688), "DRAW %d" % draw_pile.size(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(110, 688), "DISCARD %d" % discard_pile.size(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(26, 688), (loc("山札 %d", "DRAW %d") % draw_pile.size()), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(110, 688), (loc("捨て札 %d", "DISCARD %d") % discard_pile.size()), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
 	if banner_time > 0.0:
 		var rect := Rect2(390, 110, 500, 42)
 		draw_style_box(Palette.rounded_box(Color(0.02, 0.08, 0.07, 0.95), 12, Palette.MINT, 1), rect)
-		draw_string(ThemeDB.fallback_font, Vector2(390, 137), banner, HORIZONTAL_ALIGNMENT_CENTER, 500, 15, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(390, 137), banner, HORIZONTAL_ALIGNMENT_CENTER, 500, 15, Palette.PAPER)
 	if tutorial_step == 1 and state == GameState.PLAYER_TURN:
 		var tip := Rect2(28, 402, 440, 62)
 		draw_style_box(Palette.rounded_box(Palette.PANEL, 12, Palette.AMBER, 1), tip)
-		draw_string(ThemeDB.fallback_font, Vector2(45, 428), "TIP: Enemy plans %d. Build BLOCK or accept debt" % enemy_intent, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.PAPER)
-		draw_string(ThemeDB.fallback_font, Vector2(45, 449), "to power up CHARGEBACK. The risk is yours.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(45, 428), (loc("ヒント：次の請求は%d。防ぐか、あえて借金するか。", "TIP: Enemy plans %d. Build BLOCK or accept debt") % enemy_intent), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(45, 449), loc("借金が増えるほどチャージバックは強くなる。", "to power up CHARGEBACK. The risk is yours."), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
 
 func draw_card(item: Dictionary, rect: Rect2, index: int, hovered: bool) -> void:
 	var draw_rect := rect
@@ -506,26 +510,26 @@ func draw_card(item: Dictionary, rect: Rect2, index: int, hovered: bool) -> void
 	var accent: Color = item.color if affordable else Palette.MUTED
 	draw_style_box(Palette.rounded_box(Palette.PAPER if affordable else Color("9aa0a2"), 15, accent, 3), draw_rect)
 	draw_circle(draw_rect.position + Vector2(25, 26), 18, accent)
-	draw_string(ThemeDB.fallback_font, draw_rect.position + Vector2(11, 32), str(item.cost), HORIZONTAL_ALIGNMENT_CENTER, 28, 18, Palette.INK)
-	draw_string(ThemeDB.fallback_font, draw_rect.position + Vector2(49, 31), item.title, HORIZONTAL_ALIGNMENT_LEFT, draw_rect.size.x - 58, 14, Palette.INK)
+	draw_string(Palette.UI_FONT, draw_rect.position + Vector2(11, 32), str(item.cost), HORIZONTAL_ALIGNMENT_CENTER, 28, 18, Palette.INK)
+	draw_string(Palette.UI_FONT, draw_rect.position + Vector2(49, 31), item.title, HORIZONTAL_ALIGNMENT_LEFT, draw_rect.size.x - 58, 14, Palette.INK)
 	draw_rect(Rect2(draw_rect.position + Vector2(15, 54), Vector2(draw_rect.size.x - 30, 6)), accent)
-	draw_multiline_string(ThemeDB.fallback_font, draw_rect.position + Vector2(17, 91), item.description, HORIZONTAL_ALIGNMENT_LEFT, draw_rect.size.x - 34, 15, 4, Palette.INK)
-	draw_string(ThemeDB.fallback_font, draw_rect.position + Vector2(17, 185), "EVIDENCE %02d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.with_alpha(Palette.INK, 0.55))
+	draw_multiline_string(Palette.UI_FONT, draw_rect.position + Vector2(17, 91), item.description, HORIZONTAL_ALIGNMENT_LEFT, draw_rect.size.x - 34, 15, 4, Palette.INK)
+	draw_string(Palette.UI_FONT, draw_rect.position + Vector2(17, 185), (loc("証拠 %02d", "EVIDENCE %02d") % (index + 1)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.with_alpha(Palette.INK, 0.55))
 
 func draw_reward() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.01, 0.035, 0.03, 0.88))
-	draw_string(ThemeDB.fallback_font, Vector2(0, 116), "EVIDENCE RECOVERED", HORIZONTAL_ALIGNMENT_CENTER, 1280, 32, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(0, 151), "Choose one card for the next authorization. +9 CREDIT restored.", HORIZONTAL_ALIGNMENT_CENTER, 1280, 16, Palette.MINT)
+	draw_string(Palette.UI_FONT, Vector2(0, 116), loc("証拠を回収した", "EVIDENCE RECOVERED"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 32, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(0, 151), loc("次の案件に持ち込むカードを1枚選択。利用枠を9回復。", "Choose one card for the next authorization. +9 CREDIT restored."), HORIZONTAL_ALIGNMENT_CENTER, 1280, 16, Palette.MINT)
 	for index in range(reward_cards.size()):
 		var rect := reward_rects[index]
 		draw_style_box(Palette.rounded_box(Palette.PANEL, 20, reward_cards[index].color, 2), rect.grow(8))
 		draw_card(reward_cards[index], Rect2(rect.position + Vector2(20, 34), Vector2(190, 206)), index, false)
-		draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, rect.position.y + 275), "ADD TO DECK", HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 15, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(rect.position.x, rect.position.y + 275), loc("デッキに追加", "ADD TO DECK"), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 15, Palette.PAPER)
 	draw_menu_button()
 
 func draw_effects(shake: Vector2) -> void:
 	for item in floating_texts:
-		draw_string(ThemeDB.fallback_font, item.pos + shake, item.text, HORIZONTAL_ALIGNMENT_CENTER, 180, 19, Palette.with_alpha(item.color, clampf(item.life, 0, 1)))
+		draw_string(Palette.UI_FONT, item.pos + shake, item.text, HORIZONTAL_ALIGNMENT_CENTER, 180, 19, Palette.with_alpha(item.color, clampf(item.life, 0, 1)))
 	for item in sparks:
 		draw_circle(item.pos + shake, 3.5, Palette.with_alpha(item.color, clampf(item.life * 2.0, 0, 1)))
 
@@ -534,18 +538,18 @@ func draw_result(victory: bool) -> void:
 	var accent := Palette.MINT if victory else Palette.CORAL
 	var panel := Rect2(310, 150, 660, 420)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 26, accent, 3), panel)
-	draw_string(ThemeDB.fallback_font, Vector2(310, 220), "ALL CHARGES REVERSED" if victory else "CREDIT LINE EXHAUSTED", HORIZONTAL_ALIGNMENT_CENTER, 660, 31, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(310, 260), "ACCOUNT HOLDER: FREE" if victory else "CLAIM DENIED — FOR NOW", HORIZONTAL_ALIGNMENT_CENTER, 660, 16, accent)
-	draw_string(ThemeDB.fallback_font, Vector2(350, 334), "CASES", HORIZONTAL_ALIGNMENT_CENTER, 180, 14, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(350, 374), "%d / 3" % (3 if victory else encounter), HORIZONTAL_ALIGNMENT_CENTER, 180, 29, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(550, 334), "TURNS", HORIZONTAL_ALIGNMENT_CENTER, 180, 14, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(550, 374), str(run_turns), HORIZONTAL_ALIGNMENT_CENTER, 180, 29, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(750, 334), "DECK", HORIZONTAL_ALIGNMENT_CENTER, 180, 14, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(750, 374), "%d CARDS" % deck.size(), HORIZONTAL_ALIGNMENT_CENTER, 180, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(310, 220), (loc("全請求を差し戻した", "ALL CHARGES REVERSED") if victory else loc("利用枠を使い切った", "CREDIT LINE EXHAUSTED")), HORIZONTAL_ALIGNMENT_CENTER, 660, 31, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(310, 260), (loc("契約者は自由になった", "ACCOUNT HOLDER: FREE") if victory else loc("申立て却下 — 今のところは", "CLAIM DENIED — FOR NOW")), HORIZONTAL_ALIGNMENT_CENTER, 660, 16, accent)
+	draw_string(Palette.UI_FONT, Vector2(350, 334), loc("案件", "CASES"), HORIZONTAL_ALIGNMENT_CENTER, 180, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(350, 374), "%d / 3" % (3 if victory else encounter), HORIZONTAL_ALIGNMENT_CENTER, 180, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(550, 334), loc("ターン", "TURNS"), HORIZONTAL_ALIGNMENT_CENTER, 180, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(550, 374), str(run_turns), HORIZONTAL_ALIGNMENT_CENTER, 180, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(750, 334), loc("デッキ", "DECK"), HORIZONTAL_ALIGNMENT_CENTER, 180, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(750, 374), (loc("%d枚", "%d CARDS") % deck.size()), HORIZONTAL_ALIGNMENT_CENTER, 180, 29, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(accent, 12), Rect2(426, 466, 428, 54))
-	draw_string(ThemeDB.fallback_font, Vector2(426, 500), "TAP OR PRESS ENTER TO FILE AGAIN", HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
+	draw_string(Palette.UI_FONT, Vector2(426, 500), loc("タップまたはENTERで再申請", "TAP OR PRESS ENTER TO FILE AGAIN"), HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
 	draw_menu_button()
 
 func draw_menu_button() -> void:
 	draw_style_box(Palette.rounded_box(Color(0.025, 0.07, 0.065, 0.94), 10, Palette.with_alpha(Palette.MUTED, 0.55), 1), menu_rect)
-	draw_string(ThemeDB.fallback_font, Vector2(menu_rect.position.x, menu_rect.position.y + 25), "← GAME LAB", HORIZONTAL_ALIGNMENT_CENTER, menu_rect.size.x, 14, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(menu_rect.position.x, menu_rect.position.y + 25), loc("← ゲーム選択", "← GAME LAB"), HORIZONTAL_ALIGNMENT_CENTER, menu_rect.size.x, 14, Palette.PAPER)

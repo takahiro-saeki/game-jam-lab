@@ -21,4 +21,4 @@ Each event lives under `events/<year>-<jam>/` with its source, design notes, tes
 | CHARGEBACK | Deck-building roguelike | Your credit limit is both health and fuel for stronger retaliation. |
 | CAPACITOR DEFENSE | Circuit tower defense | Towers only work when routed power packets physically reach them. |
 
-Built in Godot 4.6 with GDScript. Keyboard, mouse, and touch are supported.
+Built in Godot 4.6 with GDScript. Japanese and English, keyboard, mouse, and touch are supported.

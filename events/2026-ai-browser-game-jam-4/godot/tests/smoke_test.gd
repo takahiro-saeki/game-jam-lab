@@ -33,8 +33,10 @@ func test_zero_percent_city() -> void:
 	print("\nZERO PERCENT CITY")
 	var game := ZeroGame.new()
 	root.add_child(game)
+	game.is_japanese = true
 	game.reset_run()
 	check(game.run_state == game.RunState.PLAYING, "run boots into PLAYING")
+	check(game.loc("日本語", "English") == "日本語", "Japanese copy is selected")
 	game.player_pos = game.pickups[0].rect.get_center()
 	game.handle_interactions(0.016)
 	check(game.has_dash, "dash module can be acquired")
@@ -49,8 +51,10 @@ func test_chargeback() -> void:
 	print("\nCHARGEBACK")
 	var game := ChargebackGame.new()
 	root.add_child(game)
+	game.is_japanese = true
 	game.start_run()
 	check(game.hand.size() == 5, "opening hand draws five cards")
+	check(game.find_card(game.all_cards(), "dispute").title == "異議申立て", "cards use Japanese copy")
 	check(game.enemy.hp == 58, "first authorization loads")
 	var pool: Array[Dictionary] = game.all_cards()
 	game.hand = [game.find_card(pool, "dispute").duplicate()]
@@ -74,7 +78,9 @@ func test_capacitor_defense() -> void:
 	print("\nCAPACITOR DEFENSE")
 	var game := CapacitorGame.new()
 	root.add_child(game)
+	game.is_japanese = true
 	game.reset_run()
+	check(game.wave_name(0) == "偵察電流", "wave names use Japanese copy")
 	game.build_mode = game.BuildMode.ARC
 	game.handle_node(1)
 	check(game.nodes[1].building == "arc" and game.credits == 82, "arc tower builds on a live socket")

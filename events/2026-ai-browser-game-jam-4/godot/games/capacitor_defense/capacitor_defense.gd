@@ -13,6 +13,7 @@ const VIEW := Vector2(1280, 720)
 const FIELD_RIGHT := 1020.0
 
 var synth: JamSynth
+var is_japanese := false
 var state := GameState.INTRO
 var build_mode := BuildMode.CABLE
 var credits := 112
@@ -46,11 +47,11 @@ var launch_rect := Rect2(1038, 608, 224, 62)
 var menu_rect := Rect2(1100, 18, 154, 38)
 
 var waves := [
-	{"name": "SCOUT CURRENT", "count": 8, "hp": 22, "speed": 78.0, "interval": 0.75, "reward": 3},
-	{"name": "BROWNOUT PACK", "count": 11, "hp": 32, "speed": 86.0, "interval": 0.62, "reward": 4},
-	{"name": "SURGE SWARM", "count": 14, "hp": 38, "speed": 102.0, "interval": 0.48, "reward": 4},
-	{"name": "INSULATOR COLUMN", "count": 10, "hp": 72, "speed": 66.0, "interval": 0.72, "reward": 6},
-	{"name": "BLACKOUT ENGINE", "count": 1, "hp": 540, "speed": 46.0, "interval": 0.2, "reward": 40},
+	{"name": "SCOUT CURRENT", "name_ja": "偵察電流", "count": 8, "hp": 22, "speed": 78.0, "interval": 0.75, "reward": 3},
+	{"name": "BROWNOUT PACK", "name_ja": "電圧低下パック", "count": 11, "hp": 32, "speed": 86.0, "interval": 0.62, "reward": 4},
+	{"name": "SURGE SWARM", "name_ja": "サージ群体", "count": 14, "hp": 38, "speed": 102.0, "interval": 0.48, "reward": 4},
+	{"name": "INSULATOR COLUMN", "name_ja": "絶縁体部隊", "count": 10, "hp": 72, "speed": 66.0, "interval": 0.72, "reward": 6},
+	{"name": "BLACKOUT ENGINE", "name_ja": "ブラックアウト機関", "count": 1, "hp": 540, "speed": 46.0, "interval": 0.2, "reward": 40},
 ]
 
 func _ready() -> void:
@@ -98,7 +99,7 @@ func reset_run() -> void:
 	build_grid()
 	build_mode = BuildMode.CABLE
 	state = GameState.BUILD
-	show_message("ROUTE CABLES, PLACE TOWERS, THEN LAUNCH THE WAVE", 4.0)
+	show_message(loc("ケーブルを配線し、タワーを建てて、ウェーブを開始", "ROUTE CABLES, PLACE TOWERS, THEN LAUNCH THE WAVE"), 4.0)
 	synth.play_chord([196.0, 293.66, 392.0], 0.24, -23.0)
 
 func _process(delta: float) -> void:
@@ -132,7 +133,7 @@ func update_wave(delta: float) -> void:
 		else:
 			state = GameState.BUILD
 			credits += 18 + wave_index * 3
-			show_message("WAVE CLEARED — GRID CREDIT AWARDED", 2.5)
+			show_message(loc("ウェーブ突破 — グリッドクレジット獲得", "WAVE CLEARED — GRID CREDIT AWARDED"), 2.5)
 			synth.confirm()
 
 func spawn_enemy(wave: Dictionary) -> void:
@@ -335,13 +336,13 @@ func handle_node(index: int) -> void:
 	match build_mode:
 		BuildMode.CABLE:
 			if node.active:
-				show_message("THIS SOCKET IS ALREADY ON THE GRID", 1.2)
+				show_message(loc("このソケットは接続済み", "THIS SOCKET IS ALREADY ON THE GRID"), 1.2)
 				return
 			var adjacent := false
 			for neighbor in node_neighbors(index):
 				if nodes[neighbor].active: adjacent = true
 			if not adjacent:
-				show_message("EXTEND FROM AN ACTIVE CYAN SOCKET", 1.4)
+				show_message(loc("点灯中のシアン色ソケットから延長しよう", "EXTEND FROM AN ACTIVE CYAN SOCKET"), 1.4)
 				synth.error()
 				return
 			if spend(cost):
@@ -350,7 +351,7 @@ func handle_node(index: int) -> void:
 				synth.confirm()
 		BuildMode.CAPACITOR, BuildMode.ARC, BuildMode.PULSE:
 			if not node.active or node.building != "":
-				show_message("BUILDINGS REQUIRE AN EMPTY ACTIVE SOCKET", 1.4)
+				show_message(loc("建設には空の接続済みソケットが必要", "BUILDINGS REQUIRE AN EMPTY ACTIVE SOCKET"), 1.4)
 				synth.error()
 				return
 			if spend(cost):
@@ -360,7 +361,7 @@ func handle_node(index: int) -> void:
 				synth.confirm()
 		BuildMode.UPGRADE:
 			if node.building not in ["capacitor", "arc", "pulse"] or int(node.level) >= 3:
-				show_message("SELECT A LEVEL 1 OR 2 BUILDING", 1.3)
+				show_message(loc("レベル1か2の設備を選択しよう", "SELECT A LEVEL 1 OR 2 BUILDING"), 1.3)
 				synth.error()
 				return
 			var upgrade_cost := cost + (int(node.level) - 1) * 12
@@ -372,7 +373,7 @@ func handle_node(index: int) -> void:
 
 func spend(amount: int) -> bool:
 	if credits < amount:
-		show_message("NOT ENOUGH GRID CREDIT", 1.3)
+		show_message(loc("グリッドクレジットが足りない", "NOT ENOUGH GRID CREDIT"), 1.3)
 		synth.error()
 		return false
 	credits -= amount
@@ -387,18 +388,24 @@ func launch_wave() -> void:
 	for node in nodes:
 		if node.building in ["arc", "pulse"]: armed = true
 	if not armed:
-		show_message("PLACE AT LEAST ONE DEFENSE TOWER", 1.8)
+		show_message(loc("防衛タワーを1基以上設置しよう", "PLACE AT LEAST ONE DEFENSE TOWER"), 1.8)
 		synth.error()
 		return
 	state = GameState.WAVE
 	wave_spawned = 0
 	spawn_timer = 0.35
-	show_message("WAVE %d — %s" % [wave_index + 1, waves[wave_index].name], 2.0)
+	show_message((loc("ウェーブ %d — %s", "WAVE %d — %s") % [wave_index + 1, wave_name(wave_index)]), 2.0)
 	synth.play_chord([146.83, 220.0, 293.66], 0.2, -21.0)
 
 func show_message(text: String, duration: float) -> void:
 	message = text
 	message_time = duration
+
+func loc(japanese: String, english: String) -> String:
+	return japanese if is_japanese else english
+
+func wave_name(index: int) -> String:
+	return str(waves[index].name_ja) if is_japanese else str(waves[index].name)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
@@ -452,16 +459,16 @@ func _draw() -> void:
 func draw_intro() -> void:
 	draw_texture_rect(KEY_ART, Rect2(Vector2.ZERO, VIEW), false)
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.02, 0.03, 0.08, 0.52))
-	draw_string(ThemeDB.fallback_font, Vector2(62, 76), "PROTOTYPE 03  //  CIRCUIT TOWER DEFENSE", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.VIOLET)
-	draw_string(ThemeDB.fallback_font, Vector2(62, 142), "CAPACITOR DEFENSE", HORIZONTAL_ALIGNMENT_LEFT, -1, 51, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(64, 184), "A tower without charge is only architecture.", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 76), loc("プロトタイプ 03  //  回路タワーディフェンス", "PROTOTYPE 03  //  CIRCUIT TOWER DEFENSE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, Vector2(62, 142), "CAPACITOR DEFENSE", HORIZONTAL_ALIGNMENT_LEFT, -1, 51, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(64, 184), loc("電力のないタワーは、ただの建築物だ。", "A tower without charge is only architecture."), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.MUTED)
 	var panel := Rect2(62, 376, 590, 210)
 	draw_style_box(Palette.rounded_box(Color(0.035, 0.05, 0.12, 0.94), 20, Palette.VIOLET, 2), panel)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 416), "GRID PROTOCOL", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.VIOLET)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 458), "1. Extend cyan cable into empty sockets.", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 492), "2. Build towers. Watch power packets travel.", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(88, 526), "3. Capacitors store five packets, then burst-charge nearby towers.", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(62, 650), "PRESS ANY KEY OR TAP TO ENERGIZE", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, Vector2(88, 416), loc("グリッド手順", "GRID PROTOCOL"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, Vector2(88, 458), loc("1. シアン色の配線を空ソケットへ延ばす。", "1. Extend cyan cable into empty sockets."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 492), loc("2. タワーを建て、電力パケットの流れを見る。", "2. Build towers. Watch power packets travel."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 526), loc("3. 蓄電器は5個ためると、周囲のタワーへ一気に放電。", "3. Capacitors store five packets, then burst-charge nearby towers."), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 650), loc("キー入力またはタップで通電", "PRESS ANY KEY OR TAP TO ENERGIZE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.VIOLET)
 	draw_menu_button()
 
 func draw_field() -> void:
@@ -493,7 +500,7 @@ func draw_field() -> void:
 	for item in projectiles: draw_projectile(item)
 	# Base reactor endpoint.
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 12, Palette.CORAL, 2), Rect2(972, 529, 45, 72))
-	draw_string(ThemeDB.fallback_font, Vector2(972, 622), "CORE", HORIZONTAL_ALIGNMENT_CENTER, 45, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(972, 622), loc("コア", "CORE"), HORIZONTAL_ALIGNMENT_CENTER, 45, 11, Palette.MUTED)
 
 func draw_node(index: int) -> void:
 	var node: Dictionary = nodes[index]
@@ -528,7 +535,7 @@ func draw_node(index: int) -> void:
 		for pip in range(int(4 + node.level)):
 			draw_circle(pos + Vector2(-18 + pip * 8, 29), 2.5, charge_color if pip < int(ceil(node.charge)) else Palette.PANEL_2)
 	if node.building != "" and node.building != "reactor":
-		draw_string(ThemeDB.fallback_font, pos + Vector2(-18, -27), "L%d" % node.level, HORIZONTAL_ALIGNMENT_CENTER, 36, 10, Palette.PAPER)
+		draw_string(Palette.UI_FONT, pos + Vector2(-18, -27), "L%d" % node.level, HORIZONTAL_ALIGNMENT_CENTER, 36, 10, Palette.PAPER)
 
 func draw_packet(packet: Dictionary) -> void:
 	var route: Array = packet.route
@@ -573,53 +580,53 @@ func draw_projectile(item: Dictionary) -> void:
 func draw_sidebar() -> void:
 	draw_rect(Rect2(FIELD_RIGHT, 0, 1280 - FIELD_RIGHT, 720), Color("101528"))
 	draw_rect(Rect2(0, 0, 1280, 96), Color(0.025, 0.035, 0.08, 0.97))
-	draw_string(ThemeDB.fallback_font, Vector2(24, 34), "REACTOR INTEGRITY", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(24, 34), loc("リアクター耐久値", "REACTOR INTEGRITY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
 	draw_style_box(Palette.rounded_box(Palette.INK, 7), Rect2(24, 49, 255, 17))
 	var hp_color := Palette.CYAN if base_hp > 6 else Palette.CORAL
 	draw_style_box(Palette.rounded_box(hp_color, 7), Rect2(24, 49, 255 * float(base_hp) / max_base_hp, 17))
-	draw_string(ThemeDB.fallback_font, Vector2(294, 67), "%d / %d" % [base_hp, max_base_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, hp_color)
-	draw_string(ThemeDB.fallback_font, Vector2(420, 34), "GRID CREDIT", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(420, 68), "¤ %03d" % credits, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Palette.AMBER)
-	draw_string(ThemeDB.fallback_font, Vector2(590, 34), "WAVE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(590, 68), "%d / %d" % [mini(wave_index + 1, waves.size()), waves.size()], HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(294, 67), "%d / %d" % [base_hp, max_base_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, hp_color)
+	draw_string(Palette.UI_FONT, Vector2(420, 34), loc("グリッド資金", "GRID CREDIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(420, 68), "C %03d" % credits, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Palette.AMBER)
+	draw_string(Palette.UI_FONT, Vector2(590, 34), loc("ウェーブ", "WAVE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(590, 68), "%d / %d" % [mini(wave_index + 1, waves.size()), waves.size()], HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Palette.PAPER)
 	if wave_index < waves.size():
-		draw_string(ThemeDB.fallback_font, Vector2(708, 34), waves[wave_index].name, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(708, 34), wave_name(wave_index), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.PAPER)
 		var remaining := int(waves[wave_index].count) - wave_spawned + enemies.size() if state == GameState.WAVE else int(waves[wave_index].count)
-		draw_string(ThemeDB.fallback_font, Vector2(708, 67), "%d HOSTILES" % remaining, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.CORAL)
+		draw_string(Palette.UI_FONT, Vector2(708, 67), (loc("敵 %d体", "%d HOSTILES") % remaining), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.CORAL)
 	draw_menu_button()
 
-	draw_string(ThemeDB.fallback_font, Vector2(1038, 131), "BUILD GRID", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(1038, 158), "Tap a tool, then a socket.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
-	var labels := [["CABLE", "¤6"], ["CAPACITOR", "¤22"], ["ARC TOWER", "¤30"], ["PULSE", "¤36"], ["UPGRADE", "¤26+"]]
+	draw_string(Palette.UI_FONT, Vector2(1038, 131), loc("グリッド建設", "BUILD GRID"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1038, 158), loc("ツールを選び、ソケットをタップ。", "Tap a tool, then a socket."), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	var labels := [[loc("ケーブル", "CABLE"), "C6"], [loc("蓄電器", "CAPACITOR"), "C22"], [loc("アーク塔", "ARC TOWER"), "C30"], [loc("パルス塔", "PULSE"), "C36"], [loc("強化", "UPGRADE"), "C26+"]]
 	for index in range(mode_rects.size()):
 		var selected := build_mode == index
 		var accent := mode_color(index)
 		draw_style_box(Palette.rounded_box(accent if selected else Palette.PANEL, 12, accent, 2), mode_rects[index])
-		draw_string(ThemeDB.fallback_font, Vector2(mode_rects[index].position.x, mode_rects[index].position.y + 29), labels[index][0], HORIZONTAL_ALIGNMENT_CENTER, mode_rects[index].size.x, 13, Palette.INK if selected else Palette.PAPER)
-		draw_string(ThemeDB.fallback_font, Vector2(mode_rects[index].position.x, mode_rects[index].position.y + 53), labels[index][1], HORIZONTAL_ALIGNMENT_CENTER, mode_rects[index].size.x, 12, Palette.INK if selected else Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(mode_rects[index].position.x, mode_rects[index].position.y + 29), labels[index][0], HORIZONTAL_ALIGNMENT_CENTER, mode_rects[index].size.x, 13, Palette.INK if selected else Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(mode_rects[index].position.x, mode_rects[index].position.y + 53), labels[index][1], HORIZONTAL_ALIGNMENT_CENTER, mode_rects[index].size.x, 12, Palette.INK if selected else Palette.MUTED)
 
 	var telemetry := Rect2(1038, 440, 224, 142)
 	draw_style_box(Palette.rounded_box(Palette.INK, 14, Palette.with_alpha(Palette.CYAN, 0.25), 1), telemetry)
-	draw_string(ThemeDB.fallback_font, Vector2(1056, 469), "POWER TELEMETRY", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(1056, 469), loc("電力テレメトリ", "POWER TELEMETRY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.CYAN)
 	var active_count := 0
 	var stored := 0.0
 	for node in nodes:
 		if node.active: active_count += 1
 		stored += float(node.charge) + float(node.stored)
-	draw_string(ThemeDB.fallback_font, Vector2(1056, 505), "LIVE SOCKETS", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(1210, 505), str(active_count), HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(1056, 535), "STORED CHARGE", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(1210, 535), "%.0f" % stored, HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(1056, 565), "PACKETS IN FLIGHT", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(1210, 565), str(packets.size()), HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1056, 505), loc("接続ソケット", "LIVE SOCKETS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1210, 505), str(active_count), HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1056, 535), loc("蓄電量", "STORED CHARGE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1210, 535), "%.0f" % stored, HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(1056, 565), loc("送電パケット", "PACKETS IN FLIGHT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1210, 565), str(packets.size()), HORIZONTAL_ALIGNMENT_RIGHT, 35, 15, Palette.PAPER)
 
 	var launch_color := Palette.CORAL if state == GameState.BUILD else Palette.PANEL_2
 	draw_style_box(Palette.rounded_box(launch_color, 14), launch_rect)
-	draw_string(ThemeDB.fallback_font, Vector2(launch_rect.position.x, launch_rect.position.y + 38), "LAUNCH WAVE" if state == GameState.BUILD else "WAVE IN PROGRESS", HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 16, Palette.INK if state == GameState.BUILD else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(launch_rect.position.x, launch_rect.position.y + 38), (loc("ウェーブ開始", "LAUNCH WAVE") if state == GameState.BUILD else loc("ウェーブ進行中", "WAVE IN PROGRESS")), HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 16, Palette.INK if state == GameState.BUILD else Palette.MUTED)
 	if message_time > 0.0:
 		var rect := Rect2(260, 108, 500, 42)
 		draw_style_box(Palette.rounded_box(Color(0.025, 0.05, 0.1, 0.95), 11, Palette.CYAN, 1), rect)
-		draw_string(ThemeDB.fallback_font, Vector2(260, 135), message, HORIZONTAL_ALIGNMENT_CENTER, 500, 14, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(260, 135), message, HORIZONTAL_ALIGNMENT_CENTER, 500, 14, Palette.PAPER)
 
 func draw_effects() -> void:
 	for particle in particles:
@@ -630,18 +637,18 @@ func draw_result(victory: bool) -> void:
 	var accent := Palette.CYAN if victory else Palette.CORAL
 	var panel := Rect2(300, 150, 680, 420)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 26, accent, 3), panel)
-	draw_string(ThemeDB.fallback_font, Vector2(300, 221), "GRID FULLY CHARGED" if victory else "REACTOR BLACKOUT", HORIZONTAL_ALIGNMENT_CENTER, 680, 34, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(300, 262), "THE LAST SURGE HAS BEEN GROUNDED" if victory else "THE CIRCUIT COULD NOT HOLD", HORIZONTAL_ALIGNMENT_CENTER, 680, 16, accent)
-	draw_string(ThemeDB.fallback_font, Vector2(355, 340), "WAVES", HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(355, 380), "%d / 5" % (5 if victory else wave_index), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(555, 340), "CORE", HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(555, 380), "%d / 20" % base_hp, HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(755, 340), "GRID CREDIT", HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
-	draw_string(ThemeDB.fallback_font, Vector2(755, 380), str(credits), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(300, 221), (loc("グリッド充電完了", "GRID FULLY CHARGED") if victory else loc("リアクター停止", "REACTOR BLACKOUT")), HORIZONTAL_ALIGNMENT_CENTER, 680, 34, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(300, 262), (loc("最後のサージを接地した", "THE LAST SURGE HAS BEEN GROUNDED") if victory else loc("回路は持ちこたえられなかった", "THE CIRCUIT COULD NOT HOLD")), HORIZONTAL_ALIGNMENT_CENTER, 680, 16, accent)
+	draw_string(Palette.UI_FONT, Vector2(355, 340), loc("ウェーブ", "WAVES"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(355, 380), "%d / 5" % (5 if victory else wave_index), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(555, 340), loc("コア", "CORE"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(555, 380), "%d / 20" % base_hp, HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(755, 340), loc("グリッド資金", "GRID CREDIT"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(755, 380), str(credits), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(accent, 12), Rect2(426, 468, 428, 54))
-	draw_string(ThemeDB.fallback_font, Vector2(426, 502), "TAP OR PRESS ENTER TO REBUILD", HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
+	draw_string(Palette.UI_FONT, Vector2(426, 502), loc("タップまたはENTERで再建", "TAP OR PRESS ENTER TO REBUILD"), HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
 	draw_menu_button()
 
 func draw_menu_button() -> void:
 	draw_style_box(Palette.rounded_box(Color(0.03, 0.04, 0.09, 0.95), 10, Palette.with_alpha(Palette.MUTED, 0.55), 1), menu_rect)
-	draw_string(ThemeDB.fallback_font, Vector2(menu_rect.position.x, menu_rect.position.y + 25), "← GAME LAB", HORIZONTAL_ALIGNMENT_CENTER, menu_rect.size.x, 14, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(menu_rect.position.x, menu_rect.position.y + 25), loc("← ゲーム選択", "← GAME LAB"), HORIZONTAL_ALIGNMENT_CENTER, menu_rect.size.x, 14, Palette.PAPER)
