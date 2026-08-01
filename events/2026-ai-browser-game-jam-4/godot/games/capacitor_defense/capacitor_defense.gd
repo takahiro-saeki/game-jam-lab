@@ -4,6 +4,7 @@ signal return_to_menu
 
 const Palette = preload("res://shared/palette.gd")
 const Synth = preload("res://shared/synth.gd")
+const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const KEY_ART = preload("res://assets/keyart/capacitor-defense.jpg")
 
 enum GameState { INTRO, BUILD, WAVE, WON, LOST }
@@ -14,6 +15,7 @@ const FIELD_RIGHT := 1020.0
 
 var synth: JamSynth
 var is_japanese := false
+var controller_bindings: Dictionary = ControllerConfig.default_bindings()
 var state := GameState.INTRO
 var build_mode := BuildMode.CABLE
 var credits := 112
@@ -457,32 +459,34 @@ func handle_controller_motion(event: InputEventJoypadMotion) -> void:
 			move_node_focus(Vector2(0, controller_axis_latch.y))
 
 func handle_controller_button(button: int) -> void:
-	if button in [JOY_BUTTON_B, JOY_BUTTON_BACK]:
+	if button == controller_button("back"):
 		return_to_menu.emit()
 		return
 	if state == GameState.INTRO:
-		if button in [JOY_BUTTON_A, JOY_BUTTON_START]: reset_run()
+		if button in [controller_button("primary"), controller_button("menu")]: reset_run()
 		return
 	if state in [GameState.WON, GameState.LOST]:
-		if button in [JOY_BUTTON_A, JOY_BUTTON_START]: reset_run()
+		if button in [controller_button("primary"), controller_button("menu")]: reset_run()
 		return
-	match button:
-		JOY_BUTTON_DPAD_LEFT:
-			move_node_focus(Vector2.LEFT)
-		JOY_BUTTON_DPAD_RIGHT:
-			move_node_focus(Vector2.RIGHT)
-		JOY_BUTTON_DPAD_UP:
-			move_node_focus(Vector2.UP)
-		JOY_BUTTON_DPAD_DOWN:
-			move_node_focus(Vector2.DOWN)
-		JOY_BUTTON_LEFT_SHOULDER:
-			cycle_build_mode(-1)
-		JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_X:
-			cycle_build_mode(1)
-		JOY_BUTTON_A:
-			handle_node(hover_node)
-		JOY_BUTTON_START:
-			launch_wave()
+	if button == JOY_BUTTON_DPAD_LEFT:
+		move_node_focus(Vector2.LEFT)
+	elif button == JOY_BUTTON_DPAD_RIGHT:
+		move_node_focus(Vector2.RIGHT)
+	elif button == JOY_BUTTON_DPAD_UP:
+		move_node_focus(Vector2.UP)
+	elif button == JOY_BUTTON_DPAD_DOWN:
+		move_node_focus(Vector2.DOWN)
+	elif button == controller_button("previous_tool"):
+		cycle_build_mode(-1)
+	elif button in [controller_button("next_tool"), controller_button("secondary")]:
+		cycle_build_mode(1)
+	elif button == controller_button("primary"):
+		handle_node(hover_node)
+	elif button == controller_button("menu"):
+		launch_wave()
+
+func controller_button(action: String) -> int:
+	return int(controller_bindings.get(action, ControllerConfig.DEFAULTS.get(action, JOY_BUTTON_A)))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
@@ -559,7 +563,10 @@ func draw_intro() -> void:
 	draw_string(Palette.UI_FONT, Vector2(88, 458), loc("1. シアン色の配線を空ソケットへ延ばす。", "1. Extend cyan cable into empty sockets."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(88, 492), loc("2. タワーを建て、電力パケットの流れを見る。", "2. Build towers. Watch power packets travel."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(88, 526), loc("3. 蓄電器は5個ためると、周囲のタワーへ一気に放電。", "3. Capacitors store five packets, then burst-charge nearby towers."), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(88, 558), loc("パッド：方向でソケット  •  LB/RBでツール  •  Aで設置", "PAD: MOVE SOCKET  •  LB/RB TOOL  •  A BUILD"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
+	var previous_pad := ControllerConfig.button_label(controller_button("previous_tool"))
+	var next_pad := ControllerConfig.button_label(controller_button("next_tool"))
+	var primary_pad := ControllerConfig.button_label(controller_button("primary"))
+	draw_string(Palette.UI_FONT, Vector2(88, 558), loc("パッド：方向でソケット  •  %s/%sでツール  •  %sで設置" % [previous_pad, next_pad, primary_pad], "PAD: MOVE SOCKET  •  %s/%s TOOL  •  %s BUILD" % [previous_pad, next_pad, primary_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(62, 650), loc("キー・ゲームパッドまたはタップで通電", "PRESS A KEY, GAMEPAD BUTTON, OR TAP TO ENERGIZE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.VIOLET)
 	draw_menu_button()
 
@@ -688,7 +695,10 @@ func draw_sidebar() -> void:
 	draw_menu_button()
 
 	draw_string(Palette.UI_FONT, Vector2(1038, 131), loc("グリッド建設", "BUILD GRID"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(1038, 158), loc("LB/RB：ツール  •  A：設置", "LB/RB: TOOL  •  A: BUILD"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
+	var previous_pad := ControllerConfig.button_label(controller_button("previous_tool"))
+	var next_pad := ControllerConfig.button_label(controller_button("next_tool"))
+	var primary_pad := ControllerConfig.button_label(controller_button("primary"))
+	draw_string(Palette.UI_FONT, Vector2(1038, 158), loc("%s/%s：ツール  •  %s：設置" % [previous_pad, next_pad, primary_pad], "%s/%s: TOOL  •  %s: BUILD" % [previous_pad, next_pad, primary_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
 	var labels := [[loc("ケーブル", "CABLE"), "C6"], [loc("蓄電器", "CAPACITOR"), "C22"], [loc("アーク塔", "ARC TOWER"), "C30"], [loc("パルス塔", "PULSE"), "C36"], [loc("強化", "UPGRADE"), "C26+"]]
 	for index in range(mode_rects.size()):
 		var selected := build_mode == index
@@ -714,7 +724,8 @@ func draw_sidebar() -> void:
 
 	var launch_color := Palette.CORAL if state == GameState.BUILD else Palette.PANEL_2
 	draw_style_box(Palette.rounded_box(launch_color, 14), launch_rect)
-	draw_string(Palette.UI_FONT, Vector2(launch_rect.position.x, launch_rect.position.y + 38), (loc("START：ウェーブ開始", "START: LAUNCH WAVE") if state == GameState.BUILD else loc("ウェーブ進行中", "WAVE IN PROGRESS")), HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 15, Palette.INK if state == GameState.BUILD else Palette.MUTED)
+	var launch_pad := ControllerConfig.button_label(controller_button("menu"))
+	draw_string(Palette.UI_FONT, Vector2(launch_rect.position.x, launch_rect.position.y + 38), (loc("%s：ウェーブ開始" % launch_pad, "%s: LAUNCH WAVE" % launch_pad) if state == GameState.BUILD else loc("ウェーブ進行中", "WAVE IN PROGRESS")), HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 15, Palette.INK if state == GameState.BUILD else Palette.MUTED)
 	if message_time > 0.0:
 		var rect := Rect2(260, 108, 500, 42)
 		draw_style_box(Palette.rounded_box(Color(0.025, 0.05, 0.1, 0.95), 11, Palette.CYAN, 1), rect)
@@ -738,7 +749,8 @@ func draw_result(victory: bool) -> void:
 	draw_string(Palette.UI_FONT, Vector2(755, 340), loc("グリッド資金", "GRID CREDIT"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(755, 380), str(credits), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(accent, 12), Rect2(426, 468, 428, 54))
-	draw_string(Palette.UI_FONT, Vector2(426, 502), loc("タップ・ENTER・Aで再建", "TAP, ENTER, OR A TO REBUILD"), HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
+	var primary_pad := ControllerConfig.button_label(controller_button("primary"))
+	draw_string(Palette.UI_FONT, Vector2(426, 502), loc("タップ・ENTER・%sで再建" % primary_pad, "TAP, ENTER, OR %s TO REBUILD" % primary_pad), HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
 	draw_menu_button()
 
 func draw_menu_button() -> void:

@@ -2,6 +2,7 @@ extends Node2D
 
 const Palette = preload("res://shared/palette.gd")
 const Synth = preload("res://shared/synth.gd")
+const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const ZeroPercentCity = preload("res://games/zero_percent_city/zero_percent_city.gd")
 const Chargeback = preload("res://games/chargeback/chargeback.gd")
 const CapacitorDefense = preload("res://games/capacitor_defense/capacitor_defense.gd")
@@ -19,11 +20,25 @@ var controller_axis_latch := Vector2i.ZERO
 var card_rects: Array[Rect2] = []
 var stars: Array[Vector3] = []
 var language_rect := Rect2(1074, 32, 162, 38)
+var settings_button_rect := Rect2(884, 32, 176, 38)
+var settings_close_rect := Rect2(816, 610, 168, 42)
+var settings_reset_rect := Rect2(296, 610, 190, 42)
+var settings_row_rects: Array[Rect2] = []
+var controller_config
+var controller_bindings: Dictionary = ControllerConfig.default_bindings()
+var settings_open := false
+var settings_selected := 0
+var waiting_for_action := ""
+var settings_message := ""
+var settings_message_time := 0.0
 
 func _ready() -> void:
 	is_japanese = OS.get_locale_language().to_lower().begins_with("ja")
 	synth = Synth.new()
 	add_child(synth)
+	controller_config = ControllerConfig.new()
+	controller_config.load_settings()
+	controller_bindings = controller_config.bindings.duplicate(true)
 	for index in range(80):
 		stars.append(Vector3(fmod(index * 173.0, 1280.0), fmod(index * 97.0, 720.0), 0.2 + fmod(index * 0.137, 0.8)))
 	card_rects = [
@@ -31,18 +46,25 @@ func _ready() -> void:
 		Rect2(452, 184, 376, 452),
 		Rect2(860, 184, 376, 452),
 	]
+	for index in range(ControllerConfig.ACTIONS.size()):
+		settings_row_rects.append(Rect2(296, 188 + index * 54, 688, 46))
 	queue_redraw()
 
 func _process(delta: float) -> void:
 	menu_time += delta
+	if settings_message_time > 0.0:
+		settings_message_time -= delta
 	if active_game == null:
 		queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if settings_open:
+		handle_settings_input(event)
+		return
 	if active_game != null:
 		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 			return_to_menu()
-		elif event is InputEventJoypadButton and event.pressed and event.button_index in [JOY_BUTTON_B, JOY_BUTTON_BACK]:
+		elif event is InputEventJoypadButton and event.pressed and event.button_index == controller_button("back"):
 			return_to_menu()
 		return
 	if event is InputEventMouseMotion:
@@ -51,6 +73,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if language_rect.has_point(event.position):
 			toggle_language()
+		elif settings_button_rect.has_point(event.position):
+			open_settings()
 		else:
 			var clicked := card_at(event.position)
 			if clicked >= 0:
@@ -58,6 +82,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventScreenTouch and event.pressed:
 		if language_rect.has_point(event.position):
 			toggle_language()
+		elif settings_button_rect.has_point(event.position):
+			open_settings()
 		else:
 			var touched := card_at(event.position)
 			if touched >= 0:
@@ -65,18 +91,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventJoypadMotion:
 		handle_controller_motion(event)
 	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				navigate_menu(-1)
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				navigate_menu(1)
-			JOY_BUTTON_A, JOY_BUTTON_START:
-				launch_game(maxi(0, hover_index))
-			JOY_BUTTON_Y:
-				toggle_language()
+		if event.button_index in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP]:
+			navigate_menu(-1)
+		elif event.button_index in [JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN]:
+			navigate_menu(1)
+		elif event.button_index == controller_button("primary"):
+			launch_game(maxi(0, hover_index))
+		elif event.button_index == controller_button("language"):
+			toggle_language()
+		elif event.button_index == controller_button("menu"):
+			open_settings()
 	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_L:
 			toggle_language()
+		elif event.keycode in [KEY_F1, KEY_C]:
+			open_settings()
 		elif event.keycode in [KEY_LEFT, KEY_UP]:
 			navigate_menu(-1)
 		elif event.keycode in [KEY_RIGHT, KEY_DOWN]:
@@ -111,6 +140,138 @@ func handle_controller_motion(event: InputEventJoypadMotion) -> void:
 			controller_axis_latch.y = 1 if event.axis_value > 0.0 else -1
 			navigate_menu(controller_axis_latch.y)
 
+func controller_button(action: String) -> int:
+	return int(controller_bindings.get(action, ControllerConfig.DEFAULTS.get(action, JOY_BUTTON_A)))
+
+func open_settings() -> void:
+	if active_game != null:
+		return
+	settings_open = true
+	settings_selected = clampi(settings_selected, 0, ControllerConfig.ACTIONS.size() - 1)
+	waiting_for_action = ""
+	settings_message = loc("変更する項目を選択してください", "SELECT AN ACTION TO REBIND")
+	settings_message_time = 2.5
+	synth.click()
+	queue_redraw()
+
+func close_settings() -> void:
+	settings_open = false
+	waiting_for_action = ""
+	controller_axis_latch = Vector2i.ZERO
+	synth.click()
+	queue_redraw()
+
+func handle_settings_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var hovered := settings_row_at(event.position)
+		if hovered >= 0:
+			settings_selected = hovered
+		queue_redraw()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		handle_settings_point(event.position)
+	elif event is InputEventScreenTouch and event.pressed:
+		handle_settings_point(event.position)
+	elif event is InputEventJoypadMotion:
+		handle_settings_motion(event)
+	elif event is InputEventJoypadButton and event.pressed:
+		if not waiting_for_action.is_empty():
+			capture_controller_button(event.button_index)
+		elif event.button_index == controller_button("back") or event.button_index == controller_button("menu"):
+			close_settings()
+		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
+			move_settings_selection(-1)
+		elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
+			move_settings_selection(1)
+		elif event.button_index == controller_button("primary"):
+			start_rebinding(settings_selected)
+	elif event is InputEventKey and event.pressed:
+		if event.keycode == KEY_ESCAPE:
+			if waiting_for_action.is_empty():
+				close_settings()
+			else:
+				waiting_for_action = ""
+				settings_message = loc("割り当て変更をキャンセルしました", "REBIND CANCELLED")
+				settings_message_time = 1.5
+		elif event.keycode in [KEY_UP, KEY_LEFT]:
+			move_settings_selection(-1)
+		elif event.keycode in [KEY_DOWN, KEY_RIGHT]:
+			move_settings_selection(1)
+		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
+			start_rebinding(settings_selected)
+		elif event.keycode == KEY_R:
+			reset_controller_bindings()
+
+func handle_settings_point(point: Vector2) -> void:
+	if settings_close_rect.has_point(point):
+		close_settings()
+		return
+	if settings_reset_rect.has_point(point):
+		reset_controller_bindings()
+		return
+	var selected := settings_row_at(point)
+	if selected >= 0:
+		settings_selected = selected
+		start_rebinding(selected)
+
+func settings_row_at(point: Vector2) -> int:
+	for index in range(settings_row_rects.size()):
+		if settings_row_rects[index].has_point(point):
+			return index
+	return -1
+
+func handle_settings_motion(event: InputEventJoypadMotion) -> void:
+	if not waiting_for_action.is_empty():
+		return
+	if event.axis == JOY_AXIS_LEFT_X:
+		if absf(event.axis_value) < 0.45:
+			controller_axis_latch.x = 0
+		elif controller_axis_latch.x == 0:
+			controller_axis_latch.x = 1 if event.axis_value > 0.0 else -1
+			move_settings_selection(controller_axis_latch.x)
+	elif event.axis == JOY_AXIS_LEFT_Y:
+		if absf(event.axis_value) < 0.45:
+			controller_axis_latch.y = 0
+		elif controller_axis_latch.y == 0:
+			controller_axis_latch.y = 1 if event.axis_value > 0.0 else -1
+			move_settings_selection(controller_axis_latch.y)
+
+func move_settings_selection(direction: int) -> void:
+	settings_selected = wrapi(settings_selected + direction, 0, ControllerConfig.ACTIONS.size())
+	synth.click()
+	queue_redraw()
+
+func start_rebinding(index: int) -> void:
+	if index < 0 or index >= ControllerConfig.ACTIONS.size():
+		return
+	waiting_for_action = str(ControllerConfig.ACTIONS[index].id)
+	settings_message = loc("割り当てるゲームパッドボタンを押してください  •  ESCで中止", "PRESS A GAMEPAD BUTTON  •  ESC CANCELS")
+	settings_message_time = 999.0
+	synth.confirm()
+	queue_redraw()
+
+func capture_controller_button(button: int, save_after: bool = true) -> void:
+	if not ControllerConfig.is_allowed(button):
+		settings_message = loc("方向キーは移動・選択用として固定されています", "D-PAD IS RESERVED FOR MOVEMENT AND NAVIGATION")
+		settings_message_time = 2.2
+		synth.error()
+		return
+	if controller_config.rebind(waiting_for_action, button, save_after):
+		controller_bindings = controller_config.bindings.duplicate(true)
+		settings_message = loc("割り当てを保存しました", "BINDING SAVED")
+		settings_message_time = 1.8
+		waiting_for_action = ""
+		synth.confirm()
+		queue_redraw()
+
+func reset_controller_bindings() -> void:
+	controller_config.reset_defaults()
+	controller_bindings = controller_config.bindings.duplicate(true)
+	waiting_for_action = ""
+	settings_message = loc("初期設定に戻しました", "DEFAULT BINDINGS RESTORED")
+	settings_message_time = 1.8
+	synth.confirm()
+	queue_redraw()
+
 func card_at(point: Vector2) -> int:
 	for index in range(card_rects.size()):
 		if card_rects[index].has_point(point):
@@ -129,6 +290,7 @@ func launch_game(index: int) -> void:
 		2:
 			active_game = CapacitorDefense.new()
 	active_game.set("is_japanese", is_japanese)
+	active_game.set("controller_bindings", controller_bindings.duplicate(true))
 	active_game.return_to_menu.connect(return_to_menu)
 	if active_game.has_signal("language_changed"):
 		active_game.connect("language_changed", sync_language)
@@ -169,13 +331,16 @@ func _draw() -> void:
 	draw_string(Palette.UI_FONT, Vector2(48, 58), "AI BROWSER GAME JAM 4", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(48, 114), loc("CHARGE! // 3つのゲーム実験室", "CHARGE! // THREE GAME LAB"), HORIZONTAL_ALIGNMENT_LEFT, -1, 42, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(48, 151), loc("3本を遊び比べて、応募作を選ぼう。", "Three polished vertical slices. Play them all, then choose the submission."), HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Palette.MUTED)
+	draw_settings_button()
 	draw_language_toggle()
 
 	draw_card(0, "ZERO PERCENT CITY", loc("ミニメトロイドヴァニア", "MINI METROIDVANIA"), ZERO_ART, Palette.CYAN, [loc("借り物の電力で探索", "Explore on borrowed power"), loc("ダッシュと二段ジャンプを解放", "Unlock dash + double jump"), loc("都市のコアを目指す", "Reach the city core")])
 	draw_card(1, "CHARGEBACK", loc("デッキ構築ローグライク", "DECK-BUILDING ROGUELIKE"), CHARGEBACK_ART, Palette.MINT, [loc("不正請求に異議を申し立てる", "Dispute hostile charges"), loc("借金をダメージに変える", "Turn debt into damage"), loc("悪質な請求元を倒す", "Defeat predatory billing")])
 	draw_card(2, "CAPACITOR DEFENSE", loc("回路タワーディフェンス", "CIRCUIT TOWER DEFENSE"), CAPACITOR_ART, Palette.VIOLET, [loc("電力パケットを配線", "Route visible power packets"), loc("蓄電して一気に放電", "Store energy for bursts"), loc("リアクターを守り抜く", "Protect the reactor")])
 
-	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1 / 2 / 3・矢印・ゲームパッドで選択  •  ESC / Bで戻る", "SELECT: 1 / 2 / 3, ARROWS, OR GAMEPAD  •  ESC / B RETURNS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1 / 2 / 3・矢印・ゲームパッドで選択  •  F1で操作設定", "SELECT: 1 / 2 / 3, ARROWS, OR GAMEPAD  •  F1 OPENS CONTROLS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	if settings_open:
+		draw_settings()
 
 func draw_card(index: int, title: String, genre: String, texture: Texture2D, accent: Color, bullets: Array[String]) -> void:
 	var rect := card_rects[index]
@@ -201,3 +366,32 @@ func draw_card(index: int, title: String, genre: String, texture: Texture2D, acc
 func draw_language_toggle() -> void:
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, Palette.with_alpha(Palette.CYAN, 0.5), 1), language_rect)
 	draw_string(Palette.UI_FONT, language_rect.position + Vector2(0, 25), "日本語  /  EN" if is_japanese else "JP  /  ENGLISH", HORIZONTAL_ALIGNMENT_CENTER, language_rect.size.x, 14, Palette.PAPER)
+
+func draw_settings_button() -> void:
+	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, Palette.with_alpha(Palette.VIOLET, 0.65), 1), settings_button_rect)
+	draw_string(Palette.UI_FONT, settings_button_rect.position + Vector2(0, 25), loc("ゲームパッド設定", "GAMEPAD SETUP"), HORIZONTAL_ALIGNMENT_CENTER, settings_button_rect.size.x, 14, Palette.PAPER)
+
+func draw_settings() -> void:
+	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 720)), Color(0.01, 0.02, 0.05, 0.9))
+	var panel := Rect2(260, 76, 760, 600)
+	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, Palette.VIOLET, 2), panel)
+	draw_string(Palette.UI_FONT, Vector2(296, 128), loc("ゲームパッド設定", "GAMEPAD SETUP"), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(296, 158), loc("方向キーと左スティックは移動・選択用として固定。変更は自動保存されます。", "D-PAD AND LEFT STICK STAY FIXED. CHANGES SAVE AUTOMATICALLY."), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
+	for index in range(ControllerConfig.ACTIONS.size()):
+		var action: Dictionary = ControllerConfig.ACTIONS[index]
+		var row := settings_row_rects[index]
+		var selected := index == settings_selected
+		var waiting := str(action.id) == waiting_for_action
+		var accent := Palette.AMBER if waiting else Palette.CYAN if selected else Palette.VIOLET
+		draw_style_box(Palette.rounded_box(Palette.PANEL_2 if selected or waiting else Palette.INK, 12, Palette.with_alpha(accent, 0.95 if selected or waiting else 0.32), 2 if selected or waiting else 1), row)
+		draw_string(Palette.UI_FONT, row.position + Vector2(18, 29), str(action.ja if is_japanese else action.en), HORIZONTAL_ALIGNMENT_LEFT, 420, 15, Palette.PAPER)
+		var button_rect := Rect2(row.position + Vector2(468, 7), Vector2(202, 32))
+		draw_style_box(Palette.rounded_box(accent if waiting else Palette.PANEL, 9, accent, 1), button_rect)
+		var button_text := loc("入力待ち…", "PRESS BUTTON…") if waiting else ControllerConfig.button_label(controller_button(str(action.id)))
+		draw_string(Palette.UI_FONT, button_rect.position + Vector2(0, 22), button_text, HORIZONTAL_ALIGNMENT_CENTER, button_rect.size.x, 13, Palette.INK if waiting else Palette.PAPER)
+	var status := settings_message if settings_message_time > 0.0 else loc("項目を選び、決定ボタンを押してください", "SELECT A ROW, THEN PRESS CONFIRM")
+	draw_string(Palette.UI_FONT, Vector2(296, 588), status, HORIZONTAL_ALIGNMENT_LEFT, 688, 14, Palette.AMBER if not waiting_for_action.is_empty() else Palette.MUTED)
+	draw_style_box(Palette.rounded_box(Palette.PANEL_2, 10, Palette.CORAL, 1), settings_reset_rect)
+	draw_string(Palette.UI_FONT, settings_reset_rect.position + Vector2(0, 27), loc("R：初期設定に戻す", "R: RESTORE DEFAULTS"), HORIZONTAL_ALIGNMENT_CENTER, settings_reset_rect.size.x, 14, Palette.PAPER)
+	draw_style_box(Palette.rounded_box(Palette.CYAN, 10), settings_close_rect)
+	draw_string(Palette.UI_FONT, settings_close_rect.position + Vector2(0, 27), loc("閉じる", "CLOSE"), HORIZONTAL_ALIGNMENT_CENTER, settings_close_rect.size.x, 14, Palette.INK)

@@ -5,6 +5,7 @@ signal language_changed(is_japanese: bool)
 
 const Palette = preload("res://shared/palette.gd")
 const Synth = preload("res://shared/synth.gd")
+const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const KEY_ART = preload("res://assets/keyart/chargeback.jpg")
 
 enum GameState { INTRO, PLAYER_TURN, ENEMY_TURN, REWARD, WON, LOST }
@@ -13,6 +14,7 @@ const VIEW := Vector2(1280, 720)
 
 var synth: JamSynth
 var is_japanese := false
+var controller_bindings: Dictionary = ControllerConfig.default_bindings()
 var state := GameState.INTRO
 var run_turns := 0
 var encounter := 0
@@ -421,10 +423,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			restart()
 
 func handle_controller_button(button: int) -> void:
-	if button in [JOY_BUTTON_B, JOY_BUTTON_BACK]:
+	if button == controller_button("back"):
 		return_to_menu.emit()
 		return
-	if button == JOY_BUTTON_Y:
+	if button == controller_button("language"):
 		toggle_language()
 		return
 	if button in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP]:
@@ -435,14 +437,17 @@ func handle_controller_button(button: int) -> void:
 		return
 	match state:
 		GameState.INTRO:
-			if button in [JOY_BUTTON_A, JOY_BUTTON_START]: start_run()
+			if button in [controller_button("primary"), controller_button("menu")]: start_run()
 		GameState.PLAYER_TURN:
-			if button == JOY_BUTTON_A: confirm_selection()
-			elif button == JOY_BUTTON_START: end_turn()
+			if button == controller_button("primary"): confirm_selection()
+			elif button == controller_button("menu"): end_turn()
 		GameState.REWARD:
-			if button == JOY_BUTTON_A: confirm_selection()
+			if button == controller_button("primary"): confirm_selection()
 		GameState.WON, GameState.LOST:
-			if button in [JOY_BUTTON_A, JOY_BUTTON_START]: restart()
+			if button in [controller_button("primary"), controller_button("menu")]: restart()
+
+func controller_button(action: String) -> int:
+	return int(controller_bindings.get(action, ControllerConfig.DEFAULTS.get(action, JOY_BUTTON_A)))
 
 func handle_controller_motion(event: InputEventJoypadMotion) -> void:
 	if event.axis == JOY_AXIS_LEFT_X:
@@ -520,7 +525,9 @@ func draw_intro() -> void:
 	draw_string(Palette.UI_FONT, Vector2(88, 422), loc("現実に異議を申し立てる方法", "HOW TO DISPUTE REALITY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MINT)
 	draw_string(Palette.UI_FONT, Vector2(88, 463), loc("次の請求額を確認し、行動力3を証拠に使う。", "Read the next charge. Spend 3 energy on evidence."), HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(88, 501), loc("請求を防ぎ、利用枠を戻し、借金を武器に変えよう。", "Block fees, recover credit, then weaponize your debt."), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(88, 539), loc("カード：クリック / 数字 / A  •  ターン終了：ENTER / START", "CARDS: CLICK / NUMBER / A  •  END TURN: ENTER / START"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	var primary_pad := ControllerConfig.button_label(controller_button("primary"))
+	var menu_pad := ControllerConfig.button_label(controller_button("menu"))
+	draw_string(Palette.UI_FONT, Vector2(88, 539), loc("カード：クリック / 数字 / %s  •  ターン終了：ENTER / %s" % [primary_pad, menu_pad], "CARDS: CLICK / NUMBER / %s  •  END TURN: ENTER / %s" % [primary_pad, menu_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(62, 650), loc("キー・ゲームパッドまたはタップで承認開始", "PRESS A KEY, GAMEPAD BUTTON, OR TAP TO AUTHORIZE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.MINT)
 	draw_menu_button()
 	draw_language_button()
@@ -611,7 +618,9 @@ func draw_card(item: Dictionary, rect: Rect2, index: int, hovered: bool) -> void
 	var draw_rect := rect
 	if hovered and state == GameState.PLAYER_TURN: draw_rect.position.y -= 14
 	elif hovered and state == GameState.REWARD: draw_rect.position.y -= 6
-	var affordable := int(item.cost) <= energy
+	# Reward cards are a free choice. Energy affordability only applies while
+	# playing cards from the hand during the player's turn.
+	var affordable := card_is_available(item)
 	var accent: Color = item.color if affordable else Palette.MUTED
 	if hovered:
 		draw_style_box(Palette.rounded_box(Palette.with_alpha(accent, 0.2), 18, Palette.PAPER, 2), draw_rect.grow(7))
@@ -622,6 +631,9 @@ func draw_card(item: Dictionary, rect: Rect2, index: int, hovered: bool) -> void
 	draw_rect(Rect2(draw_rect.position + Vector2(15, 54), Vector2(draw_rect.size.x - 30, 6)), accent)
 	draw_multiline_string(Palette.UI_FONT, draw_rect.position + Vector2(17, 91), item.description, HORIZONTAL_ALIGNMENT_LEFT, draw_rect.size.x - 34, 15, 4, Palette.INK)
 	draw_string(Palette.UI_FONT, draw_rect.position + Vector2(17, 185), (loc("証拠 %02d", "EVIDENCE %02d") % (index + 1)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.with_alpha(Palette.INK, 0.55))
+
+func card_is_available(item: Dictionary) -> bool:
+	return state != GameState.PLAYER_TURN or int(item.cost) <= energy
 
 func draw_reward() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.01, 0.035, 0.03, 0.88))
@@ -665,4 +677,6 @@ func draw_menu_button() -> void:
 
 func draw_language_button() -> void:
 	draw_style_box(Palette.rounded_box(Color(0.025, 0.07, 0.065, 0.96), 10, Palette.MINT, 1), language_rect)
-	draw_string(Palette.UI_FONT, Vector2(language_rect.position.x, language_rect.position.y + 25), "日本語 / EN  L・Y" if is_japanese else "JP / ENGLISH  L・Y", HORIZONTAL_ALIGNMENT_CENTER, language_rect.size.x, 13, Palette.PAPER)
+	var pad_label := ControllerConfig.button_label(controller_button("language"))
+	var label := "日本語 / EN  L・%s" % pad_label if is_japanese else "JP / ENGLISH  L・%s" % pad_label
+	draw_string(Palette.UI_FONT, Vector2(language_rect.position.x, language_rect.position.y + 25), label, HORIZONTAL_ALIGNMENT_CENTER, language_rect.size.x, 13, Palette.PAPER)

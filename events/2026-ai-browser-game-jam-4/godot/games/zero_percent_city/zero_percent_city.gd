@@ -4,6 +4,7 @@ signal return_to_menu
 
 const Palette = preload("res://shared/palette.gd")
 const Synth = preload("res://shared/synth.gd")
+const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const KEY_ART = preload("res://assets/keyart/zero-percent-city.jpg")
 
 enum RunState { INTRO, PLAYING, COMPLETE, FAILED }
@@ -18,6 +19,7 @@ const DASH_SPEED := 760.0
 
 var synth: JamSynth
 var is_japanese := false
+var controller_bindings: Dictionary = ControllerConfig.default_bindings()
 var run_state := RunState.INTRO
 var run_time := 0.0
 var player_pos := Vector2(130, 600)
@@ -90,7 +92,9 @@ func build_world() -> void:
 		{"rect": Rect2(2820, 365, 22, 32), "type": "cell", "taken": false},
 	]
 	walls = [
-		{"rect": Rect2(1040, 422, 48, 228), "broken": false},
+		# The first gate is intentionally passable with the normal jump, while dash
+		# remains the faster route and still teaches that barriers can be broken.
+		{"rect": Rect2(1040, 560, 48, 90), "broken": false},
 		{"rect": Rect2(2470, 500, 42, 150), "broken": false},
 	]
 	enemies = [
@@ -230,11 +234,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif run_state in [RunState.COMPLETE, RunState.FAILED]:
 			reset_run()
 	elif event is InputEventJoypadButton and event.pressed:
-		if event.button_index in [JOY_BUTTON_B, JOY_BUTTON_BACK]:
+		if event.button_index == controller_button("back"):
 			return_to_menu.emit()
-		elif run_state == RunState.INTRO and event.button_index in [JOY_BUTTON_A, JOY_BUTTON_START]:
+		elif run_state == RunState.INTRO and event.button_index in [controller_button("primary"), controller_button("menu")]:
 			reset_run()
-		elif run_state in [RunState.COMPLETE, RunState.FAILED] and event.button_index in [JOY_BUTTON_A, JOY_BUTTON_START]:
+		elif run_state in [RunState.COMPLETE, RunState.FAILED] and event.button_index in [controller_button("primary"), controller_button("menu")]:
 			reset_run()
 	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE:
@@ -243,6 +247,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			reset_run()
 		elif run_state in [RunState.COMPLETE, RunState.FAILED] and event.keycode in [KEY_ENTER, KEY_SPACE, KEY_R]:
 			reset_run()
+
+func controller_button(action: String) -> int:
+	return int(controller_bindings.get(action, ControllerConfig.DEFAULTS.get(action, JOY_BUTTON_A)))
 
 func player_rect() -> Rect2:
 	return Rect2(player_pos - PLAYER_SIZE * 0.5, PLAYER_SIZE)
@@ -335,7 +342,8 @@ func handle_interactions(delta: float) -> void:
 			match pickup.type:
 				"dash":
 					has_dash = true
-					show_message(loc("インパルスドライブ獲得 — X / SHIFTでダッシュ", "IMPULSE DRIVE ACQUIRED — DASH WITH X / SHIFT"), 3.5)
+					var dash_pad := ControllerConfig.button_label(controller_button("secondary"))
+					show_message(loc("インパルスドライブ獲得 — X / SHIFT / %sでダッシュ" % dash_pad, "IMPULSE DRIVE ACQUIRED — DASH WITH X / SHIFT / %s" % dash_pad), 3.5)
 				"double":
 					has_double_jump = true
 					show_message(loc("空中セル獲得 — 空中でもう一度ジャンプ", "AERIAL CELL ACQUIRED — JUMP AGAIN IN MID-AIR"), 3.5)
@@ -425,7 +433,9 @@ func draw_intro() -> void:
 	draw_string(Palette.UI_FONT, Vector2(88, 430), loc("ミッション", "MISSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.CYAN)
 	draw_string(Palette.UI_FONT, Vector2(88, 468), loc("バッテリーが尽きる前に都市のコアへ到達せよ。", "Reach the core before your battery hits zero."), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(88, 506), loc("移動  A / D / ←→  •  ジャンプ  SPACE / Z / ↑", "MOVE  A / D / ←→  •  JUMP  SPACE / Z / ↑"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(88, 537), loc("ダッシュ  X / SHIFT / ↓  •  パッド  Lスティック / A / X", "DASH  X / SHIFT / ↓  •  PAD  L-STICK / A / X"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	var jump_pad := ControllerConfig.button_label(controller_button("primary"))
+	var dash_pad := ControllerConfig.button_label(controller_button("secondary"))
+	draw_string(Palette.UI_FONT, Vector2(88, 537), loc("ダッシュ  X / SHIFT / ↓  •  パッド  Lスティック / %s / %s" % [jump_pad, dash_pad], "DASH  X / SHIFT / ↓  •  PAD  L-STICK / %s / %s" % [jump_pad, dash_pad]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(64, 652), loc("キー・ゲームパッドまたはタップで起動", "PRESS A KEY, GAMEPAD BUTTON, OR TAP TO BOOT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.CYAN)
 	draw_menu_button()
 
