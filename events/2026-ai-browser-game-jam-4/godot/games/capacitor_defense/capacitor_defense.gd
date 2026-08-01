@@ -29,7 +29,8 @@ var screen_shake := 0.0
 var screen_flash := 0.0
 var message := ""
 var message_time := 0.0
-var hover_node := -1
+var hover_node := 1
+var controller_axis_latch := Vector2i.ZERO
 
 var path_points := PackedVector2Array([
 	Vector2(-30, 190), Vector2(240, 190), Vector2(240, 535), Vector2(540, 535),
@@ -98,6 +99,7 @@ func reset_run() -> void:
 	particles.clear()
 	build_grid()
 	build_mode = BuildMode.CABLE
+	hover_node = 1
 	state = GameState.BUILD
 	show_message(loc("ケーブルを配線し、タワーを建てて、ウェーブを開始", "ROUTE CABLES, PLACE TOWERS, THEN LAUNCH THE WAVE"), 4.0)
 	synth.play_chord([196.0, 293.66, 392.0], 0.24, -23.0)
@@ -407,6 +409,81 @@ func loc(japanese: String, english: String) -> String:
 func wave_name(index: int) -> String:
 	return str(waves[index].name_ja) if is_japanese else str(waves[index].name)
 
+func cycle_build_mode(direction: int) -> void:
+	build_mode = wrapi(int(build_mode) + direction, 0, BuildMode.size()) as BuildMode
+	synth.click()
+	queue_redraw()
+
+func move_node_focus(direction: Vector2) -> void:
+	if nodes.is_empty():
+		return
+	if hover_node < 0 or hover_node >= nodes.size():
+		hover_node = 1 if nodes.size() > 1 else 0
+		return
+	var origin: Vector2 = nodes[hover_node].pos
+	var best_index := -1
+	var best_score := INF
+	for index in range(nodes.size()):
+		if index == hover_node:
+			continue
+		var offset: Vector2 = nodes[index].pos - origin
+		var distance := offset.length()
+		if distance < 1.0:
+			continue
+		var alignment := direction.normalized().dot(offset / distance)
+		if alignment < 0.35:
+			continue
+		var score := distance / alignment
+		if score < best_score:
+			best_score = score
+			best_index = index
+	if best_index >= 0:
+		hover_node = best_index
+		synth.click()
+		queue_redraw()
+
+func handle_controller_motion(event: InputEventJoypadMotion) -> void:
+	if event.axis == JOY_AXIS_LEFT_X:
+		if absf(event.axis_value) < 0.45:
+			controller_axis_latch.x = 0
+		elif controller_axis_latch.x == 0:
+			controller_axis_latch.x = 1 if event.axis_value > 0.0 else -1
+			move_node_focus(Vector2(controller_axis_latch.x, 0))
+	elif event.axis == JOY_AXIS_LEFT_Y:
+		if absf(event.axis_value) < 0.45:
+			controller_axis_latch.y = 0
+		elif controller_axis_latch.y == 0:
+			controller_axis_latch.y = 1 if event.axis_value > 0.0 else -1
+			move_node_focus(Vector2(0, controller_axis_latch.y))
+
+func handle_controller_button(button: int) -> void:
+	if button in [JOY_BUTTON_B, JOY_BUTTON_BACK]:
+		return_to_menu.emit()
+		return
+	if state == GameState.INTRO:
+		if button in [JOY_BUTTON_A, JOY_BUTTON_START]: reset_run()
+		return
+	if state in [GameState.WON, GameState.LOST]:
+		if button in [JOY_BUTTON_A, JOY_BUTTON_START]: reset_run()
+		return
+	match button:
+		JOY_BUTTON_DPAD_LEFT:
+			move_node_focus(Vector2.LEFT)
+		JOY_BUTTON_DPAD_RIGHT:
+			move_node_focus(Vector2.RIGHT)
+		JOY_BUTTON_DPAD_UP:
+			move_node_focus(Vector2.UP)
+		JOY_BUTTON_DPAD_DOWN:
+			move_node_focus(Vector2.DOWN)
+		JOY_BUTTON_LEFT_SHOULDER:
+			cycle_build_mode(-1)
+		JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_X:
+			cycle_build_mode(1)
+		JOY_BUTTON_A:
+			handle_node(hover_node)
+		JOY_BUTTON_START:
+			launch_wave()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		hover_node = node_at(event.position)
@@ -414,13 +491,27 @@ func _unhandled_input(event: InputEvent) -> void:
 		handle_click(event.position)
 	elif event is InputEventScreenTouch and event.pressed:
 		handle_click(event.position)
+	elif event is InputEventJoypadMotion:
+		handle_controller_motion(event)
+	elif event is InputEventJoypadButton and event.pressed:
+		handle_controller_button(event.button_index)
 	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE:
 			return_to_menu.emit()
 		elif state == GameState.INTRO:
 			reset_run()
-		elif state == GameState.BUILD and event.keycode in [KEY_ENTER, KEY_SPACE]:
-			launch_wave()
+		elif state in [GameState.BUILD, GameState.WAVE]:
+			if event.keycode == KEY_LEFT: move_node_focus(Vector2.LEFT)
+			elif event.keycode == KEY_RIGHT: move_node_focus(Vector2.RIGHT)
+			elif event.keycode == KEY_UP: move_node_focus(Vector2.UP)
+			elif event.keycode == KEY_DOWN: move_node_focus(Vector2.DOWN)
+			elif event.keycode == KEY_Q: cycle_build_mode(-1)
+			elif event.keycode == KEY_E: cycle_build_mode(1)
+			elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
+				build_mode = int(event.keycode - KEY_1) as BuildMode
+				synth.click()
+			elif event.keycode == KEY_SPACE: handle_node(hover_node)
+			elif state == GameState.BUILD and event.keycode == KEY_ENTER: launch_wave()
 		elif state in [GameState.WON, GameState.LOST] and event.keycode in [KEY_ENTER, KEY_SPACE, KEY_R]:
 			reset_run()
 
@@ -468,7 +559,8 @@ func draw_intro() -> void:
 	draw_string(Palette.UI_FONT, Vector2(88, 458), loc("1. シアン色の配線を空ソケットへ延ばす。", "1. Extend cyan cable into empty sockets."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(88, 492), loc("2. タワーを建て、電力パケットの流れを見る。", "2. Build towers. Watch power packets travel."), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(88, 526), loc("3. 蓄電器は5個ためると、周囲のタワーへ一気に放電。", "3. Capacitors store five packets, then burst-charge nearby towers."), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(62, 650), loc("キー入力またはタップで通電", "PRESS ANY KEY OR TAP TO ENERGIZE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, Vector2(88, 558), loc("パッド：方向でソケット  •  LB/RBでツール  •  Aで設置", "PAD: MOVE SOCKET  •  LB/RB TOOL  •  A BUILD"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 650), loc("キー・ゲームパッドまたはタップで通電", "PRESS A KEY, GAMEPAD BUTTON, OR TAP TO ENERGIZE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.VIOLET)
 	draw_menu_button()
 
 func draw_field() -> void:
@@ -596,7 +688,7 @@ func draw_sidebar() -> void:
 	draw_menu_button()
 
 	draw_string(Palette.UI_FONT, Vector2(1038, 131), loc("グリッド建設", "BUILD GRID"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(1038, 158), loc("ツールを選び、ソケットをタップ。", "Tap a tool, then a socket."), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(1038, 158), loc("LB/RB：ツール  •  A：設置", "LB/RB: TOOL  •  A: BUILD"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
 	var labels := [[loc("ケーブル", "CABLE"), "C6"], [loc("蓄電器", "CAPACITOR"), "C22"], [loc("アーク塔", "ARC TOWER"), "C30"], [loc("パルス塔", "PULSE"), "C36"], [loc("強化", "UPGRADE"), "C26+"]]
 	for index in range(mode_rects.size()):
 		var selected := build_mode == index
@@ -622,7 +714,7 @@ func draw_sidebar() -> void:
 
 	var launch_color := Palette.CORAL if state == GameState.BUILD else Palette.PANEL_2
 	draw_style_box(Palette.rounded_box(launch_color, 14), launch_rect)
-	draw_string(Palette.UI_FONT, Vector2(launch_rect.position.x, launch_rect.position.y + 38), (loc("ウェーブ開始", "LAUNCH WAVE") if state == GameState.BUILD else loc("ウェーブ進行中", "WAVE IN PROGRESS")), HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 16, Palette.INK if state == GameState.BUILD else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(launch_rect.position.x, launch_rect.position.y + 38), (loc("START：ウェーブ開始", "START: LAUNCH WAVE") if state == GameState.BUILD else loc("ウェーブ進行中", "WAVE IN PROGRESS")), HORIZONTAL_ALIGNMENT_CENTER, launch_rect.size.x, 15, Palette.INK if state == GameState.BUILD else Palette.MUTED)
 	if message_time > 0.0:
 		var rect := Rect2(260, 108, 500, 42)
 		draw_style_box(Palette.rounded_box(Color(0.025, 0.05, 0.1, 0.95), 11, Palette.CYAN, 1), rect)
@@ -646,7 +738,7 @@ func draw_result(victory: bool) -> void:
 	draw_string(Palette.UI_FONT, Vector2(755, 340), loc("グリッド資金", "GRID CREDIT"), HORIZONTAL_ALIGNMENT_CENTER, 170, 14, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(755, 380), str(credits), HORIZONTAL_ALIGNMENT_CENTER, 170, 29, Palette.PAPER)
 	draw_style_box(Palette.rounded_box(accent, 12), Rect2(426, 468, 428, 54))
-	draw_string(Palette.UI_FONT, Vector2(426, 502), loc("タップまたはENTERで再建", "TAP OR PRESS ENTER TO REBUILD"), HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
+	draw_string(Palette.UI_FONT, Vector2(426, 502), loc("タップ・ENTER・Aで再建", "TAP, ENTER, OR A TO REBUILD"), HORIZONTAL_ALIGNMENT_CENTER, 428, 16, Palette.INK)
 	draw_menu_button()
 
 func draw_menu_button() -> void:

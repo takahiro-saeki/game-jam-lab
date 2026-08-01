@@ -4,7 +4,7 @@
 - **Theme:** CHARGE!
 - **Development:** August 1–15, 2026
 - **Engine:** Godot 4.6 / GDScript / Compatibility renderer
-- **Target:** Browser, keyboard/mouse and touch
+- **Target:** Browser, keyboard/mouse, gamepad, and touch
 - **AI workflow:** OpenAI Codex for design, implementation, testing, balancing, and documentation; OpenAI image generation for key art.
 
 ## Playable concepts
@@ -19,28 +19,30 @@ The three concepts share one web build and launcher so they can be compared unde
 
 ### Shared
 
-- Select a game with `1`, `2`, `3`, or by clicking/tapping its card.
-- Press `Esc` or use **Game Lab** to return to the launcher.
-- Japanese is selected automatically on Japanese devices. Use the language switch in the upper-right corner of the launcher to change between Japanese and English.
+- Select a game with `1`, `2`, `3`, the arrow keys, the gamepad D-pad/left stick, or by clicking/tapping its card. Confirm with `Enter`, `Space`, or gamepad `A`.
+- Press `Esc`, gamepad `B`, or use **Game Lab** to return to the launcher.
+- Japanese is selected automatically on Japanese devices. Use the language switch or press `L` / gamepad `Y` to change between Japanese and English.
 
 ### ZERO PERCENT CITY
 
-- Move: `A` / `D` or arrow keys
-- Jump: `Space` / `Z`
-- Dash after unlocking it: `X` / `Shift`
+- Move: `A` / `D`, `←` / `→`, or gamepad D-pad/left stick
+- Jump: `Space` / `Z` / `↑`, or gamepad `A` / D-pad up
+- Dash after unlocking it: `X` / `Shift` / `↓`, or gamepad `X` / right shoulder / D-pad down
 - Touch: left/right, jump, and dash buttons appear on touch devices
 
 ### CHARGEBACK
 
-- Click/tap a card to play it.
-- Click **End Turn** or press `Enter` / `E`.
+- Click/tap a card, or select one with the arrow keys / D-pad / left stick and play it with `Space` / gamepad `A`.
+- Click **End Turn**, press `Enter` / `E`, or use gamepad `Start`.
 - Keyboard card shortcuts: `1`–`9`.
+- Switch Japanese/English at any time with the in-game language button, `L`, or gamepad `Y`.
 
 ### CAPACITOR DEFENSE
 
-- Select a tool, then click/tap a circuit socket.
+- Select a tool, then click/tap a circuit socket. Keyboard: `1`–`5` or `Q` / `E`; gamepad: left/right shoulder or `X`.
+- Select sockets with the arrow keys or gamepad D-pad/left stick, then build with `Space` / gamepad `A`.
 - Extend cables only from a live cyan socket.
-- Place at least one tower, then select **Launch Wave**.
+- Place at least one tower, then select **Launch Wave**, press `Enter`, or use gamepad `Start`.
 
 ## Local development
 

@@ -229,6 +229,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			reset_run()
 		elif run_state in [RunState.COMPLETE, RunState.FAILED]:
 			reset_run()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index in [JOY_BUTTON_B, JOY_BUTTON_BACK]:
+			return_to_menu.emit()
+		elif run_state == RunState.INTRO and event.button_index in [JOY_BUTTON_A, JOY_BUTTON_START]:
+			reset_run()
+		elif run_state in [RunState.COMPLETE, RunState.FAILED] and event.button_index in [JOY_BUTTON_A, JOY_BUTTON_START]:
+			reset_run()
 	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE:
 			return_to_menu.emit()
@@ -417,9 +424,9 @@ func draw_intro() -> void:
 	draw_style_box(Palette.rounded_box(Color(0.04, 0.08, 0.14, 0.9), 18, Palette.with_alpha(Palette.CYAN, 0.45), 2), panel)
 	draw_string(Palette.UI_FONT, Vector2(88, 430), loc("ミッション", "MISSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.CYAN)
 	draw_string(Palette.UI_FONT, Vector2(88, 468), loc("バッテリーが尽きる前に都市のコアへ到達せよ。", "Reach the core before your battery hits zero."), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(88, 506), loc("移動  A / D  •  ジャンプ  SPACE / Z", "MOVE  A / D  •  JUMP  SPACE / Z"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(88, 537), loc("ダッシュ  X / SHIFT  •  タッチ操作対応", "DASH  X / SHIFT  •  TOUCH CONTROLS SUPPORTED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(64, 652), loc("キー入力またはタップで起動", "PRESS ANY KEY OR TAP TO BOOT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(88, 506), loc("移動  A / D / ←→  •  ジャンプ  SPACE / Z / ↑", "MOVE  A / D / ←→  •  JUMP  SPACE / Z / ↑"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(88, 537), loc("ダッシュ  X / SHIFT / ↓  •  パッド  Lスティック / A / X", "DASH  X / SHIFT / ↓  •  PAD  L-STICK / A / X"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(64, 652), loc("キー・ゲームパッドまたはタップで起動", "PRESS A KEY, GAMEPAD BUTTON, OR TAP TO BOOT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Palette.CYAN)
 	draw_menu_button()
 
 func draw_game_world() -> void:
