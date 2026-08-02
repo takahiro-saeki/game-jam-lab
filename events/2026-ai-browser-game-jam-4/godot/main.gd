@@ -6,6 +6,7 @@ const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const ZeroPercentCity = preload("res://games/zero_percent_city/zero_percent_city.gd")
 const Chargeback = preload("res://games/chargeback/chargeback.gd")
 const CapacitorDefense = preload("res://games/capacitor_defense/capacitor_defense.gd")
+const ChargeClicker = preload("res://games/charge_clicker/charge_clicker.gd")
 
 const ZERO_ART = preload("res://assets/keyart/zero-percent-city.jpg")
 const CHARGEBACK_ART = preload("res://assets/keyart/chargeback.jpg")
@@ -42,9 +43,10 @@ func _ready() -> void:
 	for index in range(80):
 		stars.append(Vector3(fmod(index * 173.0, 1280.0), fmod(index * 97.0, 720.0), 0.2 + fmod(index * 0.137, 0.8)))
 	card_rects = [
-		Rect2(44, 184, 376, 452),
-		Rect2(452, 184, 376, 452),
-		Rect2(860, 184, 376, 452),
+		Rect2(26, 184, 292, 452),
+		Rect2(338, 184, 292, 452),
+		Rect2(650, 184, 292, 452),
+		Rect2(962, 184, 292, 452),
 	]
 	for index in range(ControllerConfig.ACTIONS.size()):
 		settings_row_rects.append(Rect2(296, 168 + index * 50, 688, 44))
@@ -118,6 +120,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			launch_game(1)
 		elif event.keycode in [KEY_3, KEY_KP_3]:
 			launch_game(2)
+		elif event.keycode in [KEY_4, KEY_KP_4]:
+			launch_game(3)
 
 func navigate_menu(direction: int) -> void:
 	if card_rects.is_empty():
@@ -289,6 +293,10 @@ func launch_game(index: int) -> void:
 			active_game = Chargeback.new()
 		2:
 			active_game = CapacitorDefense.new()
+		3:
+			active_game = ChargeClicker.new()
+		_:
+			return
 	active_game.set("is_japanese", is_japanese)
 	active_game.set("controller_bindings", controller_bindings.duplicate(true))
 	active_game.return_to_menu.connect(return_to_menu)
@@ -329,16 +337,17 @@ func _draw() -> void:
 		draw_line(Vector2(x + fmod(menu_time * 10.0, 80.0), 0), Vector2(x - 260 + fmod(menu_time * 10.0, 80.0), 720), Palette.with_alpha(Palette.BLUE, 0.055), 1.0)
 
 	draw_string(Palette.UI_FONT, Vector2(48, 58), "AI BROWSER GAME JAM 4", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(48, 114), loc("CHARGE! // 3つのゲーム実験室", "CHARGE! // THREE GAME LAB"), HORIZONTAL_ALIGNMENT_LEFT, -1, 42, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(48, 151), loc("3本を遊び比べて、応募作を選ぼう。", "Three polished vertical slices. Play them all, then choose the submission."), HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(48, 114), loc("CHARGE! // 4つのゲーム実験室", "CHARGE! // FOUR GAME LAB"), HORIZONTAL_ALIGNMENT_LEFT, -1, 42, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(48, 151), loc("3本の縦切り版と、新しいアクティブクリッカー。", "Three vertical slices plus a new active-clicker contender."), HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Palette.MUTED)
 	draw_settings_button()
 	draw_language_toggle()
 
-	draw_card(0, "ZERO PERCENT CITY", loc("ミニメトロイドヴァニア", "MINI METROIDVANIA"), ZERO_ART, Palette.CYAN, [loc("3段攻撃で電力を奪還", "Recycle power with 3-hit combos"), loc("ダッシュと二段ジャンプを解放", "Unlock dash + double jump"), loc("コア防衛機を撃破", "Break the Core Warden")])
-	draw_card(1, "CHARGEBACK", loc("デッキ構築ローグライク", "DECK-BUILDING ROGUELIKE"), CHARGEBACK_ART, Palette.MINT, [loc("3つの信用方針から選択", "Choose one of 3 credit policies"), loc("カード系統を連携させる", "Chain card archetype synergies"), loc("証拠を強化して持ち込む", "Draft upgraded evidence")])
-	draw_card(2, "CAPACITOR DEFENSE", loc("回路タワーディフェンス", "CIRCUIT TOWER DEFENSE"), CAPACITOR_ART, Palette.VIOLET, [loc("電力パケットを配線", "Route visible power packets"), loc("隣接設備でネットワーク共振", "Build resonant tower networks"), loc("3倍速とオーバードライブ", "3× speed and Overdrive")])
+	draw_card(0, "ZERO PERCENT CITY", loc("ミニメトロイドヴァニア", "MINI METROIDVANIA"), ZERO_ART, Palette.CYAN, [loc("3段攻撃で電力を奪還", "Recycle power with combos"), loc("移動能力を解放", "Unlock traversal modules"), loc("コア防衛機を撃破", "Break the Core Warden")])
+	draw_card(1, "CHARGEBACK", loc("デッキ構築ローグライク", "DECK-BUILDING ROGUELIKE"), CHARGEBACK_ART, Palette.MINT, [loc("3つの信用方針", "Choose a credit policy"), loc("カード系統を連携", "Chain card synergies"), loc("証拠カードを強化", "Draft upgraded evidence")])
+	draw_card(2, "CAPACITOR DEFENSE", loc("回路タワーディフェンス", "CIRCUIT TOWER DEFENSE"), CAPACITOR_ART, Palette.VIOLET, [loc("電力パケットを配線", "Route power packets"), loc("設備でネットワーク共振", "Build resonant networks"), loc("3倍速と過駆動", "Use 3× speed + Overdrive")])
+	draw_card(3, "PROJECT CHARGE", loc("アクティブクリッカー", "ACTIVE CLICKER"), null, Palette.AMBER, [loc("6セルを充電・放電", "Charge and discharge 6 cells"), loc("過充電の危険と高倍率", "Risk heat for higher output"), loc("30秒コアループ検証中", "30-second core prototype")])
 
-	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1 / 2 / 3・矢印・ゲームパッドで選択  •  F1で操作設定", "SELECT: 1 / 2 / 3, ARROWS, OR GAMEPAD  •  F1 OPENS CONTROLS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1〜4・矢印・ゲームパッドで選択  •  F1で操作設定", "SELECT: 1–4, ARROWS, OR GAMEPAD  •  F1 OPENS CONTROLS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
 	if settings_open:
 		draw_settings()
 
@@ -351,17 +360,30 @@ func draw_card(index: int, title: String, genre: String, texture: Texture2D, acc
 	draw_style_box(Palette.rounded_box(Palette.with_alpha(accent, 0.16 if hovered else 0.07), 24), glow_rect)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 20, Palette.with_alpha(accent, 0.85 if hovered else 0.35), 2), rect)
 	var image_rect := Rect2(rect.position + Vector2(14, 14), Vector2(rect.size.x - 28, 198))
-	draw_texture_rect(texture, image_rect, false, Color(0.92, 0.96, 1.0, 1.0))
+	if texture != null:
+		draw_texture_rect(texture, image_rect, false, Color(0.92, 0.96, 1.0, 1.0))
+	else:
+		draw_charge_preview(image_rect, accent)
 	draw_rect(image_rect, Color(0.03, 0.06, 0.12, 0.22))
 	draw_string(Palette.UI_FONT, rect.position + Vector2(20, 246), genre, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, accent)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(20, 282), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Palette.PAPER)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(20, 282), title, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 40, 20, Palette.PAPER)
 	for bullet_index in range(bullets.size()):
 		var y := rect.position.y + 322 + bullet_index * 31
 		draw_circle(Vector2(rect.position.x + 25, y - 5), 3.5, accent)
-		draw_string(Palette.UI_FONT, Vector2(rect.position.x + 39, y), bullets[bullet_index], HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(rect.position.x + 39, y), bullets[bullet_index], HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 58, 13, Palette.MUTED)
 	var button_rect := Rect2(rect.position + Vector2(20, 402), Vector2(rect.size.x - 40, 34))
 	draw_style_box(Palette.rounded_box(accent if hovered else Palette.PANEL_2, 10), button_rect)
 	draw_string(Palette.UI_FONT, button_rect.position + Vector2(0, 23), loc("プレイする", "PLAY PROTOTYPE"), HORIZONTAL_ALIGNMENT_CENTER, button_rect.size.x, 15, Palette.INK if hovered else Palette.PAPER)
+
+func draw_charge_preview(rect: Rect2, accent: Color) -> void:
+	draw_rect(rect, Color("07101e"))
+	var center := rect.get_center() - Vector2(0, 4)
+	for ring in range(4):
+		draw_arc(center, 40.0 + ring * 11.0, -PI * 0.7 + menu_time * (0.3 + ring * 0.08), PI * 1.2 + menu_time * (0.3 + ring * 0.08), 36, Palette.with_alpha(accent, 0.7 - ring * 0.12), 3.0)
+	draw_circle(center, 30.0 + sin(menu_time * 3.0) * 2.0, Palette.with_alpha(accent, 0.3))
+	for index in range(6):
+		var cell_rect := Rect2(rect.position + Vector2(18 + index * 40, rect.size.y - 38), Vector2(28, 22))
+		draw_style_box(Palette.rounded_box(Palette.with_alpha(accent, 0.18 + index * 0.06), 5, accent, 1), cell_rect)
 
 func draw_language_toggle() -> void:
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, Palette.with_alpha(Palette.CYAN, 0.5), 1), language_rect)

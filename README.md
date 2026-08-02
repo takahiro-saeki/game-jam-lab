@@ -7,7 +7,7 @@ TS Game Studio's permanent laboratory for game-jam prototypes, submissions, reus
 - **AI Browser Game Jam 4** — Theme: **CHARGE!** — August 1–15, 2026
 - **Play the current build:** [takahiro-saeki.github.io/game-jam-lab](https://takahiro-saeki.github.io/game-jam-lab/)
 
-The active event contains three polished gameplay prototypes that can be compared before selecting the final submission.
+The active event contains three polished vertical slices and a fourth active-clicker prototype that is being developed through explicit 30-second, 5-minute, and 20-minute quality gates.
 
 ## Lab structure
 
@@ -20,5 +20,6 @@ Each event lives under `events/<year>-<jam>/` with its source, design notes, tes
 | ZERO PERCENT CITY | Mini metroidvania | Exploration and abilities consume the same dwindling battery. |
 | CHARGEBACK | Deck-building roguelike | Your credit limit is both health and fuel for stronger retaliation. |
 | CAPACITOR DEFENSE | Circuit tower defense | Towers only work when routed power packets physically reach them. |
+| PROJECT CHARGE | Active clicker | Charge six cells, choose when to discharge, and risk heat for a larger overcharge multiplier. |
 
 Built in Godot 4.6 with GDScript. Japanese and English, keyboard, mouse, gamepad, and touch are supported.

@@ -3,6 +3,7 @@ extends SceneTree
 const ZeroGame = preload("res://games/zero_percent_city/zero_percent_city.gd")
 const ChargebackGame = preload("res://games/chargeback/chargeback.gd")
 const CapacitorGame = preload("res://games/capacitor_defense/capacitor_defense.gd")
+const ChargeClickerGame = preload("res://games/charge_clicker/charge_clicker.gd")
 const Launcher = preload("res://main.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 
@@ -25,6 +26,7 @@ func run_tests() -> void:
 	test_zero_percent_city()
 	test_chargeback()
 	test_capacitor_defense()
+	test_charge_clicker()
 	await process_frame
 	await process_frame
 	if failures.is_empty():
@@ -106,6 +108,10 @@ func test_launcher() -> void:
 	check(launcher.active_game != null, "gamepad A launches the selected game")
 	launcher.active_game.toggle_language()
 	check(launcher.is_japanese, "in-game language choice persists in the launcher")
+	launcher.return_to_menu()
+	check(launcher.card_rects.size() == 4, "launcher exposes all four playable concepts")
+	launcher.launch_game(3)
+	check(launcher.active_game != null and launcher.active_game.get("run") != null, "fourth launcher card opens PROJECT CHARGE")
 	launcher.return_to_menu()
 	launcher.free()
 
@@ -333,3 +339,64 @@ func improve_test_grid(game: Node) -> void:
 		game.handle_node(4)
 		game.build_mode = game.BuildMode.ARC
 		game.handle_node(4)
+
+func test_charge_clicker() -> void:
+	print("\nPROJECT CHARGE")
+	var game := ChargeClickerGame.new()
+	root.add_child(game)
+	game.is_japanese = true
+	game.run.rng.seed = 404
+	check(game.run.cells.size() == 6, "prototype starts with six independent charge cells")
+	check(game.loc("充電", "CHARGE") == "充電", "prototype supports Japanese copy")
+
+	for input in range(4):
+		game.perform_charge(false, 0)
+	var partial: Dictionary = game.perform_discharge(false, 0)
+	check(bool(partial.valid) and not bool(partial.super), "stored energy can be banked with a safe partial discharge")
+	check(int(partial.credits) > 0, "partial discharge awards spendable energy shards")
+
+	game.run.reset()
+	game.run.add_charge_energy(game.run.total_capacity(), 0.0, false)
+	var safe_full: Dictionary = game.perform_discharge(false, 0)
+	game.run.reset()
+	game.run.add_charge_energy(game.run.total_capacity(), 0.0, false)
+	for input in range(6):
+		game.perform_charge(false, 0)
+	var risky_full: Dictionary = game.perform_discharge(false, 0)
+	check(bool(safe_full.super) and bool(risky_full.super), "six full cells trigger SUPER DISCHARGE")
+	check(float(risky_full.output) > float(safe_full.output) * 1.25, "manual overcharge meaningfully increases full-discharge output")
+
+	game.run.reset()
+	game.run.credits = 100
+	game.run.elapsed = 18.0
+	var manual_before: float = game.run.manual_power
+	check(game.try_purchase(0, false), "an affordable upgrade can be purchased")
+	check(game.run.manual_power > manual_before, "HAND COIL immediately changes the charge model")
+	check(game.run.first_purchase_time <= 30.0, "first purchase can land inside the 30-second target")
+
+	game.run.reset()
+	var auto_before: float = game.run.total_charge()
+	game.toggle_auto(false)
+	for tick in range(120):
+		game.run.tick(1.0 / 60.0, false)
+	check(game.run.total_charge() > auto_before, "AUTO mode adds charge without manual input")
+
+	game.run.reset()
+	game.run.add_charge_energy(game.run.total_capacity(), 0.0, false)
+	game.run.heat = 99.0
+	var meltdown: Dictionary = game.perform_charge(false, 0)
+	check(bool(meltdown.meltdown) and game.run.meltdowns == 1, "pushing past maximum heat causes a meltdown")
+	check(game.run.total_charge() < game.run.total_capacity() * 0.25, "meltdown removes most stored charge without ending the run")
+
+	game.run.reset()
+	for step in range(200):
+		game.perform_charge(false, 0)
+		if game.run.is_full() and game.run.overcharge >= 35.0:
+			game.perform_discharge(false, 0)
+		if game.run.purchases == 0 and game.run.can_purchase("manual"):
+			game.try_purchase(0, false)
+		game.run.tick(0.15, false)
+	check(game.run.first_purchase_time >= 0.0 and game.run.first_purchase_time <= 30.0, "active play earns the first upgrade within 30 seconds")
+	check(game.run.partial_discharges + game.run.super_discharges >= 3, "the 30-second loop supports repeated charge-discharge decisions")
+	check(game.run.lifetime_output > 1500.0, "the prototype produces visible escalating output in a short session")
+	game.free()
