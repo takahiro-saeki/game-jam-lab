@@ -1,8 +1,8 @@
 # PROJECT CHARGE — PixelLab Style Brief
 
-> Status: 8 candidates generated; provisional selections integrated; human approval pending
-> Scope: Phase 2 style validation only  
-> Rule: approve one reactor and one environment in Godot before batch generation
+> Status: 17 candidates generated; five provisional selections integrated; human approval pending
+> Scope: Phase 2 style validation and first production-detail batch
+> Rule: compare every candidate in the actual Godot HUD before final approval
 
 ## 1. Art direction
 
@@ -97,13 +97,13 @@ Variations:
 6. Render the environment at 20%, 30%, and 40% opacity and compare UI contrast.
 7. Approve or reject in the 1280×720 Godot capture before generating animations.
 
-## 7. Generation limit for Phase 2
+## 7. Generation budget for Phase 2
 
 - Reactor: maximum 3 initial generations plus 2 focused revisions.
 - Environment: maximum 2 initial generations plus 1 focused revision.
-- No boss, upgrade icon, animation, or ending generation until the Phase 2 gameplay gate passes.
+- After the gameplay gate passes, generate only three candidates per new production category before requesting human review.
 
-This limit prevents art volume from hiding unresolved gameplay or causing unnecessary style drift.
+The gameplay gate passed before the cell, mini-boss, and currency batches began. The three-candidate limit prevents art volume from hiding unresolved gameplay or causing unnecessary style drift.
 
 ## 8. Phase 2 review result — August 2, 2026
 
@@ -127,4 +127,28 @@ The complete prompts, API settings, generation usage, Codex scores, and human-re
 | 2 | Cathedral Scale A | 83 | Strong alternate; busier radial structure |
 | 3 | Six-Conduit Machine Room B | 77 | Focused revision produced eight conduits and too much brown |
 
-`Hex Core A` and `Dense Machine Room A` are provisionally rendered in Godot. They remain source candidates—not final approved assets—until the human review is saved and the 1280×720 gameplay preview is accepted.
+### Charge cell module
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Hex Capsule Cell | 94 | Provisional selection; quiet meter window and shared hex language |
+| 2 | Industrial Rail Cell | 88 | Strong machinery read; upper dial competes with status UI |
+| 3 | Vacuum Tube Cell | 84 | Premium prop, but its bright inner tube looks pre-charged |
+
+### GRID WRAITH
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Manta Siphon | 95 | Provisional selection; distinct predatory silhouette and HUD fit |
+| 2 | Cable Leech | 91 | Clearest draining ability; circular form competes with the reactor |
+| 3 | Broken Hex Wraith | 82 | Clear six-way structure but weak threat read at small size |
+
+### Energy shard
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Faceted Core Shard | 95 | Provisional selection; retains the clearest shard silhouette at 24px |
+| 2 | Hex Battery Fragment | 89 | Rich detail but resembles a coin when reduced |
+| 3 | Coil Spark Fragment | 85 | Dynamic alternate better suited to a booster or component |
+
+`Hex Core A`, `Dense Machine Room A`, `Hex Capsule Cell`, `Manta Siphon`, and `Faceted Core Shard` are provisionally rendered in Godot. The review tool can switch every candidate in all five categories inside a fixed boss-state preview. They remain source candidates—not final approved assets—until the human review is saved and the 1280×720 gameplay preview is accepted.

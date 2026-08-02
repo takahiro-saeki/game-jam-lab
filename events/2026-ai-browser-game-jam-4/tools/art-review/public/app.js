@@ -90,17 +90,23 @@ function renderIntro(items) {
 function openGameCombinationPreview() {
   const reactorBatch = state.manifest.batches.find((batch) => batch.id === "phase2-reactor");
   const environmentBatch = state.manifest.batches.find((batch) => batch.id === "phase2-environment");
+  const cellBatch = state.manifest.batches.find((batch) => batch.id === "phase2-cell-module");
+  const wraithBatch = state.manifest.batches.find((batch) => batch.id === "phase2-grid-wraith");
+  const shardBatch = state.manifest.batches.find((batch) => batch.id === "phase2-energy-shard");
   const selection = state.manifest.project.provisionalSelection || {};
   const option = (candidate) => `<option value="${candidate.id}">${escapeHtml(candidate.titleJa)} — Codex ${candidate.codexReview.score ?? "—"} / あなた ${candidate.humanReview.rating ?? "—"}</option>`;
   elements.dialogContent.innerHTML = `
     <div class="game-preview-lab">
       <header>
         <div><span class="eyebrow">LIVE GODOT WEB PREVIEW</span><h2>組み合わせ比較</h2></div>
-        <p>原子炉5案×背景3案を、実際のGodot描画・UI・発光リングと重ねて確認できます。</p>
+        <p>5カテゴリの候補を、ボス戦中の実際のGodot描画・UI・発光リングと重ねて確認できます。</p>
       </header>
       <div class="game-preview-controls">
         <label>原子炉<select id="game-reactor-select">${reactorBatch.candidates.map(option).join("")}</select></label>
         <label>背景<select id="game-environment-select">${environmentBatch.candidates.map(option).join("")}</select></label>
+        <label>セル<select id="game-cell-select">${cellBatch.candidates.map(option).join("")}</select></label>
+        <label>GRID WRAITH<select id="game-wraith-select">${wraithBatch.candidates.map(option).join("")}</select></label>
+        <label>エネルギー片<select id="game-shard-select">${shardBatch.candidates.map(option).join("")}</select></label>
         <a id="open-game-window" href="#" target="_blank" rel="noreferrer">別タブで開く</a>
       </div>
       <div class="game-preview-status" role="status">選択を反映しています。初回はGodotの読み込みに数秒かかります。</div>
@@ -108,14 +114,23 @@ function openGameCombinationPreview() {
     </div>`;
   const reactorSelect = elements.dialogContent.querySelector("#game-reactor-select");
   const environmentSelect = elements.dialogContent.querySelector("#game-environment-select");
+  const cellSelect = elements.dialogContent.querySelector("#game-cell-select");
+  const wraithSelect = elements.dialogContent.querySelector("#game-wraith-select");
+  const shardSelect = elements.dialogContent.querySelector("#game-shard-select");
   reactorSelect.value = selection.reactor || reactorBatch.candidates[0].id;
   environmentSelect.value = selection.environment || environmentBatch.candidates[0].id;
+  cellSelect.value = selection.cell || cellBatch.candidates[0].id;
+  wraithSelect.value = selection.wraith || wraithBatch.candidates[0].id;
+  shardSelect.value = selection.shard || shardBatch.candidates[0].id;
   const loadCombination = () => {
     const params = new URLSearchParams({
       art_preview: "1",
       game: "project-charge",
       reactor: reactorSelect.value,
       environment: environmentSelect.value,
+      cell: cellSelect.value,
+      wraith: wraithSelect.value,
+      shard: shardSelect.value,
     });
     const url = `/game/?${params}`;
     elements.dialogContent.querySelector("#game-preview-frame").src = url;
@@ -123,6 +138,9 @@ function openGameCombinationPreview() {
   };
   reactorSelect.addEventListener("change", loadCombination);
   environmentSelect.addEventListener("change", loadCombination);
+  cellSelect.addEventListener("change", loadCombination);
+  wraithSelect.addEventListener("change", loadCombination);
+  shardSelect.addEventListener("change", loadCombination);
   loadCombination();
   elements.dialog.showModal();
 }

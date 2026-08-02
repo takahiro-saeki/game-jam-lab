@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-02T11:37:32.949Z",
+  "updatedAt": "2026-08-02T12:23:03.842Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -10,6 +10,9 @@
     "provisionalSelection": {
       "reactor": "reactor-hex-a",
       "environment": "environment-machine-room-a",
+      "cell": "cell-hex-capsule-a",
+      "wraith": "wraith-manta-siphon-a",
+      "shard": "shard-faceted-core-a",
       "note": "Codexの一次選考をGodotへ仮組み済み。人間レビューで変更可能です。"
     },
     "palette": [
@@ -406,6 +409,441 @@
             "rating": 3,
             "note": "",
             "reviewedAt": "2026-08-02T11:37:32.949Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-cell-module",
+      "order": 3,
+      "title": "Charge cell module",
+      "titleJa": "6セル共通・蓄電モジュール",
+      "objective": "現在の平面的なセルカードへ、充電量・番号・状態文字を邪魔しないピクセルアート外装を与える。",
+      "gate": "96×144原寸で中央の充電ゲージと日本語・英語UIを重ね、6個並べても情報過多にならない一案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "cell-industrial-rail-a",
+          "title": "Industrial Rail Cell",
+          "titleJa": "工業レール型セル",
+          "variation": "Squared casing with heavy side rails and restrained corner clamps.",
+          "prompt": "A single front-facing vertical energy capacitor cell casing for a science-fiction generator HUD, squared industrial silhouette, two heavy dark navy side rails, restrained corner clamps, one large empty recessed meter window in the center, tiny cyan contacts and no glowing fill inside the window, premium 16-bit pixel art, crisp large clusters, limited palette matching deep navy #09111F #111D31 #182B43 and cyan #4DEEEA, dark navy one-pixel outline, isolated object on transparent background, exactly one module, no floor, no scenery, no character, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing. Leave the top label area, center percentage area, and bottom status area visually quiet for Godot UI text.",
+          "model": "pixen",
+          "width": 96,
+          "height": 144,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/cell/cell-industrial-rail-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:06:19.722Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 2,
+            "score": 88,
+            "summary": "計器盤としての説得力と重い工業感が強い。上部ダイヤルが視線を奪うため、充電率を主役にする場合は情報量を少し整理したい。",
+            "strengths": [
+              "太い側面レールが6セル列に強いリズムを作る",
+              "暗部とシアン接点が既存の原子炉・背景によく馴染む"
+            ],
+            "concerns": [
+              "上部の白い計器が番号や警告表示と競合しやすい",
+              "中央窓が細く、色付き充電ゲージの面積が小さい"
+            ]
+          },
+          "humanReview": {
+            "status": "rejected",
+            "rating": null,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:22:20.618Z"
+          }
+        },
+        {
+          "id": "cell-hex-capsule-a",
+          "title": "Hex Capsule Cell",
+          "titleJa": "六角カプセル型セル",
+          "variation": "Rounded hexagonal casing that echoes the selected six-pod reactor.",
+          "prompt": "A single front-facing vertical energy capacitor cell casing for a science-fiction generator HUD, rounded hexagonal armored silhouette inspired by a six-pod reactor, dark navy steel frame, one tall empty central meter window, six very small cyan contact bolts around the frame, premium 16-bit pixel art, crisp large clusters, limited palette matching deep navy #09111F #111D31 #182B43 and cyan #4DEEEA, dark navy one-pixel outline, isolated object on transparent background, exactly one module, no floor, no scenery, no character, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing. Keep the interior dark and calm so Godot can draw a colored fill, number, percentage, and status text over it.",
+          "model": "pixen",
+          "width": 96,
+          "height": 144,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/cell/cell-hex-capsule-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:06:53.713Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 94,
+            "summary": "採用原子炉の六角言語を自然に引き継ぎ、中央の静かな窓へ充電色・数値・状態を重ねられる。6個並べても密度と可読性のバランスが最も良い。",
+            "strengths": [
+              "広い中央窓がゲーム状態の可視化に使いやすい",
+              "六角外形と小さなシアン端子がPROJECT CHARGEの意匠を統一する"
+            ],
+            "concerns": [
+              "空状態ではやや静かなので、充電アニメーションで生命感を足す必要がある"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 4,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:22:21.385Z"
+          }
+        },
+        {
+          "id": "cell-vacuum-tube-a",
+          "title": "Vacuum Tube Cell",
+          "titleJa": "真空管型セル",
+          "variation": "Slim glass-like chamber held by a dark mechanical frame.",
+          "prompt": "A single front-facing vertical power capacitor module for a science-fiction generator HUD, slim vacuum-tube silhouette held inside a dark mechanical frame, transparent-looking but empty inner chamber, two restrained cyan terminals, heavy navy base and cap, premium 16-bit pixel art, crisp large clusters, limited palette matching deep navy #09111F #111D31 #182B43 and cyan #4DEEEA, dark navy one-pixel outline, isolated object on transparent background, exactly one module, no liquid, no charge fill, no floor, no scenery, no character, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing. Preserve a wide quiet central region for a Godot charge fill and percentage UI.",
+          "model": "pixen",
+          "width": 96,
+          "height": 144,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/cell/cell-vacuum-tube-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:07:26.828Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 3,
+            "score": 84,
+            "summary": "ガラス管の存在感は魅力的で、装置として最も豪華。ただし白い内管と初期シアン液が充電量の上描きと競合し、状態表示素材としては自由度が低い。",
+            "strengths": [
+              "真空管らしい立体感と上下キャップの完成度が高い",
+              "単体のアイテム絵として強い"
+            ],
+            "concerns": [
+              "空セルでも充電済みに見えるシアン領域がある",
+              "中央の明度が高く白文字の可読性を落とす"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 4,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:22:22.172Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-grid-wraith",
+      "order": 4,
+      "title": "GRID WRAITH mini-boss",
+      "titleJa": "ミニボス・GRID WRAITH",
+      "objective": "最大充電セルを吸収する敵だと一目で伝わり、原子炉とは異なる不穏なシルエットを作る。",
+      "gate": "96〜144px表示で中央核、六本の吸収器官、攻撃方向が読め、セルUIの背後へ置いても邪魔にならない一案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "wraith-cable-leech-a",
+          "title": "Cable Leech",
+          "titleJa": "ケーブル吸収体",
+          "variation": "Asymmetric parasite with six hooked cable limbs and one cyan-draining maw.",
+          "prompt": "A hostile non-humanoid energy parasite called GRID WRAITH for a science-fiction generator game, front-facing hovering silhouette, one dark central draining maw surrounded by exactly six long hooked cable limbs, asymmetric damaged armor, stolen cyan current flowing inward and sparse coral warning sparks, clearly different from a circular reactor, premium 16-bit pixel art, crisp large clusters, limited dark navy cyan coral palette, readable at 96 pixels, isolated enemy on transparent background, no floor, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no recognizable franchise elements.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/boss/wraith-cable-leech-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:08:40.399Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 2,
+            "score": 91,
+            "summary": "巨大な吸収口と六本のケーブルが能力を直接説明しており、ボスとして非常に分かりやすい。円形のため原子炉と同じ画面に置くと輪郭が少し似る。",
+            "strengths": [
+              "吸収・捕食というゲームルールが一目で伝わる",
+              "コーラルの断線部が警告色としてよく機能する"
+            ],
+            "concerns": [
+              "円形中心核が採用原子炉のシルエットと競合する",
+              "黒い口は暗い背景で潰れやすい"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 5,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:22:42.509Z"
+          }
+        },
+        {
+          "id": "wraith-broken-hex-a",
+          "title": "Broken Hex Wraith",
+          "titleJa": "破損六角亡霊",
+          "variation": "Shattered hexagonal machine ghost with six separated siphon arms.",
+          "prompt": "A hostile machine ghost called GRID WRAITH for a science-fiction power station, front-facing floating broken hexagonal core, exactly six separated segmented siphon arms reaching outward, empty black center, fragmented navy armor plates, cyan energy being pulled toward the void and restrained coral corruption pixels, premium 16-bit pixel art, crisp large clusters, limited palette, strong enemy silhouette readable at 96 pixels, isolated on transparent background, not a clean reactor and not a clock, no floor, no scenery, no character face, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no recognizable franchise elements.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/boss/wraith-broken-hex-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:09:48.029Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 3,
+            "score": 82,
+            "summary": "六方向構造と破損表現は設定に合うが、中心が小さく均整が良いため敵より装置や照準器に見えやすい。縮小時の脅威感も他2案に及ばない。",
+            "strengths": [
+              "六本構造が明快で、セルとの対応を演出しやすい",
+              "破断したシアン配線が世界観に合う"
+            ],
+            "concerns": [
+              "96px以下では細い腕が弱くなり、主役の塊が残りにくい",
+              "左右対称すぎて生物的な脅威が薄い"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 3,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:22:46.100Z"
+          }
+        },
+        {
+          "id": "wraith-manta-siphon-a",
+          "title": "Manta Siphon",
+          "titleJa": "マンタ吸収体",
+          "variation": "Wide predatory silhouette with six dangling conductive tendrils.",
+          "prompt": "A hostile hovering energy siphon called GRID WRAITH for a science-fiction generator game, wide predatory manta-like machine silhouette, exactly six dangling conductive tendrils beneath it, one angular dark intake cavity, torn navy metal wings, cyan stolen electricity traveling up the tendrils and sparse coral warning fractures, non-humanoid and clearly threatening, premium 16-bit pixel art, crisp large clusters, limited palette, readable at 96 pixels, isolated enemy on transparent background, no floor, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no recognizable franchise elements.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/boss/wraith-manta-siphon-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:10:58.615Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "原子炉と明確に異なる横長の捕食者シルエットが強く、セル列の背後へ置いた際にも翼と尾が残る。キャラクター性とUI適性の両方で最有力。",
+            "strengths": [
+              "マンタ型の大きな輪郭が縮小時にも敵として残る",
+              "シアンの尾とコーラル亀裂が吸収攻撃・警告演出へ接続しやすい"
+            ],
+            "concerns": [
+              "六本の触手は輪郭上では厳密に数えにくいため、攻撃演出側でセルとの接続を補強したい"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 5,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:22:41.684Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-energy-shard",
+      "order": 5,
+      "title": "Energy shard currency",
+      "titleJa": "通貨・エネルギー片",
+      "objective": "アップグレード購入に使う資源を、24〜32px表示でも即座に識別できる固有アイコンにする。",
+      "gate": "24px表示で輪郭が残り、クレジットカードや一般的なコインに見えず、シアンとアンバーのUI双方で読める一案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "shard-faceted-core-a",
+          "title": "Faceted Core Shard",
+          "titleJa": "多面体コア片",
+          "variation": "One bold cyan crystal fragment with an amber charged edge.",
+          "prompt": "A single collectible energy shard icon for a science-fiction generator game, bold asymmetrical faceted crystal fragment, bright cyan inner core with one restrained amber charged edge, dark navy outline, premium 16-bit pixel art icon, very large crisp pixel clusters, limited palette, readable at 24 pixels, centered with generous transparent padding, exactly one object, isolated on transparent background, not a coin, not currency paper, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/icon/shard-faceted-core-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:11:39.757Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "結晶片という資源名と輪郭が一致し、24pxでもシアンの芯とアンバーの縁が残る。HUDと購入価格の両方で最も早く認識できる。",
+            "strengths": [
+              "単純な菱形輪郭で小表示の識別性が高い",
+              "既存のシアン・アンバーUIに自然に接続する"
+            ],
+            "concerns": [
+              "単体では一般的なエネルギー結晶にも見えるため、獲得アニメーションで固有性を補いたい"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 3,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:23:02.490Z"
+          }
+        },
+        {
+          "id": "shard-hex-battery-a",
+          "title": "Hex Battery Fragment",
+          "titleJa": "六角電池片",
+          "variation": "Broken hexagonal battery plate carrying a cyan spark.",
+          "prompt": "A single collectible energy shard icon for a science-fiction generator game, broken hexagonal battery plate with a cyan lightning core visible through one crack, dark navy metal rim and a tiny amber contact, premium 16-bit pixel art icon, very large crisp clusters, limited palette, readable at 24 pixels, centered with transparent padding, exactly one object, isolated on transparent background, not a coin, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/icon/shard-hex-battery-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:12:26.758Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 2,
+            "score": 89,
+            "summary": "内部の稲妻と金属リムは豪華で世界観にも合う。ただし24pxでは丸いメダルに近づき、欠片という名称との一致度が下がる。",
+            "strengths": [
+              "原子炉やセルと共通する金属フレームで統一感がある",
+              "中央の発光が暗いHUDでよく目立つ"
+            ],
+            "concerns": [
+              "縮小時に六角形より円形コインとして読まれやすい",
+              "細部が多く購入価格の横ではやや騒がしい"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 3,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:23:03.209Z"
+          }
+        },
+        {
+          "id": "shard-coil-spark-a",
+          "title": "Coil Spark Fragment",
+          "titleJa": "コイル火花片",
+          "variation": "A compact broken conductor coil holding a captured spark.",
+          "prompt": "A single collectible energy shard icon for a science-fiction generator game, compact broken conductor coil wrapped around one captured cyan spark, dark navy casing pieces and one tiny amber highlight, premium 16-bit pixel art icon, very large crisp pixel clusters, limited palette, strong silhouette readable at 24 pixels, centered with generous transparent padding, exactly one object, isolated on transparent background, not a coin, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/icon/shard-coil-spark-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:13:02.356Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 3,
+            "score": 85,
+            "summary": "斜めの導体と火花は動勢がありアイテムとして魅力的だが、通貨より弾薬や工具に見えやすい。補助資源や一時ブースト用なら活かせる。",
+            "strengths": [
+              "斜めシルエットが他のHUDアイコンと差別化できる",
+              "火花の方向性が獲得演出に向く"
+            ],
+            "concerns": [
+              "通貨としての意味が単体では伝わりにくい",
+              "24pxでは端子部と火花が一つの棒にまとまりやすい"
+            ]
+          },
+          "humanReview": {
+            "status": "approved",
+            "rating": 4,
+            "note": "",
+            "reviewedAt": "2026-08-02T12:23:03.842Z"
           }
         }
       ]

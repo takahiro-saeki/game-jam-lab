@@ -4,16 +4,19 @@ Generated with OpenAI's built-in image generation tool on August 1, 2026. The ou
 
 The Japanese and Latin UI typeface is [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp), distributed by Google Fonts under the SIL Open Font License 1.1. The font file and a copy of its license are stored in `godot/assets/fonts/`.
 
-## PROJECT CHARGE — PixelLab Phase 2
+## PROJECT CHARGE — PixelLab Phase 2 and production-detail batch
 
-Eight original pixel-art candidates were generated through PixelLab API v2 on August 2, 2026: five 192×192 transparent reactor candidates and three 320×180 generator-chamber candidates. Each successful request consumed one subscription generation. No generated pixels were manually edited during this exploration batch.
+Seventeen original pixel-art candidates were generated through PixelLab API v2 on August 2, 2026: five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, and three 64×64 transparent energy-shard icons. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
 
 - Untouched API outputs: `godot/assets/charge_clicker/pixellab/source/`
 - Full prompts, settings, usage, scores, and review decisions: `tools/art-review/data/review-manifest.json`
 - Current provisional reactor: `reactor/reactor-hex-a.png`
 - Current provisional environment: `environment/environment-machine-room-a.png`
+- Current provisional charge cell: `cell/cell-hex-capsule-a.png`
+- Current provisional GRID WRAITH: `boss/wraith-manta-siphon-a.png`
+- Current provisional energy shard: `icon/shard-faceted-core-a.png`
 
-The provisional pair is rendered in the game for an in-context quality check but has not been copied to `approved/`. Focused revisions were retained in the source set even when they failed the six-part composition requirement, so the selection process and generation disclosure remain auditable.
+The five provisional selections are rendered in the game for an in-context quality check but have not been copied to `approved/`. Every alternate remains selectable in the live Godot review preview. Focused revisions were retained in the source set even when they failed their composition requirement, so the selection process and generation disclosure remain auditable.
 
 ## ZERO PERCENT CITY
 

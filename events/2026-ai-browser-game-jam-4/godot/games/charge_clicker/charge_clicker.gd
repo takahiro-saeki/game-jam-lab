@@ -20,6 +20,21 @@ const GeneratorBackgrounds := {
 	"environment-machine-room-a": preload("res://assets/charge_clicker/pixellab/source/environment/environment-machine-room-a.png"),
 	"environment-machine-room-b": preload("res://assets/charge_clicker/pixellab/source/environment/environment-machine-room-b.png"),
 }
+const CellTextures := {
+	"cell-industrial-rail-a": preload("res://assets/charge_clicker/pixellab/source/cell/cell-industrial-rail-a.png"),
+	"cell-hex-capsule-a": preload("res://assets/charge_clicker/pixellab/source/cell/cell-hex-capsule-a.png"),
+	"cell-vacuum-tube-a": preload("res://assets/charge_clicker/pixellab/source/cell/cell-vacuum-tube-a.png"),
+}
+const GridWraithTextures := {
+	"wraith-cable-leech-a": preload("res://assets/charge_clicker/pixellab/source/boss/wraith-cable-leech-a.png"),
+	"wraith-broken-hex-a": preload("res://assets/charge_clicker/pixellab/source/boss/wraith-broken-hex-a.png"),
+	"wraith-manta-siphon-a": preload("res://assets/charge_clicker/pixellab/source/boss/wraith-manta-siphon-a.png"),
+}
+const EnergyShardTextures := {
+	"shard-faceted-core-a": preload("res://assets/charge_clicker/pixellab/source/icon/shard-faceted-core-a.png"),
+	"shard-hex-battery-a": preload("res://assets/charge_clicker/pixellab/source/icon/shard-hex-battery-a.png"),
+	"shard-coil-spark-a": preload("res://assets/charge_clicker/pixellab/source/icon/shard-coil-spark-a.png"),
+}
 
 const VIEW := Vector2(1280, 720)
 const REACTOR_CENTER := Vector2(212, 286)
@@ -32,6 +47,9 @@ var controller_bindings: Dictionary = ControllerConfig.default_bindings()
 var persistence_enabled := true
 var reactor_texture: Texture2D = ReactorTextures["reactor-hex-a"]
 var generator_background: Texture2D = GeneratorBackgrounds["environment-machine-room-a"]
+var cell_texture: Texture2D = CellTextures["cell-hex-capsule-a"]
+var grid_wraith_texture: Texture2D = GridWraithTextures["wraith-manta-siphon-a"]
+var energy_shard_texture: Texture2D = EnergyShardTextures["shard-faceted-core-a"]
 var art_preview_enabled := false
 
 var animation_time := 0.0
@@ -72,6 +90,8 @@ func _ready() -> void:
 		for column in range(4):
 			upgrade_rects.append(Rect2(438 + column * 194, 494 + row * 94, 184, 84))
 	var resumed: bool = persistence_enabled and save_manager.load_into(run)
+	if art_preview_enabled:
+		configure_art_preview_state()
 	if resumed:
 		show_message(loc("保存したGENERATOR COREを再開", "RESUMED GENERATOR CORE"), 3.0)
 	else:
@@ -91,10 +111,29 @@ func apply_web_art_preview() -> void:
 	persistence_enabled = false
 	var reactor_id := str(values.get("reactor", "reactor-hex-a"))
 	var environment_id := str(values.get("environment", "environment-machine-room-a"))
+	var cell_id := str(values.get("cell", "cell-hex-capsule-a"))
+	var wraith_id := str(values.get("wraith", "wraith-manta-siphon-a"))
+	var shard_id := str(values.get("shard", "shard-faceted-core-a"))
 	if ReactorTextures.has(reactor_id):
 		reactor_texture = ReactorTextures[reactor_id]
 	if GeneratorBackgrounds.has(environment_id):
 		generator_background = GeneratorBackgrounds[environment_id]
+	if CellTextures.has(cell_id):
+		cell_texture = CellTextures[cell_id]
+	if GridWraithTextures.has(wraith_id):
+		grid_wraith_texture = GridWraithTextures[wraith_id]
+	if EnergyShardTextures.has(shard_id):
+		energy_shard_texture = EnergyShardTextures[shard_id]
+
+func configure_art_preview_state() -> void:
+	run.stage_phase = ChargeState.StagePhase.BOSS
+	run.boss_hp = ChargeState.BOSS_MAX_HP * 0.62
+	run.boss_attack_timer = 5.8
+	run.credits = 128
+	run.heat = 46.0
+	run.overcharge = 28.0
+	for index in range(run.cells.size()):
+		run.cells[index] = run.capacity * [0.94, 0.78, 0.61, 0.45, 0.28, 0.12][index]
 
 func parse_query_string(raw_query: String) -> Dictionary:
 	var values := {}
@@ -129,6 +168,10 @@ func _process(delta: float) -> void:
 	if message_time > 0.0:
 		message_time -= delta
 	autosave_timer -= delta
+	if art_preview_enabled:
+		update_effects(delta)
+		queue_redraw()
+		return
 
 	if charge_held:
 		charge_repeat_timer -= delta
@@ -636,6 +679,7 @@ func draw_header() -> void:
 	draw_line(Vector2(0, 86), Vector2(1280, 86), Palette.with_alpha(Palette.CYAN, 0.32), 1.0)
 	draw_string(Palette.UI_FONT, Vector2(178, 34), "PROJECT CHARGE", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(178, 60), loc("GENERATOR CORE・縦切り版", "GENERATOR CORE · VERTICAL SLICE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
+	draw_texture_rect(energy_shard_texture, Rect2(568, 17, 36, 36), false)
 	draw_string(Palette.UI_FONT, Vector2(610, 34), loc("エネルギー片", "ENERGY SHARDS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(610, 65), "%04d" % run.credits, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, Palette.AMBER)
 	draw_string(Palette.UI_FONT, Vector2(770, 34), loc("経過", "ELAPSED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
@@ -695,6 +739,9 @@ func draw_circuit_panel() -> void:
 	var panel := Rect2(416, 106, 832, 582)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, Palette.with_alpha(Palette.VIOLET, 0.32), 2), panel)
 	draw_objective_header()
+	if run.stage_phase == ChargeState.StagePhase.BOSS:
+		var wraith_alpha := 0.24 + sin(animation_time * 2.4) * 0.035
+		draw_texture_rect(grid_wraith_texture, Rect2(687, 125, 256, 256), false, Color(0.82, 0.94, 1.0, wraith_alpha))
 	for index in range(6):
 		draw_cell(index)
 	for index in range(5):
@@ -736,7 +783,7 @@ func draw_cell(index: int) -> void:
 		draw_style_box(Palette.rounded_box(Palette.with_alpha(Palette.CORAL, 0.12 + sin(animation_time * 16.0) * 0.08), 17, Palette.CORAL, 2), rect.grow(10.0))
 	if full:
 		draw_style_box(Palette.rounded_box(Palette.with_alpha(color, 0.12 + sin(animation_time * 5.0 + index) * 0.05), 15), rect.grow(7.0))
-	draw_style_box(Palette.rounded_box(Palette.INK, 13, Palette.with_alpha(color, 0.85 if full else 0.36), 2), rect)
+	draw_style_box(Palette.rounded_box(Palette.INK, 13), rect)
 	var inner := Rect2(rect.position + Vector2(8, 8), rect.size - Vector2(16, 16))
 	if ratio > 0.0:
 		var fill_height := inner.size.y * ratio
@@ -745,6 +792,8 @@ func draw_cell(index: int) -> void:
 		for stripe in range(3):
 			var stripe_y := fill_rect.position.y + fmod(animation_time * 36.0 + stripe * 31.0, maxf(1.0, fill_rect.size.y))
 			draw_line(Vector2(fill_rect.position.x + 5, stripe_y), Vector2(fill_rect.end.x - 5, stripe_y), Palette.with_alpha(Palette.PAPER, 0.18), 1.0)
+	draw_texture_rect(cell_texture, Rect2(rect.position + Vector2(5, 5), Vector2(96, 144)), false, Color(0.9, 0.95, 1.0, 1.0))
+	draw_style_box(Palette.rounded_box(Color(0.025, 0.05, 0.10, 0.78), 7), Rect2(rect.position + Vector2(12, 61), Vector2(82, 37)))
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 25), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 13, Palette.MUTED)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 91), "%d%%" % int(ratio * 100.0), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 22, Palette.PAPER)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 133), loc("同期", "SYNC") if full else loc("充電", "CHARGE"), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 11, color)
@@ -763,7 +812,8 @@ func draw_upgrade(index: int) -> void:
 	draw_string(Palette.UI_FONT, rect.position + Vector2(32, 20), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 140, 12, Palette.PAPER)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(10, 44), str(copy.desc), HORIZONTAL_ALIGNMENT_LEFT, 164, 10, Palette.MUTED)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(10, 70), "LV.%d" % run.upgrade_level(id), HORIZONTAL_ALIGNMENT_LEFT, 72, 11, color)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(82, 70), "◆ %d" % run.upgrade_cost(id), HORIZONTAL_ALIGNMENT_RIGHT, 92, 12, Palette.AMBER if affordable else Palette.MUTED)
+	draw_texture_rect(energy_shard_texture, Rect2(rect.position + Vector2(100, 55), Vector2(18, 18)), false, Color.WHITE if affordable else Color(0.48, 0.52, 0.58, 0.7))
+	draw_string(Palette.UI_FONT, rect.position + Vector2(119, 70), "%d" % run.upgrade_cost(id), HORIZONTAL_ALIGNMENT_RIGHT, 55, 12, Palette.AMBER if affordable else Palette.MUTED)
 
 func draw_particles_and_text() -> void:
 	for item in particles:
@@ -782,6 +832,9 @@ func draw_objective_header() -> void:
 	var target: float = ChargeState.BOSS_MAX_HP if is_boss else ChargeState.RESTORE_GOAL
 	draw_string(Palette.UI_FONT, Vector2(446, 138), title, HORIZONTAL_ALIGNMENT_LEFT, 230, 15, accent)
 	draw_string(Palette.UI_FONT, Vector2(676, 138), phase, HORIZONTAL_ALIGNMENT_LEFT, 190, 11, Palette.MUTED)
+	if is_boss:
+		draw_circle(Vector2(832, 133), 24.0, Palette.with_alpha(Palette.CORAL, 0.12))
+		draw_texture_rect(grid_wraith_texture, Rect2(808, 109, 48, 48), false)
 	var bar := Rect2(862, 122, 330, 18)
 	draw_style_box(Palette.rounded_box(Palette.INK, 8, Palette.with_alpha(accent, 0.38), 1), bar)
 	var ratio: float = clampf(current / maxf(1.0, target), 0.0, 1.0)

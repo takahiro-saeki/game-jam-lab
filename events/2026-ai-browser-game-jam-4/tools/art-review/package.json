@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build-game": "mkdir -p ../../build/web && godot --headless --path ../../godot --export-release Web ../../build/web/index.html",
+    "build-game": "mkdir -p ../../build/web && godot --headless --path ../../godot --export-release Web ../build/web/index.html",
     "start": "npm run build-game && node server.mjs",
     "check": "node --check server.mjs && node --check scripts/generate-batch.mjs"
   }
