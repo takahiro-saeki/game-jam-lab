@@ -104,6 +104,9 @@ textarea { resize: vertical; }
 .gate { align-self: flex-end; max-width: 25rem; padding: .9rem 1rem; border-left: 2px solid var(--amber); background: rgba(255,183,3,.06); color: #d7c88d; font-size: .8rem; line-height: 1.55; }
 .game-preview-button { margin-top: 1rem; border: 1px solid rgba(77,238,234,.5); border-radius: .55rem; background: rgba(77,238,234,.09); color: var(--cyan); padding: .62rem .85rem; font-weight: 750; }
 .game-preview-button:hover { background: rgba(77,238,234,.16); }
+.preview-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.identity-preview-button { border-color: rgba(255,183,3,.55); background: rgba(255,183,3,.08); color: var(--amber); }
+.identity-preview-button:hover { background: rgba(255,183,3,.15); }
 
 .candidate-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
 .candidate-card { min-width: 0; overflow: hidden; border: 1px solid var(--edge); border-radius: 1rem; background: rgba(17,29,49,.72); box-shadow: 0 12px 36px rgba(0,0,0,.18); transition: border-color .2s, transform .2s; }
@@ -186,12 +189,38 @@ dialog::backdrop { background: rgba(0,0,0,.78); backdrop-filter: blur(6px); }
 .game-preview-controls a { grid-column: 1 / -1; justify-self: end; border: 1px solid rgba(77,238,234,.5); border-radius: .55rem; color: var(--cyan); padding: .7rem .8rem; text-decoration: none; white-space: nowrap; }
 .game-preview-status { padding: .65rem .2rem; color: var(--muted); font-size: .7rem; }
 .game-preview-lab iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 1px solid var(--edge); border-radius: .7rem; background: #000; }
+.identity-preview-controls { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.identity-stage { position: relative; display: grid; gap: .75rem; margin-top: .8rem; padding: 1.1rem; overflow: hidden; border: 1px solid rgba(77,238,234,.28); background: radial-gradient(circle at 35% 40%, rgba(58,134,255,.13), transparent 28%), #050a13; box-shadow: inset 0 0 4rem rgba(0,0,0,.65); }
+.identity-stage::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .16; background-image: linear-gradient(rgba(77,238,234,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(77,238,234,.12) 1px, transparent 1px); background-size: 2rem 2rem; }
+.identity-stage > * { position: relative; z-index: 1; }
+.identity-stage-header { display: flex; justify-content: space-between; align-items: center; min-height: 5rem; padding: .4rem .65rem; border-bottom: 1px solid rgba(77,238,234,.24); }
+.identity-brand span, .identity-brand small { display: block; }
+.identity-brand span { color: var(--paper); font: 800 1.25rem/1 ui-monospace, monospace; letter-spacing: .08em; }
+.identity-brand small, .identity-control-wrap > span, .identity-rack-wrap > span, .identity-boss-row > span { margin-top: .35rem; color: var(--muted); font: 700 .62rem/1 ui-monospace, monospace; letter-spacing: .12em; }
+.identity-accumulator-wrap { position: relative; width: 12rem; height: 6rem; }
+.identity-accumulator-wrap img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.identity-accumulator-wrap .identity-shard { position: absolute; top: 2.35rem; left: 2.45rem; color: var(--cyan); font-size: 1.2rem; text-shadow: 0 0 .75rem var(--cyan); }
+.identity-accumulator-wrap strong { position: absolute; top: 2.25rem; right: 1.7rem; width: 4.4rem; color: var(--amber); font: 800 1rem/1 ui-monospace, monospace; letter-spacing: .09em; text-align: center; }
+.identity-boss-row { display: grid; grid-template-columns: 13rem 1fr; gap: 1rem; align-items: center; min-height: 5rem; padding: .4rem .75rem; background: rgba(255,92,92,.035); }
+.identity-boss-row img { width: min(100%, 40rem); height: 5rem; object-fit: contain; object-position: left center; image-rendering: pixelated; }
+.identity-core-mock { display: grid; grid-template-columns: 10rem 1fr; gap: 1.5rem; align-items: center; min-height: 8.5rem; padding: .75rem 3%; border-block: 1px solid rgba(77,238,234,.12); }
+.identity-reactor-mock { display: grid; place-items: center; width: 8rem; height: 8rem; border: .8rem double rgba(77,238,234,.42); border-radius: 50%; background: radial-gradient(circle, rgba(77,238,234,.2), #07101e 62%); color: var(--muted); font: 700 .65rem/1.5 ui-monospace, monospace; letter-spacing: .12em; text-align: center; box-shadow: 0 0 2rem rgba(77,238,234,.12); }
+.identity-reactor-mock strong { color: var(--cyan); font-size: 1.2rem; }
+.identity-cells { display: grid; grid-template-columns: repeat(6, 1fr); gap: .55rem; }
+.identity-cells i { position: relative; height: 5.4rem; overflow: hidden; border: 2px solid rgba(77,238,234,.24); background: #07101e; clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%); }
+.identity-cells i::after { content: ""; position: absolute; right: .25rem; bottom: .25rem; left: .25rem; height: var(--level); background: linear-gradient(var(--cyan), rgba(58,134,255,.32)); box-shadow: 0 0 .85rem rgba(77,238,234,.45); }
+.identity-cells b { position: absolute; z-index: 1; top: .35rem; left: 0; width: 100%; color: var(--paper); font: 700 .6rem ui-monospace, monospace; text-align: center; }
+.identity-control-wrap, .identity-rack-wrap { display: grid; grid-template-columns: 11rem 1fr; gap: 1rem; align-items: center; min-height: 7rem; padding: .45rem .75rem; }
+.identity-control-wrap img, .identity-rack-wrap img { width: min(100%, 48rem); max-height: 8rem; object-fit: contain; object-position: left center; image-rendering: pixelated; }
+.identity-rack-wrap { background: rgba(155,93,229,.035); }
+.identity-preview-note { margin: .8rem 0 .2rem; color: var(--muted); font-size: .74rem; line-height: 1.7; }
 
 @media (max-width: 1100px) {
   .candidate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .control-deck { grid-template-columns: repeat(3, 1fr); }
   .segmented { justify-self: start; }
   .game-preview-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .identity-preview-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
   .site-header, .batch-intro { display: block; }
@@ -206,4 +235,12 @@ dialog::backdrop { background: rgba(0,0,0,.78); backdrop-filter: blur(6px); }
   .game-preview-lab header { display: block; }
   .game-preview-lab header p { margin-top: .6rem; }
   .game-preview-controls { grid-template-columns: 1fr; }
+  .identity-stage-header { align-items: flex-start; gap: .8rem; }
+  .identity-brand span { font-size: 1rem; }
+  .identity-accumulator-wrap { width: 9rem; height: 4.5rem; }
+  .identity-accumulator-wrap .identity-shard { top: 1.75rem; left: 1.8rem; font-size: .9rem; }
+  .identity-accumulator-wrap strong { top: 1.7rem; right: 1.2rem; width: 3.6rem; font-size: .78rem; }
+  .identity-boss-row, .identity-control-wrap, .identity-rack-wrap { grid-template-columns: 1fr; }
+  .identity-core-mock { grid-template-columns: 1fr; justify-items: center; }
+  .identity-cells { width: 100%; gap: .25rem; }
 }

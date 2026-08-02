@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-02T12:50:05.000Z",
+  "updatedAt": "2026-08-02T14:42:42.764Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -16,7 +16,11 @@
       "chargeControl": "charge-piston-a",
       "dischargeControl": "discharge-wave-a",
       "autoControl": "auto-stopped-rotor-a",
-      "note": "Codexの一次選考をGodotへ仮組み済み。人間レビューで変更可能です。"
+      "note": "既存8カテゴリとUI Identity 4カテゴリのCodex一次選考を保存済み。人間レビューで変更可能です。",
+      "upgradeRack": "upgrade-rack-switchboard-a",
+      "controlKit": "control-kit-switchboard-a",
+      "wraithGauge": "wraith-gauge-corrupted-b",
+      "shardAccumulator": "shard-accumulator-switchboard-b"
     },
     "palette": [
       "#09111F",
@@ -1275,6 +1279,855 @@
             ],
             "concerns": [
               "静止画だけでは停止中か常時稼働中か断定しにくいため、OFF時は彩度を落とす必要がある"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-upgrade-rack",
+      "order": 9,
+      "title": "Eight-module upgrade rack",
+      "titleJa": "8モジュール・アップグレードラック",
+      "objective": "同じ丸角カード8枚を、ゲーム世界に存在する一体型の機械ラックへ置き換える。文字・数値・個別アイコンはGodotで重ねる。",
+      "gate": "4×2の8ソケットが正確に読め、各ソケットの暗い余白へ日本語2行とアイコンを重ねられる案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "upgrade-rack-switchboard-a",
+          "title": "Maintenance Switchboard",
+          "titleJa": "重工業メンテナンス盤",
+          "variation": "Direction A — the recommended normal-game identity: bolted rails, bus lines, and service-bay asymmetry.",
+          "prompt": "One single wide industrial upgrade backplate built as exactly eight empty module sockets arranged four across and two rows, thick bolted navy steel outer rails, angular maintenance cutouts, dark quiet socket interiors, a continuous cyan electrical bus connecting all sockets, six tiny amber service lamps at most, deliberately asymmetric wear and repair plates, every socket clearly separated and large enough for later icon and Japanese label overlays, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 384,
+          "height": 128,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/upgrade-rack-switchboard-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:23:12.217Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 96,
+            "summary": "暫定本命。4×2の8ソケット、共通バス、左右のサービス区画が一体の設備として読め、丸角カード8枚という現状を最も大きく崩せます。",
+            "strengths": [
+              "正確に8ソケットあり、各枠へ日本語とアイコンを重ねられる",
+              "左右非対称の整備区画と中央バスが量産カード感を消す"
+            ],
+            "concerns": [
+              "左右の大型空洞は装飾または系統表示としてGodot側で用途を与える必要がある"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "upgrade-rack-ceramic-a",
+          "title": "High-voltage Ceramic Rack",
+          "titleJa": "高圧セラミック実験盤",
+          "variation": "Direction B — a cleaner scientific identity with porcelain insulators and graphite bus rails.",
+          "prompt": "One single wide high-voltage laboratory upgrade backplate built as exactly eight empty module sockets arranged four across and two rows, graphite metal bus rails, warm ivory ceramic insulator corners, dark navy recessed socket interiors, precise cyan terminal contacts, sparse amber measurement diodes, clean engineered spacing with subtle handmade irregularities, every socket clearly separated and large enough for later icon and Japanese label overlays, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 384,
+          "height": 128,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/upgrade-rack-ceramic-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:23:53.352Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 92,
+            "summary": "8ソケットが最も明瞭で実装しやすい優秀な案です。均一性が強いため、通常設備より研究所ステージや精密アップグレード画面に向きます。",
+            "strengths": [
+              "正確な4×2構造と広い暗色の文字領域",
+              "セラミックと濃紺の素材差でネオン依存を減らせる"
+            ],
+            "concerns": [
+              "全枠が完全に同形で、使い方によっては再びテンプレート感が出る"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "upgrade-rack-corrupted-a",
+          "title": "Corrupted Conduit Rack",
+          "titleJa": "侵食コンジット盤",
+          "variation": "Direction C — a damaged late-game identity with restrained red fractures and repaired power paths.",
+          "prompt": "One single wide damaged power-station upgrade backplate built as exactly eight empty module sockets arranged four across and two rows, broken dark conduits repaired with cyan bypass cables, restrained coral electrical fractures creeping across the outer frame, a few mismatched steel patches and bolts, socket interiors remain calm and unobstructed, dangerous but still functional, every socket clearly separated and large enough for later icon and Japanese label overlays, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 384,
+          "height": 128,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/upgrade-rack-corrupted-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:24:33.743Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 86,
+            "summary": "8モジュールと侵食配線は読めますが、独立した小型枠が再びカード列に見えます。通常UIではなくボス侵食中の差し替え素材として有効です。",
+            "strengths": [
+              "正確に8枠あり、赤い侵食とシアン修復の関係が明確",
+              "暗い内部へ情報を安全に重ねられる"
+            ],
+            "concerns": [
+              "一体型ラックより8枚のカードに近い",
+              "珊瑚色の比率を上げると購入可否の色と競合する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-control-console-kit",
+      "order": 10,
+      "title": "CHARGE / DISCHARGE / AUTO console kit",
+      "titleJa": "主操作・制御盤フレームセット",
+      "objective": "CHARGE・DISCHARGE・AUTOを同じ丸角カードから分離し、それぞれ操作原理が異なる三つの機械として成立させる。",
+      "gate": "1枚の中に接触しない3筐体が正確に分かれ、左＝充電、中央＝放電、右＝自動化の異なる輪郭をGodotで切り出せる案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "control-kit-switchboard-a",
+          "title": "Switchboard Control Family",
+          "titleJa": "重工業スイッチボード系",
+          "variation": "Direction A — three visibly related but role-specific maintenance controls.",
+          "prompt": "A coherent pixel-art asset kit containing exactly three separate empty industrial control housings arranged left to right in one horizontal row with generous transparent gaps and no touching parts: first a tall heavy CHARGE plunger housing with vertical detents and a recessed icon well, second a much wider DISCHARGE bus housing with exactly six output contact slots and a recessed icon well, third a compact AUTO relay housing with a mechanical lock notch and recessed icon well, all three share bolted navy steel and cyan wiring but have unmistakably different silhouettes, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 384,
+          "height": 128,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/control-kit-switchboard-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:25:34.562Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 97,
+            "summary": "暫定本命。縦型プランジャー、横長6系統バス、小型リレーが明確に異なる輪郭を持ちつつ、配線色と金属で同じ製品群に見えます。",
+            "strengths": [
+              "CHARGE・DISCHARGE・AUTOの操作原理が筐体だけで分かれる",
+              "各中央が静かで既存アイコン、発光、文字を重ねやすい"
+            ],
+            "concerns": [
+              "3部品の切り出し矩形を手動で確定し、端のケーブルを欠けさせない調整が必要"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "control-kit-ceramic-a",
+          "title": "Ceramic Laboratory Controls",
+          "titleJa": "高圧セラミック操作系",
+          "variation": "Direction B — porcelain-insulated scientific controls with less neon and more material contrast.",
+          "prompt": "A coherent pixel-art asset kit containing exactly three separate empty high-voltage laboratory control housings arranged left to right in one horizontal row with generous transparent gaps and no touching parts: first a tall CHARGE compression chamber framed by ivory ceramic insulators, second a much wider DISCHARGE manifold with exactly six graphite terminals, third a compact AUTO latching relay with a circular rotor recess, shared dark navy metal and restrained cyan contacts, all three have clearly different engineered silhouettes, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 384,
+          "height": 128,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/control-kit-ceramic-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:26:09.428Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 89,
+            "summary": "素材感が独特でAI的なネオンカードから離れられます。ただし中央の放電装置が横長バスではなく汎用ダイヤル盤に見え、操作差は本命より弱いです。",
+            "strengths": [
+              "アイボリー絶縁体が画面に新しい物質感を作る",
+              "三筐体とも暗いオーバーレイ領域が広い"
+            ],
+            "concerns": [
+              "DISCHARGEの外向き・6セル連動が静止画から読み取りにくい",
+              "3筐体の大きさが近く、優先度差が弱い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "control-kit-corrupted-a",
+          "title": "Emergency Bypass Controls",
+          "titleJa": "侵食・緊急バイパス操作系",
+          "variation": "Direction C — repaired emergency controls suitable for boss and true-route states.",
+          "prompt": "A coherent pixel-art asset kit containing exactly three separate empty damaged power-station control housings arranged left to right in one horizontal row with generous transparent gaps and no touching parts: first a tall CHARGE housing reinforced by a cyan bypass coil, second a much wider DISCHARGE breaker manifold with exactly six output contacts and restrained coral fractures, third a compact AUTO relay clamped by an emergency lock, mismatched repair plates and exposed cables, all three remain readable and have unmistakably different silhouettes, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 384,
+          "height": 128,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/control-kit-corrupted-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:27:10.394Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 88,
+            "summary": "緊急設備として強い物語性があります。中央の6端子も明瞭ですが、常設UIにすると危険色が平常化するためボス・真ルート状態への差し替えが適切です。",
+            "strengths": [
+              "中央に正確な6端子がありセル接続へ展開しやすい",
+              "修理痕と異種ケーブルが手作業感を出す"
+            ],
+            "concerns": [
+              "常時表示では赤い警告の意味が薄れる",
+              "AUTO筐体が操作盤より補給装置にも見える"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-wraith-gauge",
+      "order": 11,
+      "title": "GRID WRAITH segmented siphon gauge",
+      "titleJa": "GRID WRAITH・6分割侵食ゲージ",
+      "objective": "一般的な丸いHPバーを廃止し、6セルと直接関係する送電管・侵食装置としてボス耐久値を見せる。",
+      "gate": "空の6セグメントが一目で数えられ、左の敵アンカーと各セルへの警告演出をGodotで追加できる案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "wraith-gauge-switchboard-a",
+          "title": "Siphon Bus Spine",
+          "titleJa": "吸収バス・スパイン",
+          "variation": "Direction A — a boss-linked industrial bus that physically breaks segment by segment.",
+          "prompt": "One long horizontal empty boss integrity gauge housing designed as an industrial siphon bus, exactly six clearly separated dark meter chambers connected by thick navy conduit vertebrae, one larger mechanical anchor socket on the far left for a creature portrait overlay, cyan current inlet details and restrained coral warning clamps, empty transparent meter interiors ready for procedural fill and break effects, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 320,
+          "height": 80,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/wraith-gauge-switchboard-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:28:04.849Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 82,
+            "summary": "工業的な配線背骨として魅力はありますが、細い区切りが多数あり6分割を伝えません。中央ハブと端部の素材取り候補です。",
+            "strengths": [
+              "機械的な背骨と中央ハブの固有シルエット",
+              "細い導線は吸収予告アニメーションと相性が良い"
+            ],
+            "concerns": [
+              "6分割ではなく多数の細いリブに見える",
+              "中央ハブが値の読み順を分断する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "wraith-gauge-ceramic-a",
+          "title": "Insulator Test Spine",
+          "titleJa": "絶縁試験スパイン",
+          "variation": "Direction B — six porcelain-isolated chambers that read as dangerous laboratory containment.",
+          "prompt": "One long horizontal empty boss integrity gauge housing designed as a high-voltage test spine, exactly six clearly separated dark glass meter chambers divided by warm ivory ceramic insulators and graphite rails, one larger circular specimen anchor on the far left for a creature portrait overlay, sparse cyan terminals and tiny coral overload contacts, empty transparent meter interiors ready for procedural fill, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 320,
+          "height": 80,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/wraith-gauge-ceramic-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:28:54.706Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 5,
+            "score": 78,
+            "summary": "研究設備としては美しいですが、細分化された管と中央標本がボスHPの読みやすさを下げます。特殊ステージの進捗装置向きです。",
+            "strengths": [
+              "セラミック絶縁体の素材感が独自",
+              "中央標本が物語上のアンカーになる"
+            ],
+            "concerns": [
+              "6分割ではなく多数の小区画",
+              "アンバー面積が大きく満充電表示と競合する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "wraith-gauge-corrupted-a",
+          "title": "Corruption Siphon Vein",
+          "titleJa": "侵食吸収ヴェイン",
+          "variation": "Direction C — a semi-organic broken conduit whose red corruption retreats under damage.",
+          "prompt": "One long horizontal empty boss integrity gauge housing designed as a corrupted machine conduit, exactly six clearly separated dark meter chambers held by broken navy armor, one predatory cable anchor on the far left for a creature portrait overlay, restrained coral fractures and hooked siphon wires flowing through the frame with cyan repair staples, empty transparent meter interiors ready for procedural corruption fill and segment shattering, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 320,
+          "height": 80,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/wraith-gauge-corrupted-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:29:54.813Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 4,
+            "score": 80,
+            "summary": "侵食配線の雰囲気は強い一方、空のゲージ領域と6分割が成立していません。ボス周辺の装飾コンジットとして転用する案です。",
+            "strengths": [
+              "赤・青ケーブルの対立が敵の吸収と修復を表現できる",
+              "通常UIと大きく異なる不穏な質感"
+            ],
+            "concerns": [
+              "情報を重ねる静かな領域がほぼない",
+              "セグメント数を判別できない"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "wraith-gauge-switchboard-b",
+          "title": "Six Breaker Seals",
+          "titleJa": "六連ブレーカーシール",
+          "variation": "Focused A revision — remove the central hub and reduce the structure to six large breakable seals.",
+          "prompt": "Exactly six and only six large identical empty industrial breaker frames placed in one perfectly straight horizontal row, equal spacing, each frame is a simple dark square chamber with chamfered corners and one thick cyan terminal underneath, the six frames are connected by one thin navy cable, no central hub, no end cap, no extra small compartments, no internal markings, no meter fill, designed to break one frame at a time, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 320,
+          "height": 80,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/wraith-gauge-switchboard-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:35:24.658Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 2,
+            "score": 84,
+            "summary": "破壊可能な大型シールという方向は良いものの、7基生成されて6セルルールと矛盾します。1基を切り出す部品素材としては利用できます。",
+            "strengths": [
+              "一基ごとの輪郭が強く、小表示でも破壊状態を作りやすい",
+              "暗色と赤錆でボス用設備らしい"
+            ],
+            "concerns": [
+              "7基あり、そのままでは採用不可",
+              "同形反復が強く中央の敵らしさは別レイヤーで必要"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "wraith-gauge-ceramic-b",
+          "title": "Six Insulator Chambers",
+          "titleJa": "六連絶縁チャンバー",
+          "variation": "Focused B revision — six large isolated chambers, with no portrait anchor or decorative subdivisions.",
+          "prompt": "Exactly six and only six large identical empty high-voltage chamber frames placed in one perfectly straight horizontal row, equal spacing, every chamber has a dark square empty center and four warm ivory ceramic corner clamps, the six chambers are linked by one thin graphite rail with tiny cyan contacts, no circular hub, no end cap, no extra small compartments, no internal markings, no meter fill, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 320,
+          "height": 80,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/wraith-gauge-ceramic-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:36:39.871Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 6,
+            "score": 74,
+            "summary": "空洞を大きくする修正は効きましたが、約10区画に増えています。単一フレームを切り出す場合のみ利用可能です。",
+            "strengths": [
+              "均質な空洞はGodotの塗りと相性が良い",
+              "上下レールが配置を安定させる"
+            ],
+            "concerns": [
+              "6ではなく多数の区画を生成",
+              "反復が強く敵固有の異常さが弱い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "wraith-gauge-corrupted-b",
+          "title": "Six Fracture Cells",
+          "titleJa": "六連侵食セル",
+          "variation": "Focused C revision — six readable armored cells with corruption confined to the outer cable.",
+          "prompt": "Exactly six and only six large identical empty damaged machine frames placed in one perfectly straight horizontal row, equal spacing, every frame has a calm dark square empty center and thick chipped navy armor, one restrained coral fracture cable snakes behind the six frames and is stapled by cyan repair clamps, no central hub, no end cap, no extra small compartments, no internal markings, no meter fill, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 320,
+          "height": 80,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/wraith-gauge-corrupted-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:37:38.080Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 93,
+            "summary": "集中修正版の暫定本命。大きな暗色セルが6基あり、珊瑚色の侵食と青い修復を各セグメントの破壊演出へつなげられます。",
+            "strengths": [
+              "6個の主要空洞が読み取れ、普通のHPバーに見えない",
+              "一基ずつ割る・消灯する演出が想像しやすい"
+            ],
+            "concerns": [
+              "端が密集しているため、Godotでは中央6枠を切り出すか個別タイル化する",
+              "装飾密度が高く、数値表示はゲージ外へ置く必要がある"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-shard-accumulator",
+      "order": 12,
+      "title": "Energy shard accumulator",
+      "titleJa": "エネルギー片・蓄積カウンター",
+      "objective": "小さなアイコンと数字だけの資源表示を、報酬粒子が流れ込むゲーム固有の蓄積装置へ変える。",
+      "gate": "左に32〜40pxのエネルギー片、右に4〜6桁の数値を重ねられ、獲得時の流入アニメーションを想像できる案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "shard-accumulator-switchboard-a",
+          "title": "Shard Hopper Odometer",
+          "titleJa": "破片ホッパー・積算計",
+          "variation": "Direction A — a tactile maintenance hopper with an odometer window.",
+          "prompt": "One compact horizontal energy-shard accumulator housing, a large open circular receptacle on the left sized for a glowing shard icon overlay, a dark wide mechanical odometer window on the right sized for four to six digits, angular navy steel hopper walls, a short cyan intake conduit, two tiny amber tally lamps, a few bolts and service scratches, all central areas empty for Godot overlays, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/shard-accumulator-switchboard-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:30:52.344Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 4,
+            "score": 76,
+            "summary": "筐体そのものは魅力的ですが、右窓に偽の数字が焼き込まれました。AIっぽさを直接増やすため、そのままでは不採用です。",
+            "strengths": [
+              "大型ホッパーと積算計の用途が一目で分かる",
+              "外形は重工業本命とよく合う"
+            ],
+            "concerns": [
+              "偽数字がローカライズと実数値に干渉する",
+              "手修正コストが集中修正版より高い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "shard-accumulator-ceramic-a",
+          "title": "Vacuum Charge Counter",
+          "titleJa": "真空蓄電カウンター",
+          "variation": "Direction B — a clean lab receptacle with ceramic isolation and a dark numeric tube.",
+          "prompt": "One compact horizontal high-voltage energy-shard counter housing, a large round vacuum receptacle on the left framed by warm ivory ceramic insulators for a glowing shard icon overlay, a dark graphite numeric tube window on the right sized for four to six digits, restrained cyan contacts, one small amber measurement diode, engineered laboratory construction with empty centers for Godot overlays, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/shard-accumulator-ceramic-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:31:50.871Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 6,
+            "score": 70,
+            "summary": "絶縁リングは良いものの、右窓へ判読不能な数字列が生成されました。AI生成物らしさを最も強く感じるため不採用です。",
+            "strengths": [
+              "左の絶縁リングは単体素材として転用可能",
+              "構成自体はアイコンと数値の順序が明快"
+            ],
+            "concerns": [
+              "偽数字が目立ち、今回の改善目的と正反対",
+              "上部の突起がヘッダー高さに収まりにくい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "shard-accumulator-corrupted-a",
+          "title": "Unstable Fragment Canister",
+          "titleJa": "不安定破片キャニスター",
+          "variation": "Direction C — a repaired containment vessel that flashes under large rewards.",
+          "prompt": "One compact horizontal damaged energy-shard accumulator housing, a large cracked circular containment socket on the left sized for a glowing shard icon overlay, a dark reinforced numeric window on the right sized for four to six digits, restrained coral fractures trapped by cyan repair clamps, a short intake cable and mismatched armor plates, dangerous but functional, all central areas empty for Godot overlays, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/shard-accumulator-corrupted-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:32:39.119Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 5,
+            "score": 73,
+            "summary": "不安定な封じ込め装置として派手ですが、右側が複数の偽メーターに分かれ、ゲーム内数値を置く場所がありません。",
+            "strengths": [
+              "エネルギー片が危険物である印象を強く出せる",
+              "左右を貫く配線の勢いがある"
+            ],
+            "concerns": [
+              "数値表示領域が分断されている",
+              "色と細部が多くヘッダーで過度に目立つ"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "shard-accumulator-switchboard-b",
+          "title": "Blank Shard Intake",
+          "titleJa": "無表示・破片取入口",
+          "variation": "Focused A revision — treat the numeric area as a completely blank maintenance plate, not a counter display.",
+          "prompt": "One compact horizontal industrial shard-intake housing with two clearly different empty zones, on the left one large open circular mechanical socket for a separate glowing shard sprite, on the right one completely blank flat near-black rectangular maintenance plate for a later Godot text overlay, the blank plate contains absolutely no pixels except a uniform dark fill, angular navy steel edges, cyan intake pipe, two tiny amber bolts outside the blank plate, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/shard-accumulator-switchboard-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:38:19.155Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 97,
+            "summary": "集中修正版の暫定本命。大型ソケットと完全に空いた暗色プレートが明瞭で、破片アイコン、4桁数値、流入発光を安全にGodotで重ねられます。",
+            "strengths": [
+              "偽文字や数字がなく、表示領域を完全に制御できる",
+              "ラック・操作盤の重工業本命と同じ素材言語",
+              "左ソケットが報酬粒子の到着点として強い"
+            ],
+            "concerns": [
+              "右板の横線は数値と干渉しない濃度へ落とす可能性がある"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "shard-accumulator-ceramic-b",
+          "title": "Blank Ceramic Intake",
+          "titleJa": "無表示・絶縁取入口",
+          "variation": "Focused B revision — one porcelain receptacle and one featureless graphite overlay plate.",
+          "prompt": "One compact horizontal high-voltage shard-intake housing with two clearly different empty zones, on the left one large open round socket held by four warm ivory ceramic insulators for a separate glowing shard sprite, on the right one completely blank flat near-black graphite plate for a later Godot text overlay, the blank plate contains absolutely no pixels except a uniform dark fill, restrained cyan terminals and one amber bolt outside the blank plate, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/shard-accumulator-ceramic-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:39:09.331Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 92,
+            "summary": "左の絶縁ソケットと右の空欄パネルが最も整然としています。研究所ルートや希少通貨表示への差し替え候補です。",
+            "strengths": [
+              "文字領域が広く完全に空いている",
+              "アイボリーの留め具が小表示でも資源装置の輪郭を保つ"
+            ],
+            "concerns": [
+              "通常画面ではアップグレードラックもB案に揃えないと単独で浮く"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "shard-accumulator-corrupted-b",
+          "title": "Blank Containment Intake",
+          "titleJa": "無表示・封じ込め取入口",
+          "variation": "Focused C revision — damaged outer containment with a calm, perfectly blank value plate.",
+          "prompt": "One compact horizontal damaged shard-intake housing with two clearly different empty zones, on the left one large cracked circular containment socket for a separate glowing shard sprite, on the right one completely blank flat near-black reinforced plate for a later Godot text overlay, the blank plate contains absolutely no pixels except a uniform dark fill, restrained coral fractures remain only on the outer navy armor and are held by cyan repair clamps, premium authored 16-bit pixel art UI component, front-facing orthographic view, crisp large pixel clusters, hard chamfered silhouette, practical mechanical construction, limited palette matching deep navy #09111F #111D31 #182B43, charge cyan #4DEEEA, restrained amber #FFB703, danger coral #FF5C5C, and warm highlight #F5F0DB, transparent background, no scenery, no characters, no readable text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing, no generic mobile-game card, no soft rounded rectangle, no glossy gradient.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/shard-accumulator-corrupted-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T14:40:12.982Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 88,
+            "summary": "単純で強い二窓構造です。珊瑚色の角枠が大報酬や危険な資源を示すため、平常時よりボス中の一時変化に向きます。",
+            "strengths": [
+              "左アイコンと右数値の領域が明快",
+              "外周だけ侵食しており情報の可読性を保てる"
+            ],
+            "concerns": [
+              "中央の黒面積が大きく、常設すると他の重工業素材より簡素に見える"
             ]
           },
           "humanReview": {

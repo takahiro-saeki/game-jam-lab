@@ -6,7 +6,7 @@ The Japanese and Latin UI typeface is [Noto Sans JP](https://github.com/google/f
 
 ## PROJECT CHARGE — PixelLab Phase 2 and production-detail batch
 
-Twenty-six original pixel-art candidates were generated through PixelLab API v2 on August 2, 2026: five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, three 64×64 transparent energy-shard icons, and nine 64×64 transparent control emblems for CHARGE, DISCHARGE, and AUTO OFF. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
+Forty-four original pixel-art candidates were generated through PixelLab API v2 on August 2, 2026. The first 26 consist of five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, three 64×64 transparent energy-shard icons, and nine 64×64 transparent control emblems for CHARGE, DISCHARGE, and AUTO OFF. The UI Identity pass added 18 transparent machine-housing candidates: three 384×128 upgrade racks, three 384×128 three-part control kits, six 320×80 GRID WRAITH gauge attempts, and six 192×96 shard-accumulator attempts. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
 
 - Untouched API outputs: `godot/assets/charge_clicker/pixellab/source/`
 - Full prompts, settings, usage, scores, and review decisions: `tools/art-review/data/review-manifest.json`
@@ -18,8 +18,12 @@ Twenty-six original pixel-art candidates were generated through PixelLab API v2 
 - Current provisional CHARGE emblem: `control/charge-piston-a.png`
 - Current provisional DISCHARGE emblem: `control/discharge-wave-a.png`
 - Current provisional AUTO OFF emblem: `control/auto-stopped-rotor-a.png`
+- Current provisional upgrade rack: `ui/upgrade-rack-switchboard-a.png`
+- Current provisional control-frame kit: `ui/control-kit-switchboard-a.png`
+- Current provisional GRID WRAITH gauge: `ui/wraith-gauge-corrupted-b.png`
+- Current provisional shard accumulator: `ui/shard-accumulator-switchboard-b.png`
 
-The eight provisional selections are rendered in the game for an in-context quality check but have not been copied to `approved/`. Every alternate remains selectable in the live Godot review preview. Focused revisions were retained in the source set even when they failed their composition requirement, so the selection process and generation disclosure remain auditable.
+The first eight provisional selections are rendered in the game for an in-context quality check but have not been copied to `approved/`. The four UI Identity selections are shown in a composited control-board preview and await human approval before Godot gameplay integration. Every alternate remains selectable in the local review board. Focused revisions were retained in the source set even when they failed their composition requirement, so the selection process and generation disclosure remain auditable.
 
 ## ZERO PERCENT CITY
 

@@ -81,10 +81,98 @@ function renderIntro(items) {
     : "Codexの一次選考、生成条件、人間の判断を一つの画面で照合できます。比較には最大3案まで追加できます。";
   const gate = batch ? batch.gate : `${items.length}件を表示中。各バッチの完成条件を満たした一案だけをゲームへ採用します。`;
   const preview = state.manifest.project.gameplayPreview
-    ? `<button class="game-preview-button" type="button">Godot組み合わせ比較</button>`
+    ? `<button class="game-preview-button godot-preview-button" type="button">Godot組み合わせ比較</button>`
     : "";
-  elements.intro.innerHTML = `<div><span class="eyebrow">${en}</span><h2>${title}</h2><p>${objective}</p>${preview}</div><div class="gate"><strong>APPROVAL GATE</strong><br>${gate}</div>`;
-  elements.intro.querySelector(".game-preview-button")?.addEventListener("click", openGameCombinationPreview);
+  const identityPreview = state.manifest.batches.some((item) => item.id === "phase2-upgrade-rack")
+    ? `<button class="game-preview-button identity-preview-button" type="button">UI基盤・脱AI感比較</button>`
+    : "";
+  elements.intro.innerHTML = `<div><span class="eyebrow">${en}</span><h2>${title}</h2><p>${objective}</p><div class="preview-actions">${preview}${identityPreview}</div></div><div class="gate"><strong>APPROVAL GATE</strong><br>${gate}</div>`;
+  elements.intro.querySelector(".godot-preview-button")?.addEventListener("click", openGameCombinationPreview);
+  elements.intro.querySelector(".identity-preview-button")?.addEventListener("click", openUiIdentityPreview);
+}
+
+function openUiIdentityPreview() {
+  const rackBatch = state.manifest.batches.find((batch) => batch.id === "phase2-upgrade-rack");
+  const controlBatch = state.manifest.batches.find((batch) => batch.id === "phase2-control-console-kit");
+  const gaugeBatch = state.manifest.batches.find((batch) => batch.id === "phase2-wraith-gauge");
+  const accumulatorBatch = state.manifest.batches.find((batch) => batch.id === "phase2-shard-accumulator");
+  if (![rackBatch, controlBatch, gaugeBatch, accumulatorBatch].every(Boolean)) return;
+  const selection = state.manifest.project.provisionalSelection || {};
+  const option = (candidate) => `<option value="${candidate.id}">${escapeHtml(candidate.titleJa)} — Codex ${candidate.codexReview.score ?? "—"}</option>`;
+  elements.dialogContent.innerHTML = `
+    <div class="game-preview-lab identity-preview-lab">
+      <header>
+        <div><span class="eyebrow">UI IDENTITY / ANTI-AI PASS</span><h2>機械部品の組み合わせ比較</h2></div>
+        <p>PixelLabs生成物は筐体だけに使い、文字・数値・発光・押下・破損はGodotで重ねます。これはレイアウト方針を比較する合成モックです。</p>
+      </header>
+      <div class="game-preview-controls identity-preview-controls">
+        <label>方向プリセット<select id="identity-preset">
+          <option value="recommended">Codex本命</option>
+          <option value="switchboard">重工業 A</option>
+          <option value="ceramic">高圧実験 B</option>
+          <option value="corrupted">侵食設備 C</option>
+          <option value="custom">個別選択</option>
+        </select></label>
+        <label>アップグレードラック<select id="identity-rack-select">${rackBatch.candidates.map(option).join("")}</select></label>
+        <label>主操作盤<select id="identity-control-select">${controlBatch.candidates.map(option).join("")}</select></label>
+        <label>敵ゲージ<select id="identity-gauge-select">${gaugeBatch.candidates.map(option).join("")}</select></label>
+        <label>エネルギー片<select id="identity-accumulator-select">${accumulatorBatch.candidates.map(option).join("")}</select></label>
+      </div>
+      <div class="identity-stage">
+        <div class="identity-stage-header">
+          <div class="identity-brand"><span>PROJECT CHARGE</span><small>GENERATOR CORE / UI IDENTITY TEST</small></div>
+          <div class="identity-accumulator-wrap"><img id="identity-accumulator-image" alt="エネルギー片カウンター候補"><span class="identity-shard">✦</span><strong>0240</strong></div>
+        </div>
+        <div class="identity-boss-row"><span>GRID WRAITH / SIPHON INTEGRITY</span><img id="identity-gauge-image" alt="GRID WRAITHゲージ候補"></div>
+        <div class="identity-core-mock" aria-label="6セルの仮表示">
+          <div class="identity-reactor-mock">CORE<br><strong>72%</strong></div>
+          <div class="identity-cells">${Array.from({ length: 6 }, (_, index) => `<i style="--level:${34 + index * 11}%"><b>0${index + 1}</b></i>`).join("")}</div>
+        </div>
+        <div class="identity-control-wrap"><span>MAIN CONTROL BUS</span><img id="identity-control-image" alt="主操作盤候補"></div>
+        <div class="identity-rack-wrap"><span>UPGRADE MODULE RACK / 4 × 2</span><img id="identity-rack-image" alt="アップグレードラック候補"></div>
+      </div>
+      <p class="identity-preview-note">本命は通常UIを重工業Aで統一し、GRID WRAITHだけ侵食Cを混ぜる構成です。C案はボス警告・真ルートで設備が侵食される差し替えにも使えます。</p>
+    </div>`;
+
+  const preset = elements.dialogContent.querySelector("#identity-preset");
+  const rackSelect = elements.dialogContent.querySelector("#identity-rack-select");
+  const controlSelect = elements.dialogContent.querySelector("#identity-control-select");
+  const gaugeSelect = elements.dialogContent.querySelector("#identity-gauge-select");
+  const accumulatorSelect = elements.dialogContent.querySelector("#identity-accumulator-select");
+  const presets = {
+    recommended: {
+      rack: selection.upgradeRack || "upgrade-rack-switchboard-a",
+      control: selection.controlKit || "control-kit-switchboard-a",
+      gauge: selection.wraithGauge || "wraith-gauge-corrupted-b",
+      accumulator: selection.shardAccumulator || "shard-accumulator-switchboard-b",
+    },
+    switchboard: { rack: "upgrade-rack-switchboard-a", control: "control-kit-switchboard-a", gauge: "wraith-gauge-switchboard-b", accumulator: "shard-accumulator-switchboard-b" },
+    ceramic: { rack: "upgrade-rack-ceramic-a", control: "control-kit-ceramic-a", gauge: "wraith-gauge-ceramic-b", accumulator: "shard-accumulator-ceramic-b" },
+    corrupted: { rack: "upgrade-rack-corrupted-a", control: "control-kit-corrupted-a", gauge: "wraith-gauge-corrupted-b", accumulator: "shard-accumulator-corrupted-b" },
+  };
+  const updateImages = () => {
+    const byId = (batch, id) => batch.candidates.find((candidate) => candidate.id === id);
+    elements.dialogContent.querySelector("#identity-rack-image").src = imageUrl(byId(rackBatch, rackSelect.value));
+    elements.dialogContent.querySelector("#identity-control-image").src = imageUrl(byId(controlBatch, controlSelect.value));
+    elements.dialogContent.querySelector("#identity-gauge-image").src = imageUrl(byId(gaugeBatch, gaugeSelect.value));
+    elements.dialogContent.querySelector("#identity-accumulator-image").src = imageUrl(byId(accumulatorBatch, accumulatorSelect.value));
+  };
+  const applyPreset = (name) => {
+    const values = presets[name];
+    if (!values) return;
+    rackSelect.value = values.rack;
+    controlSelect.value = values.control;
+    gaugeSelect.value = values.gauge;
+    accumulatorSelect.value = values.accumulator;
+    updateImages();
+  };
+  preset.addEventListener("change", () => applyPreset(preset.value));
+  [rackSelect, controlSelect, gaugeSelect, accumulatorSelect].forEach((select) => select.addEventListener("change", () => {
+    preset.value = "custom";
+    updateImages();
+  }));
+  applyPreset("recommended");
+  elements.dialog.showModal();
 }
 
 function openGameCombinationPreview() {

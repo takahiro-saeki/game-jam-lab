@@ -23,6 +23,7 @@ The next candidate is a 20-minute active clicker built around six charge cells, 
 - [Game design document](docs/CHARGE_CLICKER_GDD.md)
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
 - [PixelLab style and prompt brief](docs/PIXELLAB_STYLE_BRIEF.md)
+- [UI Identity / anti-AI pass](docs/UI_IDENTITY_PASS.md)
 
 ## Controls
 
@@ -110,4 +111,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE Phase 2 now contains a timed restoration objective, an interruptible mini-boss, circuit rewards, stage results, and versioned autosave in addition to the six-cell core loop. Its active-play simulation clears in 337.5 seconds. Eight PixelLab style candidates have been generated and scored; the provisional reactor/background pair is integrated and awaits human approval in the local art-review board.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE Phase 2 now contains a timed restoration objective, an interruptible mini-boss, circuit rewards, stage results, and versioned autosave in addition to the six-cell core loop. Its active-play simulation clears in 337.5 seconds. Forty-four PixelLab candidates across twelve review categories have been generated and scored. The first eight gameplay categories are available in the live Godot comparison; the four UI Identity categories are available in the composited anti-AI review before gameplay integration.

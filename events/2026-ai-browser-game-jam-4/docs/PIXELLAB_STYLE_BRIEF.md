@@ -1,6 +1,6 @@
 # PROJECT CHARGE — PixelLab Style Brief
 
-> Status: 26 candidates generated; eight provisional selections integrated; control-emblem approval pending
+> Status: 44 candidates generated; eight gameplay selections integrated; four UI Identity selections await human approval
 > Scope: Phase 2 style validation and first production-detail batch
 > Rule: compare every candidate in the actual Godot HUD before final approval
 
@@ -178,3 +178,9 @@ Human review approved the first five production categories. `Coil Spark Fragment
 | 3 | Dormant Drone Dock | 82 | Appropriate low brightness, but resembles a terminal or helmet |
 
 The review tool can switch every candidate across all eight categories inside a fixed boss-state preview. The three new control selections remain source candidates until human review is saved.
+
+## 9. UI Identity / anti-AI pass — August 2, 2026
+
+Before generating 24 upgrade icons, the project inserted a structural UI pass. Eighteen additional candidates explore upgrade racks, a three-part main-control family, a six-part GRID WRAITH integrity device, and an energy-shard accumulator. The first gauge and accumulator prompts exposed two repeatable generation risks: exact counts drifted above six, and counter language caused fake digits. Focused revisions replaced counter language with a blank maintenance plate and reduced the gauge to isolated breakable chambers.
+
+The current mixed provisional direction is heavy switchboard machinery for the normal HUD and a corrupted six-cell frame for GRID WRAITH. Full rationale, Godot layer ownership, integration behavior, and the morning review checklist are recorded in [`UI_IDENTITY_PASS.md`](UI_IDENTITY_PASS.md).
