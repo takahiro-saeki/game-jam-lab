@@ -35,6 +35,21 @@ const EnergyShardTextures := {
 	"shard-hex-battery-a": preload("res://assets/charge_clicker/pixellab/source/icon/shard-hex-battery-a.png"),
 	"shard-coil-spark-a": preload("res://assets/charge_clicker/pixellab/source/icon/shard-coil-spark-a.png"),
 }
+const ChargeControlTextures := {
+	"charge-piston-a": preload("res://assets/charge_clicker/pixellab/source/control/charge-piston-a.png"),
+	"charge-hex-pad-a": preload("res://assets/charge_clicker/pixellab/source/control/charge-hex-pad-a.png"),
+	"charge-convergence-a": preload("res://assets/charge_clicker/pixellab/source/control/charge-convergence-a.png"),
+}
+const DischargeControlTextures := {
+	"discharge-breaker-a": preload("res://assets/charge_clicker/pixellab/source/control/discharge-breaker-a.png"),
+	"discharge-six-bus-a": preload("res://assets/charge_clicker/pixellab/source/control/discharge-six-bus-a.png"),
+	"discharge-wave-a": preload("res://assets/charge_clicker/pixellab/source/control/discharge-wave-a.png"),
+}
+const AutoControlTextures := {
+	"auto-drone-dock-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-drone-dock-a.png"),
+	"auto-open-relay-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-open-relay-a.png"),
+	"auto-stopped-rotor-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-stopped-rotor-a.png"),
+}
 
 const VIEW := Vector2(1280, 720)
 const REACTOR_CENTER := Vector2(212, 286)
@@ -49,7 +64,10 @@ var reactor_texture: Texture2D = ReactorTextures["reactor-hex-a"]
 var generator_background: Texture2D = GeneratorBackgrounds["environment-machine-room-a"]
 var cell_texture: Texture2D = CellTextures["cell-hex-capsule-a"]
 var grid_wraith_texture: Texture2D = GridWraithTextures["wraith-manta-siphon-a"]
-var energy_shard_texture: Texture2D = EnergyShardTextures["shard-faceted-core-a"]
+var energy_shard_texture: Texture2D = EnergyShardTextures["shard-coil-spark-a"]
+var charge_control_texture: Texture2D = ChargeControlTextures["charge-piston-a"]
+var discharge_control_texture: Texture2D = DischargeControlTextures["discharge-wave-a"]
+var auto_control_texture: Texture2D = AutoControlTextures["auto-stopped-rotor-a"]
 var art_preview_enabled := false
 
 var animation_time := 0.0
@@ -113,7 +131,10 @@ func apply_web_art_preview() -> void:
 	var environment_id := str(values.get("environment", "environment-machine-room-a"))
 	var cell_id := str(values.get("cell", "cell-hex-capsule-a"))
 	var wraith_id := str(values.get("wraith", "wraith-manta-siphon-a"))
-	var shard_id := str(values.get("shard", "shard-faceted-core-a"))
+	var shard_id := str(values.get("shard", "shard-coil-spark-a"))
+	var charge_control_id := str(values.get("charge_control", "charge-piston-a"))
+	var discharge_control_id := str(values.get("discharge_control", "discharge-wave-a"))
+	var auto_control_id := str(values.get("auto_control", "auto-stopped-rotor-a"))
 	if ReactorTextures.has(reactor_id):
 		reactor_texture = ReactorTextures[reactor_id]
 	if GeneratorBackgrounds.has(environment_id):
@@ -124,6 +145,12 @@ func apply_web_art_preview() -> void:
 		grid_wraith_texture = GridWraithTextures[wraith_id]
 	if EnergyShardTextures.has(shard_id):
 		energy_shard_texture = EnergyShardTextures[shard_id]
+	if ChargeControlTextures.has(charge_control_id):
+		charge_control_texture = ChargeControlTextures[charge_control_id]
+	if DischargeControlTextures.has(discharge_control_id):
+		discharge_control_texture = DischargeControlTextures[discharge_control_id]
+	if AutoControlTextures.has(auto_control_id):
+		auto_control_texture = AutoControlTextures[auto_control_id]
 
 func configure_art_preview_state() -> void:
 	run.stage_phase = ChargeState.StagePhase.BOSS
@@ -716,8 +743,11 @@ func draw_reactor_panel() -> void:
 	var hovered := charge_rect.has_point(mouse_position) or charge_held
 	var charge_color := Palette.AMBER if run.is_full() else Palette.CYAN
 	draw_style_box(Palette.rounded_box(Palette.with_alpha(charge_color, 0.92 if charge_held else 0.72 if hovered else 0.16), 22, charge_color, 3), charge_rect)
-	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(0, 47), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x, 31, Palette.INK if hovered else Palette.PAPER)
-	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(0, 78), loc("クリック・長押し / SPACE / A・×", "CLICK · HOLD / SPACE / A · CROSS"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x, 12, Palette.INK if hovered else Palette.MUTED)
+	var charge_icon_center := charge_rect.position + Vector2(53, 54)
+	draw_circle(charge_icon_center, 39.0, Palette.with_alpha(charge_color, 0.18 if hovered else 0.08))
+	draw_texture_rect(charge_control_texture, Rect2(charge_rect.position + Vector2(21, 22), Vector2(64, 64)), false, Color.WHITE)
+	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(78, 47), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 31, Palette.INK if hovered else Palette.PAPER)
+	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(78, 78), loc("クリック・長押し / SPACE / A・×", "CLICK · HOLD / SPACE / A · CROSS"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 12, Palette.INK if hovered else Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(58, 650), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 13, Palette.AMBER if run.is_full() else Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(58, 675), loc("入力 %d  放電 %d  事故 %d", "INPUTS %d  DISCHARGES %d  MELTDOWNS %d") % [run.manual_inputs, run.partial_discharges + run.super_discharges, run.meltdowns], HORIZONTAL_ALIGNMENT_LEFT, 310, 11, Palette.MUTED)
 
@@ -754,14 +784,18 @@ func draw_circuit_panel() -> void:
 	var discharge_color := Palette.AMBER if super_ready else Palette.CYAN
 	var discharge_hover := discharge_rect.has_point(mouse_position)
 	draw_style_box(Palette.rounded_box(Palette.with_alpha(discharge_color, 0.82 if discharge_hover and can_discharge else 0.17 if can_discharge else 0.035), 18, Palette.with_alpha(discharge_color, 0.95 if can_discharge else 0.25), 2), discharge_rect)
-	draw_string(Palette.UI_FONT, discharge_rect.position + Vector2(0, 34), loc("SUPER DISCHARGE", "SUPER DISCHARGE") if super_ready else "DISCHARGE", HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x, 24, Palette.INK if discharge_hover and can_discharge else Palette.PAPER)
-	draw_string(Palette.UI_FONT, discharge_rect.position + Vector2(0, 59), loc("ENTER / X / X・□　右クリック", "ENTER / X / X · SQUARE  ·  RIGHT CLICK"), HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x, 11, Palette.INK if discharge_hover and can_discharge else Palette.MUTED)
+	draw_circle(discharge_rect.position + Vector2(47, 38), 33.0, Palette.with_alpha(discharge_color, 0.16 if can_discharge else 0.035))
+	draw_texture_rect(discharge_control_texture, Rect2(discharge_rect.position + Vector2(15, 6), Vector2(64, 64)), false, Color.WHITE if can_discharge else Color(0.44, 0.48, 0.54, 0.42))
+	draw_string(Palette.UI_FONT, discharge_rect.position + Vector2(74, 34), loc("SUPER DISCHARGE", "SUPER DISCHARGE") if super_ready else "DISCHARGE", HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x - 84, 24, Palette.INK if discharge_hover and can_discharge else Palette.PAPER)
+	draw_string(Palette.UI_FONT, discharge_rect.position + Vector2(74, 59), loc("ENTER / X / X・□　右クリック", "ENTER / X / X · SQUARE  ·  RIGHT CLICK"), HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x - 84, 11, Palette.INK if discharge_hover and can_discharge else Palette.MUTED)
 
 	var auto_color := Palette.VIOLET if run.auto_enabled else Palette.MUTED
 	var auto_hover := auto_rect.has_point(mouse_position)
 	draw_style_box(Palette.rounded_box(Palette.with_alpha(auto_color, 0.65 if auto_hover or run.auto_enabled else 0.08), 18, auto_color, 2), auto_rect)
-	draw_string(Palette.UI_FONT, auto_rect.position + Vector2(0, 32), "AUTO  %s" % ("ON" if run.auto_enabled else "OFF"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x, 19, Palette.PAPER)
-	draw_string(Palette.UI_FONT, auto_rect.position + Vector2(0, 57), loc("A / Y・△", "A / Y · TRIANGLE"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x, 11, Palette.MUTED)
+	draw_circle(auto_rect.position + Vector2(37, 38), 29.0, Palette.with_alpha(Palette.VIOLET, 0.24 if run.auto_enabled else 0.06))
+	draw_texture_rect(auto_control_texture, Rect2(auto_rect.position + Vector2(9, 10), Vector2(56, 56)), false, Color.WHITE if run.auto_enabled else Color(0.7, 0.72, 0.82, 0.72))
+	draw_string(Palette.UI_FONT, auto_rect.position + Vector2(56, 32), "AUTO  %s" % ("ON" if run.auto_enabled else "OFF"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x - 62, 19, Palette.PAPER)
+	draw_string(Palette.UI_FONT, auto_rect.position + Vector2(56, 57), loc("A / Y・△", "A / Y · TRIANGLE"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x - 62, 11, Palette.MUTED)
 
 	var status := message if message_time > 0.0 else tutorial_hint()
 	draw_string(Palette.UI_FONT, Vector2(448, 455), status, HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.AMBER if run.is_full() else Palette.PAPER)

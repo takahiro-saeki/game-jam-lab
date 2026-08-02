@@ -93,13 +93,16 @@ function openGameCombinationPreview() {
   const cellBatch = state.manifest.batches.find((batch) => batch.id === "phase2-cell-module");
   const wraithBatch = state.manifest.batches.find((batch) => batch.id === "phase2-grid-wraith");
   const shardBatch = state.manifest.batches.find((batch) => batch.id === "phase2-energy-shard");
+  const chargeControlBatch = state.manifest.batches.find((batch) => batch.id === "phase2-charge-control");
+  const dischargeControlBatch = state.manifest.batches.find((batch) => batch.id === "phase2-discharge-control");
+  const autoControlBatch = state.manifest.batches.find((batch) => batch.id === "phase2-auto-control");
   const selection = state.manifest.project.provisionalSelection || {};
   const option = (candidate) => `<option value="${candidate.id}">${escapeHtml(candidate.titleJa)} — Codex ${candidate.codexReview.score ?? "—"} / あなた ${candidate.humanReview.rating ?? "—"}</option>`;
   elements.dialogContent.innerHTML = `
     <div class="game-preview-lab">
       <header>
         <div><span class="eyebrow">LIVE GODOT WEB PREVIEW</span><h2>組み合わせ比較</h2></div>
-        <p>5カテゴリの候補を、ボス戦中の実際のGodot描画・UI・発光リングと重ねて確認できます。</p>
+        <p>8カテゴリの候補を、固定したボス戦中の実際のGodot描画・UI・発光リングと重ねて確認できます。</p>
       </header>
       <div class="game-preview-controls">
         <label>原子炉<select id="game-reactor-select">${reactorBatch.candidates.map(option).join("")}</select></label>
@@ -107,6 +110,9 @@ function openGameCombinationPreview() {
         <label>セル<select id="game-cell-select">${cellBatch.candidates.map(option).join("")}</select></label>
         <label>GRID WRAITH<select id="game-wraith-select">${wraithBatch.candidates.map(option).join("")}</select></label>
         <label>エネルギー片<select id="game-shard-select">${shardBatch.candidates.map(option).join("")}</select></label>
+        <label>CHARGE<select id="game-charge-control-select">${chargeControlBatch.candidates.map(option).join("")}</select></label>
+        <label>DISCHARGE<select id="game-discharge-control-select">${dischargeControlBatch.candidates.map(option).join("")}</select></label>
+        <label>AUTO OFF<select id="game-auto-control-select">${autoControlBatch.candidates.map(option).join("")}</select></label>
         <a id="open-game-window" href="#" target="_blank" rel="noreferrer">別タブで開く</a>
       </div>
       <div class="game-preview-status" role="status">選択を反映しています。初回はGodotの読み込みに数秒かかります。</div>
@@ -117,11 +123,17 @@ function openGameCombinationPreview() {
   const cellSelect = elements.dialogContent.querySelector("#game-cell-select");
   const wraithSelect = elements.dialogContent.querySelector("#game-wraith-select");
   const shardSelect = elements.dialogContent.querySelector("#game-shard-select");
+  const chargeControlSelect = elements.dialogContent.querySelector("#game-charge-control-select");
+  const dischargeControlSelect = elements.dialogContent.querySelector("#game-discharge-control-select");
+  const autoControlSelect = elements.dialogContent.querySelector("#game-auto-control-select");
   reactorSelect.value = selection.reactor || reactorBatch.candidates[0].id;
   environmentSelect.value = selection.environment || environmentBatch.candidates[0].id;
   cellSelect.value = selection.cell || cellBatch.candidates[0].id;
   wraithSelect.value = selection.wraith || wraithBatch.candidates[0].id;
   shardSelect.value = selection.shard || shardBatch.candidates[0].id;
+  chargeControlSelect.value = selection.chargeControl || chargeControlBatch.candidates[0].id;
+  dischargeControlSelect.value = selection.dischargeControl || dischargeControlBatch.candidates[0].id;
+  autoControlSelect.value = selection.autoControl || autoControlBatch.candidates[0].id;
   const loadCombination = () => {
     const params = new URLSearchParams({
       art_preview: "1",
@@ -131,6 +143,9 @@ function openGameCombinationPreview() {
       cell: cellSelect.value,
       wraith: wraithSelect.value,
       shard: shardSelect.value,
+      charge_control: chargeControlSelect.value,
+      discharge_control: dischargeControlSelect.value,
+      auto_control: autoControlSelect.value,
     });
     const url = `/game/?${params}`;
     elements.dialogContent.querySelector("#game-preview-frame").src = url;
@@ -141,6 +156,9 @@ function openGameCombinationPreview() {
   cellSelect.addEventListener("change", loadCombination);
   wraithSelect.addEventListener("change", loadCombination);
   shardSelect.addEventListener("change", loadCombination);
+  chargeControlSelect.addEventListener("change", loadCombination);
+  dischargeControlSelect.addEventListener("change", loadCombination);
+  autoControlSelect.addEventListener("change", loadCombination);
   loadCombination();
   elements.dialog.showModal();
 }

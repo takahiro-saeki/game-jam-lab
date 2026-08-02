@@ -1,6 +1,6 @@
 # PROJECT CHARGE — PixelLab Style Brief
 
-> Status: 17 candidates generated; five provisional selections integrated; human approval pending
+> Status: 26 candidates generated; eight provisional selections integrated; control-emblem approval pending
 > Scope: Phase 2 style validation and first production-detail batch
 > Rule: compare every candidate in the actual Godot HUD before final approval
 
@@ -151,4 +151,30 @@ The complete prompts, API settings, generation usage, Codex scores, and human-re
 | 2 | Hex Battery Fragment | 89 | Rich detail but resembles a coin when reduced |
 | 3 | Coil Spark Fragment | 85 | Dynamic alternate better suited to a booster or component |
 
-`Hex Core A`, `Dense Machine Room A`, `Hex Capsule Cell`, `Manta Siphon`, and `Faceted Core Shard` are provisionally rendered in Godot. The review tool can switch every candidate in all five categories inside a fixed boss-state preview. They remain source candidates—not final approved assets—until the human review is saved and the 1280×720 gameplay preview is accepted.
+Human review approved the first five production categories. `Coil Spark Fragment` replaced the original shard proposal because it received the strongest human rating in that category. `Hex Capsule Cell` remains the normal cell, while the also-approved `Vacuum Tube Cell` is reserved for an upgraded or overcharge state. `Manta Siphon` remains GRID WRAITH, and the equally rated `Cable Leech` is reserved for GRID LEECH.
+
+### CHARGE control
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Induction Piston | 91 | Provisional selection; clear storage chamber and narrow button-friendly silhouette |
+| 2 | Convergence Core | 88 | Strong focus but resembles another small reactor |
+| 3 | Six-Contact Charge Pad | 79 | Generated with an eight-direction outer structure |
+
+### DISCHARGE control
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Release Wave | 95 | Provisional selection; clearest outward force at 40px |
+| 2 | Six-Way Power Bus | 89 | Strong machinery but reads as four arms and eight terminals |
+| 3 | Arc Breaker | 75 | Tactile lever whose discharge meaning disappears when reduced |
+
+### AUTO OFF control
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Stopped Automation Rotor | 94 | Provisional selection; strongest OFF-to-ON animation potential |
+| 2 | Open Hex Relay | 90 | Polished dormant mechanism but weak AUTO-specific meaning |
+| 3 | Dormant Drone Dock | 82 | Appropriate low brightness, but resembles a terminal or helmet |
+
+The review tool can switch every candidate across all eight categories inside a fixed boss-state preview. The three new control selections remain source candidates until human review is saved.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-02T12:23:03.842Z",
+  "updatedAt": "2026-08-02T12:50:05.000Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -12,7 +12,10 @@
       "environment": "environment-machine-room-a",
       "cell": "cell-hex-capsule-a",
       "wraith": "wraith-manta-siphon-a",
-      "shard": "shard-faceted-core-a",
+      "shard": "shard-coil-spark-a",
+      "chargeControl": "charge-piston-a",
+      "dischargeControl": "discharge-wave-a",
+      "autoControl": "auto-stopped-rotor-a",
       "note": "Codexの一次選考をGodotへ仮組み済み。人間レビューで変更可能です。"
     },
     "palette": [
@@ -844,6 +847,441 @@
             "rating": 4,
             "note": "",
             "reviewedAt": "2026-08-02T12:23:03.842Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-charge-control",
+      "order": 6,
+      "title": "CHARGE control emblem",
+      "titleJa": "操作盤・CHARGE",
+      "objective": "ゲームの主入力を文字に頼らず認識でき、押下・満充電・過充電のGodot演出へ接続できる固有機構にする。",
+      "gate": "48px表示で入力・蓄積・収束の意味が読み取れ、CHARGE文字と入力表記を邪魔せず、シアンからアンバーへの発光差し替えが成立する一案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "charge-piston-a",
+          "title": "Induction Piston",
+          "titleJa": "誘導ピストン",
+          "variation": "A tactile industrial piston that visibly compresses energy into a capacitor.",
+          "prompt": "A single front-facing control emblem for the main CHARGE action in a science-fiction generator game, compact induction piston pressing downward into one cyan capacitor chamber, dark navy mechanical housing, two restrained metal guide rails, energy visibly converging inward, premium 16-bit pixel art icon, large crisp clusters, limited palette matching deep navy #09111F #111D31 #182B43 and cyan #4DEEEA with tiny amber #FFB703 contact, readable at 48 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no hand, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/charge-piston-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:38:40.000Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 91,
+            "summary": "縦方向のピストンと明るい蓄電室が、入力してエネルギーを貯める操作を最も素直に伝える。輪郭が細長く、CHARGE文字の左へ置いても競合しにくい。",
+            "strengths": [
+              "大きなシアン蓄電部が48pxでも残る",
+              "縦長シルエットが横長ボタンの余白を効率よく使う"
+            ],
+            "concerns": [
+              "単体では操作ピストンより小型セルにも見えるため、押下時の沈み込み演出で補強したい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "charge-hex-pad-a",
+          "title": "Six-Contact Charge Pad",
+          "titleJa": "六接点チャージパッド",
+          "variation": "A hexagonal input pad whose six contacts feed one central charge core.",
+          "prompt": "A single front-facing control emblem for the main CHARGE action in a science-fiction generator game, bold hexagonal pressure pad with exactly six cyan contact nodes feeding one dark central capacitor, thick dark navy armor rim, one restrained amber readiness contact, energy paths converge toward the center, premium 16-bit pixel art icon, very large crisp pixel clusters, limited palette matching #09111F #111D31 #182B43 #4DEEEA #FFB703, readable at 48 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/charge-hex-pad-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:39:18.429Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 3,
+            "score": 79,
+            "summary": "中央へ収束する圧力盤としての密度は高いが、生成結果の外周接点が8個に見え、6セルというルールを誤って伝える。アンバー比率も初期CHARGEには強すぎる。",
+            "strengths": [
+              "押し込み盤として重厚で、機械UIの存在感がある",
+              "中心へ向かう配線はCHARGEの方向と合う"
+            ],
+            "concerns": [
+              "六接点指定に対して八方向の構造へ崩れた",
+              "橙色ノードが危険・満充電状態に見えやすい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "charge-convergence-a",
+          "title": "Convergence Core",
+          "titleJa": "収束コア",
+          "variation": "An energetic instrument with concentric rings collapsing toward a bright input core.",
+          "prompt": "A single front-facing control emblem for the main CHARGE action in a science-fiction generator game, three broken concentric induction rings visibly converging toward one bright cyan central core, compact dark navy instrument clamps, restrained amber terminal at the bottom, energetic but readable silhouette, premium 16-bit pixel art icon, large crisp clusters, limited palette matching #09111F #111D31 #182B43 #4DEEEA #FFB703, readable at 48 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/charge-convergence-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:40:05.834Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 2,
+            "score": 88,
+            "summary": "明るい中心核と太い入力アームでエネルギー収束が伝わる。円形原子炉と似た中心構成だが、ボタン内では発光計器として魅力がある。",
+            "strengths": [
+              "中心核の明度が高く、瞬間的に視線を集める",
+              "押下時にアームを縮めるアニメーションへ展開しやすい"
+            ],
+            "concerns": [
+              "外周アームが五方向に見え、6セル意匠とは一致しない",
+              "小型原子炉やタレットにも見える"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-discharge-control",
+      "order": 7,
+      "title": "DISCHARGE control emblem",
+      "titleJa": "操作盤・DISCHARGE",
+      "objective": "蓄積した電力を外へ解放する第2の主操作を、CHARGEとは逆向きの力と危険な開放感で識別させる。",
+      "gate": "40〜48px表示で解放・外向き・遮断解除が読み取れ、通常放電のシアンと超放電のアンバーを同じ素材で受けられる一案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "discharge-breaker-a",
+          "title": "Arc Breaker",
+          "titleJa": "アーク遮断器",
+          "variation": "A heavy breaker opening to release a contained electrical arc.",
+          "prompt": "A single front-facing control emblem for the DISCHARGE action in a science-fiction generator game, heavy dark navy circuit breaker snapped open around one cyan electrical arc escaping outward, two strong mechanical jaws and a restrained amber hazard contact, clearly communicates release rather than storage, premium 16-bit pixel art icon, large crisp clusters, limited palette matching #09111F #111D31 #182B43 #4DEEEA #FFB703, readable at 40 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/discharge-breaker-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:40:41.350Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 3,
+            "score": 75,
+            "summary": "レバーと接点の機械感はあるが、放電アークが小さく、縮小すると椅子や工具のように見える。主操作の意味をアイコンだけで伝えるには弱い。",
+            "strengths": [
+              "物理スイッチとして触覚的な魅力がある",
+              "他の円形機構とは輪郭を差別化できる"
+            ],
+            "concerns": [
+              "外向きのエネルギー解放が読み取りにくい",
+              "40px表示でシルエットの意味が曖昧になる"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "discharge-six-bus-a",
+          "title": "Six-Way Power Bus",
+          "titleJa": "六分割パワーバス",
+          "variation": "Six charged gates open away from a central bus core.",
+          "prompt": "A single front-facing control emblem for the DISCHARGE action in a science-fiction generator game, one compact central power bus splitting open into exactly six outward-facing cyan discharge gates, thick dark navy hexagonal braces and tiny amber overload contacts, unmistakably outward energy flow, premium 16-bit pixel art icon, very large crisp pixel clusters, limited palette matching #09111F #111D31 #182B43 #4DEEEA #FFB703, readable at 40 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/discharge-six-bus-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:41:21.945Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 2,
+            "score": 89,
+            "summary": "交差する太い導体と外端のシアンが、電力を複数経路へ送り出す装置としてよく読める。実生成は六方向より四本アーム・八端子に見える点が惜しい。",
+            "strengths": [
+              "機械的で、CHARGE候補と明確に異なる外向き構造",
+              "シアン端子が超放電時のアンバー差し替えにも向く"
+            ],
+            "concerns": [
+              "六分割指定を正確には満たしていない",
+              "武器や交差レンチにも見える可能性がある"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "discharge-wave-a",
+          "title": "Release Wave",
+          "titleJa": "解放波形",
+          "variation": "A compressed core bursting into two bold expanding energy waves.",
+          "prompt": "A single front-facing control emblem for the DISCHARGE action in a science-fiction generator game, compressed dark central capacitor bursting into two bold symmetrical cyan energy waves, small dark navy containment fragments moving outward and restrained amber spark at the core, premium 16-bit pixel art icon, extremely clear large clusters, limited palette matching #09111F #111D31 #182B43 #4DEEEA #FFB703, readable at 40 pixels, centered with transparent padding, exactly one isolated effect mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/discharge-wave-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:42:02.142Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "中央の圧縮核から左右へ広がる強い波形により、放出・瞬発・高出力が文字なしでも伝わる。通常放電と超放電の色変更にも最も耐える。",
+            "strengths": [
+              "40pxでも左右の放出方向と中心核が明瞭",
+              "CHARGEの内向き操作と正反対のシルエットになる"
+            ],
+            "concerns": [
+              "波形がやや生物的な翼にも見えるため、ボタン枠と放電アニメーションで機械操作に固定したい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-auto-control",
+      "order": 8,
+      "title": "AUTO control emblem",
+      "titleJa": "操作盤・AUTO OFF",
+      "objective": "自動化装置が停止・待機していることを示し、ON時には同じ素材へ紫の稼働光を加えて明確に反転できる機構にする。",
+      "gate": "40〜48px表示で待機中の機械だと分かり、OFFでは暗く、ONでは紫の発光と回転・稼働演出を加えられ、主操作2つと混同しない一案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "auto-drone-dock-a",
+          "title": "Dormant Drone Dock",
+          "titleJa": "休止ドローンドック",
+          "variation": "A small service drone parked inside an unpowered charging dock.",
+          "prompt": "A single front-facing control emblem for AUTO OFF in a science-fiction generator game, one compact triangular service drone parked inside a dark unpowered docking cradle, folded tool arms, one tiny dim violet standby light, dark navy casing and no active energy beam, premium 16-bit pixel art icon, large crisp clusters, limited palette matching #09111F #111D31 #182B43 and restrained violet #9B5DE5, readable at 40 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/auto-drone-dock-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:43:00.838Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 3,
+            "score": 82,
+            "summary": "暗い筐体と紫の待機灯はOFF状態に合うが、ドローンとドックの関係が小表示では弱く、端末・モニター・ヘルメットにも見える。",
+            "strengths": [
+              "OFF時の低輝度と落ち着いた配色が適切",
+              "自動ドローン強化との物語的な接続がある"
+            ],
+            "concerns": [
+              "自動化や待機という意味が輪郭だけでは伝わりにくい",
+              "ON時に動かせる部位が少ない"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "auto-open-relay-a",
+          "title": "Open Hex Relay",
+          "titleJa": "開放六角リレー",
+          "variation": "A six-contact relay with an obvious open central circuit.",
+          "prompt": "A single front-facing control emblem for AUTO OFF in a science-fiction generator game, dark hexagonal automation relay with exactly six contact points, visibly open central circuit and one dim violet standby diode, thick navy industrial rim, dormant and unpowered silhouette designed to glow violet when enabled, premium 16-bit pixel art icon, very large crisp pixel clusters, limited palette matching #09111F #111D31 #182B43 #9B5DE5, readable at 40 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/auto-open-relay-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:43:26.684Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "reviewed",
+            "rank": 2,
+            "score": 90,
+            "summary": "精密な暗色リレーとして完成度が高く、中央の紫灯をON時に強くできる。静止画では開回路よりダイヤルや小型原子炉に近く見える。",
+            "strengths": [
+              "既存パレットと機械室の密度へよく馴染む",
+              "中心灯と外輪を段階的に点灯できる"
+            ],
+            "concerns": [
+              "AUTO固有の意味が弱く、別の装置アイコンにも転用できてしまう",
+              "細い接点は40pxで一部失われる"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "auto-stopped-rotor-a",
+          "title": "Stopped Automation Rotor",
+          "titleJa": "停止オートローター",
+          "variation": "A compact automation rotor locked by a visible brake clamp.",
+          "prompt": "A single front-facing control emblem for AUTO OFF in a science-fiction generator game, compact three-blade automation rotor visibly stopped by one dark mechanical brake clamp, tiny dim violet center bearing, heavy navy casing pieces and no motion trails, designed to rotate and glow violet when enabled, premium 16-bit pixel art icon, large crisp clusters, limited palette matching #09111F #111D31 #182B43 #9B5DE5, readable at 40 pixels, centered with transparent padding, exactly one isolated mechanism on transparent background, no text, no letters, no numbers, no arrows, no button label, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 64,
+          "height": 64,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/control/auto-stopped-rotor-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T12:44:14.664Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 94,
+            "summary": "三枚ローターと制動部が自動機械を最も端的に表し、OFFでは停止、ONでは回転という状態変化をGodotで明確に作れる。小表示の輪郭も強い。",
+            "strengths": [
+              "40pxでも三枚羽根と中心軸が判別できる",
+              "回転・紫発光・ブレーキ解除というON演出へ自然に拡張できる"
+            ],
+            "concerns": [
+              "静止画だけでは停止中か常時稼働中か断定しにくいため、OFF時は彩度を落とす必要がある"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
           }
         }
       ]
