@@ -15,6 +15,13 @@
 
 The three concepts share one web build and launcher so they can be compared under identical conditions. Each is now a complete, replayable vertical slice with its own progression, build choices, gamepad profile, audiovisual feedback, and results screen.
 
+## Next concept: CHARGE! active clicker
+
+The next candidate is a 20-minute active clicker built around six charge cells, player-selected circuit stages, and a complete normal ending that can continue into an approximately one-hour true route.
+
+- [Game design document](docs/CHARGE_CLICKER_GDD.md)
+- [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
+
 ## Controls
 
 ### Shared
