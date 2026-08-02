@@ -12,7 +12,7 @@ const VIEW := Vector2(1280, 720)
 const REACTOR_CENTER := Vector2(212, 286)
 
 var synth: JamSynth
-var run: ChargePrototypeState
+var run
 var is_japanese := false
 var controller_bindings: Dictionary = ControllerConfig.default_bindings()
 
