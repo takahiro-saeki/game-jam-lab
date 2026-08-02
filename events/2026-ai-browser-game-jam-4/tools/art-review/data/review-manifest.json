@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-02T04:44:51.156Z",
+  "project": {
+    "id": "project-charge",
+    "title": "PROJECT CHARGE",
+    "subtitle": "PixelLab Art Direction Review",
+    "brief": "../../docs/PIXELLAB_STYLE_BRIEF.md",
+    "gameplayPreview": "/review-data/game-pixellab-preview.png",
+    "provisionalSelection": {
+      "reactor": "reactor-hex-a",
+      "environment": "environment-machine-room-a",
+      "note": "Codexの一次選考をGodotへ仮組み済み。人間レビューで変更可能です。"
+    },
+    "palette": [
+      "#09111F",
+      "#111D31",
+      "#182B43",
+      "#4DEEEA",
+      "#3A86FF",
+      "#9B5DE5",
+      "#FFB703",
+      "#FF5C5C",
+      "#55EFC4",
+      "#F5F0DB"
+    ]
+  },
+  "batches": [
+    {
+      "id": "phase2-reactor",
+      "order": 1,
+      "title": "Reactor silhouette",
+      "titleJa": "原子炉シルエット",
+      "objective": "96×96のゲーム表示でも6セル構造と中心核が読み取れる、PROJECT CHARGEの基準造形を決める。",
+      "gate": "3案から1案を選び、Godotの充電リングと重ねて最終確認する。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "reactor-turbine-a",
+          "title": "Turbine",
+          "titleJa": "タービン型",
+          "variation": "Six compact turbine vanes dominate the silhouette; keep the center small, dark, and mechanically dense.",
+          "prompt": "A front-facing circular industrial energy reactor for a science-fiction power station, centered and perfectly symmetrical, six clearly readable radial capacitor chambers around one dark central core, cyan electric conduits, restrained amber warning lights, heavy dark navy machine casing, premium 16-bit pixel art, crisp clusters, limited palette, high silhouette readability, isolated object on transparent background, no floor, no scenery, no character, no text, no numbers, no logo, no watermark, no blur, no antialiasing. Six compact turbine vanes dominate the silhouette; keep the center small, dark, and mechanically dense.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/reactor/reactor-turbine-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:30:53.099Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 78,
+            "summary": "機械としての説得力と勢いは強いものの、外周の補助部品までセルに見え、6セルというルールの読み取りを弱めます。",
+            "strengths": [
+              "六つの大型タービンが96pxでも残る",
+              "回転・過充電の演出と相性が良い"
+            ],
+            "concerns": [
+              "外周の小部品で構造数が曖昧",
+              "発光リングと重ねると輪郭が混雑しやすい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "reactor-containment-a",
+          "title": "Containment Ring",
+          "titleJa": "封じ込めリング型",
+          "variation": "Concentric containment rings dominate the silhouette, surrounding a visibly suspended core; preserve six distinct capacitor breaks.",
+          "prompt": "A front-facing circular industrial energy reactor for a science-fiction power station, centered and perfectly symmetrical, six clearly readable radial capacitor chambers around one dark central core, cyan electric conduits, restrained amber warning lights, heavy dark navy machine casing, premium 16-bit pixel art, crisp clusters, limited palette, high silhouette readability, isolated object on transparent background, no floor, no scenery, no character, no text, no numbers, no logo, no watermark, no blur, no antialiasing. Concentric containment rings dominate the silhouette, surrounding a visibly suspended core; preserve six distinct capacitor breaks.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/reactor/reactor-containment-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:32:08.887Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 84,
+            "summary": "重厚な封じ込め装置として優秀です。ただし放射状のラインと橙色ノードが8方向に見えやすく、ゲームルールとの一致は六角型に劣ります。",
+            "strengths": [
+              "中央核が最も明瞭",
+              "工業施設らしい重厚感と色分離"
+            ],
+            "concerns": [
+              "6方向より8方向の装置に見えやすい",
+              "中心付近の密度が数値表示と競合する可能性"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "reactor-hex-a",
+          "title": "Hex Core",
+          "titleJa": "六角コア型",
+          "variation": "A bold hexagonal center connects to exactly six round capacitor pods; the outer silhouette should feel engineered rather than ornamental.",
+          "prompt": "A front-facing circular industrial energy reactor for a science-fiction power station, centered and perfectly symmetrical, six clearly readable radial capacitor chambers around one dark central core, cyan electric conduits, restrained amber warning lights, heavy dark navy machine casing, premium 16-bit pixel art, crisp clusters, limited palette, high silhouette readability, isolated object on transparent background, no floor, no scenery, no character, no text, no numbers, no logo, no watermark, no blur, no antialiasing. A bold hexagonal center connects to exactly six round capacitor pods; the outer silhouette should feel engineered rather than ornamental.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/reactor/reactor-hex-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:32:55.932Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 91,
+            "summary": "暫定採用候補です。中央核と六つの独立ポッドが一目で読め、PROJECT CHARGEの6セル同期を絵だけで説明できます。",
+            "strengths": [
+              "96pxでも正確な6分割が読める",
+              "中心の暗い余白へ数値と発光を重ねやすい",
+              "円と六角形の対比が固有シルエットになる"
+            ],
+            "concerns": [
+              "ポッド内部がやや装飾的",
+              "橙色の配線をGodot側の危険色と誤認しないか確認が必要"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "reactor-hex-b",
+          "title": "Hex Core — Clean Cluster",
+          "titleJa": "六角コア・簡潔型",
+          "variation": "Focused revision of Hex Core A: simplify each pod, reduce orange wiring, enlarge solid dark clusters, and keep the center visually quiet.",
+          "prompt": "A front-facing circular industrial energy reactor for a science-fiction power station, centered and perfectly symmetrical, exactly six large round capacitor pods evenly spaced around one bold hexagonal central hub, cyan electric conduits, heavy dark navy machine casing, premium 16-bit pixel art, crisp large pixel clusters, limited palette, high silhouette readability, isolated object on transparent background, no floor, no scenery, no character, no text, no numbers, no logo, no watermark, no blur, no antialiasing. Focused clean revision: simplify every capacitor pod into a strong solid mechanical shape, remove ornamental gears and tiny filigree, use much less orange, create clear negative-space gaps between all six pods, and leave the inner central circle dark and visually quiet for a numeric game UI overlay.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/reactor/reactor-hex-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:43:08.248Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 5,
+            "score": 68,
+            "summary": "大きな塊へ整理する狙いは達成しましたが、六つを指定したポッドが四つになり、ゲームの中心ルールを誤って伝えます。",
+            "strengths": [
+              "大きなピクセル塊で小表示に強い",
+              "中央の数値用余白が広い"
+            ],
+            "concerns": [
+              "ポッドが四つしかなく6セル表現として不採用",
+              "橙色の比率が初期案より増えている"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "reactor-hex-c",
+          "title": "Hex Core — Heavy Industry",
+          "titleJa": "六角コア・重工業型",
+          "variation": "Focused revision of Hex Core A: stronger industrial mass, broader pod separation, cyan-dominant energy, and only six tiny amber markers.",
+          "prompt": "A front-facing circular heavy-industry energy reactor, perfectly symmetrical, exactly six evenly spaced rounded capacitor pods bolted to one thick hexagonal hub, each pod clearly separated from the next by dark negative space, near-black circular central cavity, cyan power paths, deep navy steel armor, premium 16-bit pixel art, bold crisp clusters, limited palette, readable at 96 by 96 pixels, isolated object on transparent background, no floor, no scenery, no character, no text, no numbers, no logo, no watermark, no blur, no antialiasing. Focused heavy-industry revision: no decorative filigree, no exposed tiny gears, cyan must dominate the energy color, use orange only for exactly six tiny warning markers, preserve a calm center for numeric UI.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/reactor/reactor-hex-c.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:44:07.872Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 4,
+            "score": 74,
+            "summary": "重工業感と暗い中心は良好ですが、外周が八つの小型ノードになり、時計盤のように見えます。初期六角型の方がルールを正確に表現します。",
+            "strengths": [
+              "暗い中心と太い外輪がUIに強い",
+              "重厚な金属感がある"
+            ],
+            "concerns": [
+              "外周が八ノードで6セルと矛盾",
+              "時計または金庫扉の印象が強い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase2-environment",
+      "order": 2,
+      "title": "Generator Core environment",
+      "titleJa": "GENERATOR CORE 背景",
+      "objective": "ゲームUIを邪魔せず、中央へ電力が集約される巨大施設の奥行きとスケールを作る。",
+      "gate": "20〜40%の不透明度と16:9クロップでUIコントラストを確認する。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "environment-cathedral-a",
+          "title": "Cathedral Scale",
+          "titleJa": "大聖堂スケール",
+          "variation": "Emphasize towering steel ribs, deep vertical scale, and a monumental quiet silhouette.",
+          "prompt": "Wide interior of a colossal abandoned generator chamber built around an unseen circular reactor, front-facing 2D game backdrop, layered steel ribs, six heavy power conduits leading toward the center, dark maintenance gantries at the bottom edge, sparse cyan emergency current, a few restrained amber warning lamps, deep navy shadows, premium 16-bit pixel art, crisp limited-color clusters, atmospheric depth without visual clutter, large calm central negative space for gameplay UI, no characters, no enemies, no text, no numbers, no logo, no watermark, no interface, no foreground objects blocking the center, no blur, no antialiasing. Emphasize towering steel ribs, deep vertical scale, and a monumental quiet silhouette.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/environment-cathedral-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:36:19.056Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 83,
+            "summary": "静かで重厚な背景ですが、中心へ伸びる構造が8方向に見えやすく、原子炉と重ねた際の情報密度も少し高めです。",
+            "strengths": [
+              "暗部が広くUI文字を置きやすい",
+              "大聖堂のような荘厳さがある"
+            ],
+            "concerns": [
+              "六方向というルール表現が弱い",
+              "中央周辺の細部が原子炉と競合しやすい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "environment-machine-room-a",
+          "title": "Dense Machine Room",
+          "titleJa": "高密度機械室",
+          "variation": "Add more readable conduits and modular control panels around the edges while keeping the center calm and low contrast.",
+          "prompt": "Wide interior of a colossal abandoned generator chamber built around an unseen circular reactor, front-facing 2D game backdrop, layered steel ribs, six heavy power conduits leading toward the center, dark maintenance gantries at the bottom edge, sparse cyan emergency current, a few restrained amber warning lamps, deep navy shadows, premium 16-bit pixel art, crisp limited-color clusters, atmospheric depth without visual clutter, large calm central negative space for gameplay UI, no characters, no enemies, no text, no numbers, no logo, no watermark, no interface, no foreground objects blocking the center, no blur, no antialiasing. Add more readable conduits and modular control panels around the edges while keeping the center calm and low contrast.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/environment-machine-room-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:36:58.170Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 90,
+            "summary": "暫定採用候補です。六本の大型導管が中央の暗い空間を囲み、背景だけでも電力集約と6セル同期を補強できます。",
+            "strengths": [
+              "六方向の導管が明確",
+              "中央の大きな低コントラスト領域がUI向き",
+              "320×180から1280×720へ正確に4倍拡大できる"
+            ],
+            "concerns": [
+              "橙色ランプがやや多い",
+              "端の機械を30%前後まで暗くして可読性を確認する必要"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "environment-machine-room-b",
+          "title": "Six-Conduit Machine Room",
+          "titleJa": "六導管機械室・低輝度型",
+          "variation": "Focused revision of Machine Room A: exactly six conduits, fewer amber lamps, darker edges, and a larger calm center.",
+          "prompt": "Wide interior of a colossal abandoned generator chamber, front-facing 2D game backdrop, exactly six massive power conduits entering from the outer edges and pointing toward an empty central space, dark maintenance structures limited to the outer third of the image, sparse cyan emergency current, deep navy shadows, premium 16-bit pixel art, crisp limited-color clusters, atmospheric depth without visual clutter, designed to sit behind opaque gameplay panels, no visible reactor object in the center, no characters, no enemies, no text, no numbers, no logo, no watermark, no interface, no foreground objects blocking the center, no blur, no antialiasing. Focused low-luminance revision: make the center larger and nearly black, reduce amber lights to no more than six tiny markers, keep all bright pixels away from the central forty percent, and make all six conduits clearly countable.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "medium detail",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/environment-machine-room-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-02T04:44:51.156Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 77,
+            "summary": "低輝度と中央余白は改善しましたが、導管が八本へ増え、茶色の占有率も高くなりました。機械室Aの方がPROJECT CHARGEらしい配色と構造です。",
+            "strengths": [
+              "中央の余白と暗さは三案中最大",
+              "UIの背後でも形が暴れにくい"
+            ],
+            "concerns": [
+              "導管が八本で6セル表現と矛盾",
+              "茶色が強く固定パレットから離れる"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    }
+  ]
+}

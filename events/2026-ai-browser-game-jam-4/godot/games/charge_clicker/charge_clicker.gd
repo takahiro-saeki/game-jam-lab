@@ -8,6 +8,8 @@ const Synth = preload("res://shared/synth.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const ChargeState = preload("res://games/charge_clicker/charge_state.gd")
 const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
+const ReactorTexture = preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-hex-a.png")
+const GeneratorBackground = preload("res://assets/charge_clicker/pixellab/source/environment/environment-machine-room-a.png")
 
 const VIEW := Vector2(1280, 720)
 const REACTOR_CENTER := Vector2(212, 286)
@@ -576,6 +578,10 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.with_alpha(flash_color, screen_flash * 0.18))
 
 func draw_background() -> void:
+	# Phase 2 provisional PixelLab selections. The 320x180 backdrop scales to
+	# 1280x720 by an exact 4x, preserving the native pixel clusters.
+	draw_texture_rect(GeneratorBackground, Rect2(Vector2.ZERO, VIEW), false, Color(0.72, 0.82, 0.94, 0.26))
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.015, 0.03, 0.07, 0.48))
 	for x in range(-120, 1440, 80):
 		draw_line(Vector2(x, 0), Vector2(x - 260, 720), Palette.with_alpha(Palette.BLUE, 0.045), 1.0)
 	for y in range(100, 720, 72):
@@ -607,6 +613,7 @@ func draw_reactor_panel() -> void:
 	var panel := Rect2(32, 106, 360, 582)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, Palette.with_alpha(Palette.CYAN, 0.32), 2), panel)
 	draw_string(Palette.UI_FONT, Vector2(58, 140), loc("CHARGE REACTOR", "CHARGE REACTOR"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_texture_rect(ReactorTexture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
 	var pulse: float = 1.0 + sin(animation_time * (2.0 + run.charge_ratio() * 4.0)) * (0.015 + run.charge_ratio() * 0.025)
 	var radius: float = 100.0 * pulse
 	for ring in range(4):

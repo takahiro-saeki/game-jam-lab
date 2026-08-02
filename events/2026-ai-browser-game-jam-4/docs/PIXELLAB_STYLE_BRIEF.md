@@ -1,6 +1,6 @@
 # PROJECT CHARGE — PixelLab Style Brief
 
-> Status: generation-ready; PixelLab sign-in required  
+> Status: 8 candidates generated; provisional selections integrated; human approval pending
 > Scope: Phase 2 style validation only  
 > Rule: approve one reactor and one environment in Godot before batch generation
 
@@ -104,3 +104,27 @@ Variations:
 - No boss, upgrade icon, animation, or ending generation until the Phase 2 gameplay gate passes.
 
 This limit prevents art volume from hiding unresolved gameplay or causing unnecessary style drift.
+
+## 8. Phase 2 review result — August 2, 2026
+
+The complete prompts, API settings, generation usage, Codex scores, and human-review fields live in [`../tools/art-review/data/review-manifest.json`](../tools/art-review/data/review-manifest.json).
+
+### Reactor
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Hex Core A | 91 | Provisional selection; exactly six readable pods |
+| 2 | Containment Ring A | 84 | Strong alternate; reads closer to eight directions |
+| 3 | Turbine A | 78 | Energetic but outer attachments weaken the six-part read |
+| 4 | Hex Core C — Heavy Industry | 74 | Focused revision produced eight outer nodes |
+| 5 | Hex Core B — Clean Cluster | 68 | Focused revision collapsed to four pods |
+
+### Environment
+
+| Rank | Candidate | Score | Decision |
+|---:|---|---:|---|
+| 1 | Dense Machine Room A | 90 | Provisional selection; six conduits and useful central void |
+| 2 | Cathedral Scale A | 83 | Strong alternate; busier radial structure |
+| 3 | Six-Conduit Machine Room B | 77 | Focused revision produced eight conduits and too much brown |
+
+`Hex Core A` and `Dense Machine Room A` are provisionally rendered in Godot. They remain source candidates—not final approved assets—until the human review is saved and the 1280×720 gameplay preview is accepted.
