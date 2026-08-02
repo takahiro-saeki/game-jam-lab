@@ -4,6 +4,8 @@ const ZeroGame = preload("res://games/zero_percent_city/zero_percent_city.gd")
 const ChargebackGame = preload("res://games/chargeback/chargeback.gd")
 const CapacitorGame = preload("res://games/capacitor_defense/capacitor_defense.gd")
 const ChargeClickerGame = preload("res://games/charge_clicker/charge_clicker.gd")
+const ChargeClickerState = preload("res://games/charge_clicker/charge_state.gd")
+const ChargeClickerSave = preload("res://games/charge_clicker/charge_save.gd")
 const Launcher = preload("res://main.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 
@@ -343,6 +345,7 @@ func improve_test_grid(game: Node) -> void:
 func test_charge_clicker() -> void:
 	print("\nPROJECT CHARGE")
 	var game := ChargeClickerGame.new()
+	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
 	game.run.rng.seed = 404
@@ -373,6 +376,10 @@ func test_charge_clicker() -> void:
 	check(game.try_purchase(0, false), "an affordable upgrade can be purchased")
 	check(game.run.manual_power > manual_before, "HAND COIL immediately changes the charge model")
 	check(game.run.first_purchase_time <= 30.0, "first purchase can land inside the 30-second target")
+	game.handle_controller_button(joy_button(JOY_BUTTON_DPAD_RIGHT))
+	check(game.controller_upgrade_selected == 1, "gamepad D-pad navigates the upgrade grid")
+	game.handle_controller_button(joy_button(JOY_BUTTON_START))
+	check(game.run.upgrade_level("capacity") == 1, "gamepad Start purchases the selected upgrade")
 
 	game.run.reset()
 	var auto_before: float = game.run.total_charge()
@@ -400,3 +407,47 @@ func test_charge_clicker() -> void:
 	check(game.run.partial_discharges + game.run.super_discharges >= 3, "the 30-second loop supports repeated charge-discharge decisions")
 	check(game.run.lifetime_output > 1500.0, "the prototype produces visible escalating output in a short session")
 	game.free()
+
+	var stage := ChargeClickerState.new()
+	var restored: Dictionary = stage.apply_output(ChargeClickerState.RESTORE_GOAL, true)
+	check(bool(restored.boss_started) and stage.stage_phase == stage.StagePhase.BOSS, "restoration target awakens the GENERATOR CORE mini-boss")
+	stage.add_charge_energy(stage.total_capacity(), 0.0, false)
+	stage.boss_attack_timer = 0.01
+	var drain: Dictionary = stage.tick(0.02, false)
+	check(bool(drain.boss_drain) and float(drain.drained) > 0.0, "GRID WRAITH drains the fullest cell when its warning expires")
+	stage.add_charge_energy(stage.total_capacity(), 0.0, false)
+	stage.boss_attack_timer = 1.0
+	var interrupted: Dictionary = stage.apply_output(1000.0, true)
+	check(bool(interrupted.interrupt) and stage.boss_interrupts == 1, "a full discharge interrupts the warned drain attack")
+	stage.boss_hp = 1.0
+	var defeated: Dictionary = stage.apply_output(2.0, false)
+	check(bool(defeated.boss_defeated) and stage.stage_phase == stage.StagePhase.REWARD, "depleting boss HP opens the circuit reward choice")
+	check(stage.select_reward("flywheel") and stage.stage_phase == stage.StagePhase.CLEAR, "choosing a permanent circuit completes the vertical slice")
+
+	var save_path := "user://project_charge_smoke_test.cfg"
+	var save := ChargeClickerSave.new(save_path)
+	check(save.save(stage) == OK, "phase-two progress can be serialized")
+	var restored_save := ChargeClickerState.new()
+	check(save.load_into(restored_save), "serialized phase-two progress can be loaded")
+	check(restored_save.stage_phase == restored_save.StagePhase.CLEAR and restored_save.reward_id == "flywheel", "save data preserves stage and reward progression")
+	save.clear()
+
+	var timed_run := ChargeClickerState.new()
+	var upgrade_order := ["manual", "discharge", "surge", "cooling", "critical", "capacity", "auto", "insulation"]
+	var upgrade_cursor := 0
+	for step in range(3200):
+		timed_run.manual_charge(0)
+		var stage_tick: Dictionary = timed_run.tick(0.15, false)
+		var should_fire: bool = timed_run.is_full() and (timed_run.overcharge >= 35.0 or timed_run.boss_warning_active())
+		if should_fire:
+			var shot: Dictionary = timed_run.discharge(0)
+			timed_run.apply_output(float(shot.output), bool(shot.super))
+		while upgrade_cursor < upgrade_order.size() and timed_run.can_purchase(str(upgrade_order[upgrade_cursor])):
+			timed_run.purchase_upgrade(str(upgrade_order[upgrade_cursor]))
+			upgrade_cursor += 1
+		if timed_run.stage_phase == timed_run.StagePhase.REWARD:
+			timed_run.select_reward("flywheel")
+			break
+	check(timed_run.stage_phase == timed_run.StagePhase.CLEAR, "an active upgrade strategy clears the complete Phase 2 slice")
+	print("Phase 2 simulated clear time: %.1f seconds" % timed_run.stage_clear_time)
+	check(timed_run.stage_clear_time >= 270.0 and timed_run.stage_clear_time <= 420.0, "active Phase 2 completion lands in the 5–7 minute target band")

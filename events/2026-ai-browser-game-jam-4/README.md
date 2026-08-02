@@ -22,6 +22,7 @@ The next candidate is a 20-minute active clicker built around six charge cells, 
 
 - [Game design document](docs/CHARGE_CLICKER_GDD.md)
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
+- [PixelLab style and prompt brief](docs/PIXELLAB_STYLE_BRIEF.md)
 
 ## Controls
 
@@ -63,12 +64,16 @@ The next candidate is a 20-minute active clicker built around six charge cells, 
 
 ### PROJECT CHARGE
 
+- Restore GENERATOR CORE with discharge output, then defeat GRID WRAITH to finish the 5–7 minute vertical slice.
 - Hold the large **CHARGE** button, `Space`, or the configured primary gamepad button to fill six cells.
 - Press **DISCHARGE**, `Enter` / `X`, right-click, or the configured secondary gamepad button to bank the current output.
 - A partial discharge is safe. Filling all six cells triggers a large synchronization bonus.
 - Continue charging after all six cells are full to raise the Overcharge multiplier. Excess heat causes a meltdown and removes most stored energy.
 - Toggle slow automatic charging with `A` or the configured active-ability button.
 - Buy upgrades by clicking/tapping them or pressing `1`–`8`. Unaffordable upgrades remain readable and show their required cost.
+- On gamepad, navigate upgrades with the D-pad and purchase the selected upgrade with `Start / Options`.
+- GRID WRAITH warns before draining the fullest cell. A synchronized SUPER DISCHARGE during the warning interrupts it and gains a damage bonus.
+- Defeating the boss awards one permanent circuit and a stage result screen. Progress saves automatically and resumes after closing the browser.
 - Press `R` to reboot the current prototype.
 
 ## Local development
@@ -105,4 +110,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE Phase 1 is playable with six cells, partial and full discharge, overcharge, heat, meltdown, AUTO charging, eight upgrade paths, Japanese/English copy, and shared remappable gamepad controls. Automated smoke coverage verifies all four concepts and the active-clicker's 30-second progression targets.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE Phase 2 now contains a timed restoration objective, an interruptible mini-boss, circuit rewards, stage results, and versioned autosave in addition to the six-cell core loop. Its active-play simulation clears in 337.5 seconds. PixelLab reference art is the remaining Phase 2 gate; its locked brief is ready for generation after sign-in.
