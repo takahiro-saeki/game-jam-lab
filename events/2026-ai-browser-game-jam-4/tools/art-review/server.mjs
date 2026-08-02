@@ -9,6 +9,7 @@ const publicRoot = resolve(toolRoot, "public");
 const dataRoot = resolve(toolRoot, "data");
 const manifestPath = resolve(toolRoot, "data/review-manifest.json");
 const assetRoot = resolve(eventRoot, "godot/assets/charge_clicker/pixellab");
+const gameBuildRoot = resolve(eventRoot, "build/web");
 const port = Number(process.env.ART_REVIEW_PORT || 6670);
 
 const mime = {
@@ -109,6 +110,9 @@ const server = createServer(async (request, response) => {
       filePath = safePath(assetRoot, url.pathname.slice("/assets/".length));
     } else if (url.pathname.startsWith("/review-data/")) {
       filePath = safePath(dataRoot, url.pathname.slice("/review-data/".length));
+    } else if (url.pathname.startsWith("/game/")) {
+      const requested = url.pathname === "/game/" ? "index.html" : url.pathname.slice("/game/".length);
+      filePath = safePath(gameBuildRoot, requested);
     } else {
       const requested = url.pathname === "/" ? "index.html" : url.pathname;
       filePath = safePath(publicRoot, requested);

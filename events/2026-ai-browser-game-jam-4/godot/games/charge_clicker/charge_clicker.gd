@@ -8,8 +8,18 @@ const Synth = preload("res://shared/synth.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const ChargeState = preload("res://games/charge_clicker/charge_state.gd")
 const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
-const ReactorTexture = preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-hex-a.png")
-const GeneratorBackground = preload("res://assets/charge_clicker/pixellab/source/environment/environment-machine-room-a.png")
+const ReactorTextures := {
+	"reactor-turbine-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-turbine-a.png"),
+	"reactor-containment-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-containment-a.png"),
+	"reactor-hex-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-hex-a.png"),
+	"reactor-hex-b": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-hex-b.png"),
+	"reactor-hex-c": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-hex-c.png"),
+}
+const GeneratorBackgrounds := {
+	"environment-cathedral-a": preload("res://assets/charge_clicker/pixellab/source/environment/environment-cathedral-a.png"),
+	"environment-machine-room-a": preload("res://assets/charge_clicker/pixellab/source/environment/environment-machine-room-a.png"),
+	"environment-machine-room-b": preload("res://assets/charge_clicker/pixellab/source/environment/environment-machine-room-b.png"),
+}
 
 const VIEW := Vector2(1280, 720)
 const REACTOR_CENTER := Vector2(212, 286)
@@ -20,6 +30,9 @@ var save_manager
 var is_japanese := false
 var controller_bindings: Dictionary = ControllerConfig.default_bindings()
 var persistence_enabled := true
+var reactor_texture: Texture2D = ReactorTextures["reactor-hex-a"]
+var generator_background: Texture2D = GeneratorBackgrounds["environment-machine-room-a"]
+var art_preview_enabled := false
 
 var animation_time := 0.0
 var charge_held := false
@@ -50,6 +63,7 @@ var clear_retry_rect := Rect2(382, 554, 236, 54)
 var clear_menu_rect := Rect2(662, 554, 236, 54)
 
 func _ready() -> void:
+	apply_web_art_preview()
 	synth = Synth.new()
 	add_child(synth)
 	run = ChargeState.new()
@@ -63,6 +77,32 @@ func _ready() -> void:
 	else:
 		show_message(loc("放電出力でGENERATOR COREを復旧せよ", "RESTORE GENERATOR CORE WITH DISCHARGE OUTPUT"), 5.0)
 	queue_redraw()
+
+func apply_web_art_preview() -> void:
+	if not OS.has_feature("web"):
+		return
+	var window = JavaScriptBridge.get_interface("window")
+	if window == null:
+		return
+	var values := parse_query_string(str(window.location.search))
+	if str(values.get("art_preview", "")) != "1":
+		return
+	art_preview_enabled = true
+	persistence_enabled = false
+	var reactor_id := str(values.get("reactor", "reactor-hex-a"))
+	var environment_id := str(values.get("environment", "environment-machine-room-a"))
+	if ReactorTextures.has(reactor_id):
+		reactor_texture = ReactorTextures[reactor_id]
+	if GeneratorBackgrounds.has(environment_id):
+		generator_background = GeneratorBackgrounds[environment_id]
+
+func parse_query_string(raw_query: String) -> Dictionary:
+	var values := {}
+	for pair in raw_query.trim_prefix("?").split("&", false):
+		var parts := pair.split("=", true, 1)
+		if parts.size() == 2:
+			values[str(parts[0])] = str(parts[1])
+	return values
 
 func reset_run() -> void:
 	run.reset()
@@ -580,7 +620,7 @@ func _draw() -> void:
 func draw_background() -> void:
 	# Phase 2 provisional PixelLab selections. The 320x180 backdrop scales to
 	# 1280x720 by an exact 4x, preserving the native pixel clusters.
-	draw_texture_rect(GeneratorBackground, Rect2(Vector2.ZERO, VIEW), false, Color(0.72, 0.82, 0.94, 0.26))
+	draw_texture_rect(generator_background, Rect2(Vector2.ZERO, VIEW), false, Color(0.72, 0.82, 0.94, 0.26))
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.015, 0.03, 0.07, 0.48))
 	for x in range(-120, 1440, 80):
 		draw_line(Vector2(x, 0), Vector2(x - 260, 720), Palette.with_alpha(Palette.BLUE, 0.045), 1.0)
@@ -613,7 +653,7 @@ func draw_reactor_panel() -> void:
 	var panel := Rect2(32, 106, 360, 582)
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, Palette.with_alpha(Palette.CYAN, 0.32), 2), panel)
 	draw_string(Palette.UI_FONT, Vector2(58, 140), loc("CHARGE REACTOR", "CHARGE REACTOR"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
-	draw_texture_rect(ReactorTexture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
+	draw_texture_rect(reactor_texture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
 	var pulse: float = 1.0 + sin(animation_time * (2.0 + run.charge_ratio() * 4.0)) * (0.015 + run.charge_ratio() * 0.025)
 	var radius: float = 100.0 * pulse
 	for ring in range(4):

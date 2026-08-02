@@ -176,6 +176,16 @@ dialog::backdrop { background: rgba(0,0,0,.78); backdrop-filter: blur(6px); }
 .dialog-preview img { max-width: 100%; max-height: 75vh; object-fit: contain; image-rendering: pixelated; }
 .dialog-preview.game { background: #03060c; }
 .dialog-preview.game img { image-rendering: auto; }
+.game-preview-lab { max-height: 94vh; overflow: auto; padding: 1.35rem; }
+.game-preview-lab header { display: flex; justify-content: space-between; gap: 2rem; align-items: end; padding: .35rem 3.2rem 1rem 0; }
+.game-preview-lab h2 { margin: .25rem 0 0; font-size: 1.6rem; }
+.game-preview-lab header p { max-width: 35rem; margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.6; }
+.game-preview-controls { display: grid; grid-template-columns: 1fr 1fr auto; gap: .7rem; align-items: end; padding: .8rem; border: 1px solid var(--edge); border-radius: .75rem; background: var(--panel); }
+.game-preview-controls label { color: var(--muted); font-size: .7rem; }
+.game-preview-controls select { display: block; margin-top: .35rem; }
+.game-preview-controls a { border: 1px solid rgba(77,238,234,.5); border-radius: .55rem; color: var(--cyan); padding: .7rem .8rem; text-decoration: none; white-space: nowrap; }
+.game-preview-status { padding: .65rem .2rem; color: var(--muted); font-size: .7rem; }
+.game-preview-lab iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 1px solid var(--edge); border-radius: .7rem; background: #000; }
 
 @media (max-width: 1100px) {
   .candidate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -192,4 +202,7 @@ dialog::backdrop { background: rgba(0,0,0,.78); backdrop-filter: blur(6px); }
   .batch-intro .gate { margin-top: 1rem; }
   .compare-items { grid-template-columns: 1fr; max-height: 45vh; overflow: auto; }
   .palette { overflow-x: auto; padding-bottom: .5rem; }
+  .game-preview-lab header { display: block; }
+  .game-preview-lab header p { margin-top: .6rem; }
+  .game-preview-controls { grid-template-columns: 1fr; }
 }

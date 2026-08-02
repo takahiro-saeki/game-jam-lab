@@ -81,13 +81,50 @@ function renderIntro(items) {
     : "Codexの一次選考、生成条件、人間の判断を一つの画面で照合できます。比較には最大3案まで追加できます。";
   const gate = batch ? batch.gate : `${items.length}件を表示中。各バッチの完成条件を満たした一案だけをゲームへ採用します。`;
   const preview = state.manifest.project.gameplayPreview
-    ? `<button class="game-preview-button" type="button">Godot仮組みを見る</button>`
+    ? `<button class="game-preview-button" type="button">Godot組み合わせ比較</button>`
     : "";
   elements.intro.innerHTML = `<div><span class="eyebrow">${en}</span><h2>${title}</h2><p>${objective}</p>${preview}</div><div class="gate"><strong>APPROVAL GATE</strong><br>${gate}</div>`;
-  elements.intro.querySelector(".game-preview-button")?.addEventListener("click", () => {
-    elements.dialogContent.innerHTML = `<div class="dialog-preview game"><img src="${state.manifest.project.gameplayPreview}" alt="Godot仮組みプレビュー" /></div>`;
-    elements.dialog.showModal();
-  });
+  elements.intro.querySelector(".game-preview-button")?.addEventListener("click", openGameCombinationPreview);
+}
+
+function openGameCombinationPreview() {
+  const reactorBatch = state.manifest.batches.find((batch) => batch.id === "phase2-reactor");
+  const environmentBatch = state.manifest.batches.find((batch) => batch.id === "phase2-environment");
+  const selection = state.manifest.project.provisionalSelection || {};
+  const option = (candidate) => `<option value="${candidate.id}">${escapeHtml(candidate.titleJa)} — Codex ${candidate.codexReview.score ?? "—"} / あなた ${candidate.humanReview.rating ?? "—"}</option>`;
+  elements.dialogContent.innerHTML = `
+    <div class="game-preview-lab">
+      <header>
+        <div><span class="eyebrow">LIVE GODOT WEB PREVIEW</span><h2>組み合わせ比較</h2></div>
+        <p>原子炉5案×背景3案を、実際のGodot描画・UI・発光リングと重ねて確認できます。</p>
+      </header>
+      <div class="game-preview-controls">
+        <label>原子炉<select id="game-reactor-select">${reactorBatch.candidates.map(option).join("")}</select></label>
+        <label>背景<select id="game-environment-select">${environmentBatch.candidates.map(option).join("")}</select></label>
+        <a id="open-game-window" href="#" target="_blank" rel="noreferrer">別タブで開く</a>
+      </div>
+      <div class="game-preview-status" role="status">選択を反映しています。初回はGodotの読み込みに数秒かかります。</div>
+      <iframe id="game-preview-frame" title="PROJECT CHARGE Godot組み合わせプレビュー" allow="autoplay; gamepad"></iframe>
+    </div>`;
+  const reactorSelect = elements.dialogContent.querySelector("#game-reactor-select");
+  const environmentSelect = elements.dialogContent.querySelector("#game-environment-select");
+  reactorSelect.value = selection.reactor || reactorBatch.candidates[0].id;
+  environmentSelect.value = selection.environment || environmentBatch.candidates[0].id;
+  const loadCombination = () => {
+    const params = new URLSearchParams({
+      art_preview: "1",
+      game: "project-charge",
+      reactor: reactorSelect.value,
+      environment: environmentSelect.value,
+    });
+    const url = `/game/?${params}`;
+    elements.dialogContent.querySelector("#game-preview-frame").src = url;
+    elements.dialogContent.querySelector("#open-game-window").href = url;
+  };
+  reactorSelect.addEventListener("change", loadCombination);
+  environmentSelect.addEventListener("change", loadCombination);
+  loadCombination();
+  elements.dialog.showModal();
 }
 
 function badge(text, className = "") {
@@ -252,8 +289,12 @@ elements.batchFilter.addEventListener("change", () => { state.batch = elements.b
 elements.statusFilter.addEventListener("change", () => { state.status = elements.statusFilter.value; render(); });
 elements.search.addEventListener("input", () => { state.query = elements.search.value.trim(); render(); });
 elements.clearCompare.addEventListener("click", () => { state.compare.clear(); render(); });
-elements.closeDialog.addEventListener("click", () => elements.dialog.close());
-elements.dialog.addEventListener("click", (event) => { if (event.target === elements.dialog) elements.dialog.close(); });
+function closeDialog() {
+  elements.dialog.querySelector("iframe")?.setAttribute("src", "about:blank");
+  elements.dialog.close();
+}
+elements.closeDialog.addEventListener("click", closeDialog);
+elements.dialog.addEventListener("click", (event) => { if (event.target === elements.dialog) closeDialog(); });
 
 try {
   const response = await fetch("/api/manifest");

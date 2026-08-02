@@ -51,6 +51,21 @@ func _ready() -> void:
 	for index in range(ControllerConfig.ACTIONS.size()):
 		settings_row_rects.append(Rect2(296, 168 + index * 50, 688, 44))
 	queue_redraw()
+	if should_auto_launch_art_preview():
+		call_deferred("launch_game", 3)
+
+func should_auto_launch_art_preview() -> bool:
+	if not OS.has_feature("web"):
+		return false
+	var window = JavaScriptBridge.get_interface("window")
+	if window == null:
+		return false
+	var raw_query := str(window.location.search).trim_prefix("?")
+	for pair in raw_query.split("&", false):
+		var parts := pair.split("=", true, 1)
+		if parts.size() == 2 and str(parts[0]) == "game" and str(parts[1]) == "project-charge":
+			return true
+	return false
 
 func _process(delta: float) -> void:
 	menu_time += delta

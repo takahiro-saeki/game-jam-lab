@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-02T04:44:51.156Z",
+  "updatedAt": "2026-08-02T11:37:32.949Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -74,10 +74,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "hold",
+            "rating": 3,
+            "note": "デザインは良いがこれだ！という感じではない",
+            "reviewedAt": "2026-08-02T11:36:43.103Z"
           }
         },
         {
@@ -119,10 +119,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "hold",
+            "rating": 3,
+            "note": "デザインは好きです。",
+            "reviewedAt": "2026-08-02T11:36:22.916Z"
           }
         },
         {
@@ -165,10 +165,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-02T11:36:11.562Z"
           }
         },
         {
@@ -210,10 +210,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "rejected",
+            "rating": 1,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-02T11:36:54.821Z"
           }
         },
         {
@@ -255,10 +255,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "rejected",
+            "rating": 1,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-02T11:37:00.253Z"
           }
         }
       ]
@@ -311,10 +311,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "approved",
+            "rating": 4,
+            "note": "重めだけど良き",
+            "reviewedAt": "2026-08-02T11:37:18.103Z"
           }
         },
         {
@@ -357,10 +357,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "approved",
+            "rating": 5,
+            "note": "めっちゃかっこいいです。",
+            "reviewedAt": "2026-08-02T11:37:26.679Z"
           }
         },
         {
@@ -402,10 +402,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-02T11:37:32.949Z"
           }
         }
       ]

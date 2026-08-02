@@ -16,3 +16,4 @@ dist/
 # Local visual QA captures (the selected in-game art preview remains tracked)
 **/tools/art-review/data/game-launcher.png
 **/tools/art-review/data/review-board-preview.png
+**/tools/art-review/data/live-combination-test.png
