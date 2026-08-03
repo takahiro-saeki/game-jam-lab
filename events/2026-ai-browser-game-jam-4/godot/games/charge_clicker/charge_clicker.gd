@@ -8,6 +8,7 @@ const Synth = preload("res://shared/synth.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const ChargeState = preload("res://games/charge_clicker/charge_state.gd")
 const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
+const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
 const ReactorTextures := {
 	"reactor-turbine-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-turbine-a.png"),
 	"reactor-containment-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-containment-a.png"),
@@ -50,9 +51,19 @@ const AutoControlTextures := {
 	"auto-open-relay-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-open-relay-a.png"),
 	"auto-stopped-rotor-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-stopped-rotor-a.png"),
 }
+const UpgradeRackTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/upgrade-rack-switchboard-a.png")
+const ControlConsoleKitTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/control-kit-switchboard-a.png")
+const WraithGaugeTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/wraith-gauge-switchboard-a.png")
+const ShardAccumulatorTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/shard-accumulator-corrupted-b.png")
 
 const VIEW := Vector2(1280, 720)
 const REACTOR_CENTER := Vector2(212, 286)
+const SHARD_ACCUMULATOR_RECT := Rect2(524, 5, 196, 78)
+const SHARD_SOCKET_CENTER := Vector2(575, 44)
+const CONTROL_CHARGE_REGION := Rect2(0, 0, 104, 128)
+const CONTROL_DISCHARGE_REGION := Rect2(104, 0, 174, 128)
+const CONTROL_AUTO_REGION := Rect2(278, 0, 106, 128)
+const UPGRADE_RACK_CENTER_REGION := Rect2(76, 4, 232, 120)
 
 var synth: JamSynth
 var run
@@ -82,6 +93,8 @@ var hover_upgrade := -1
 var mouse_position := Vector2(-100, -100)
 var particles: Array[Dictionary] = []
 var floating_texts: Array[Dictionary] = []
+var resource_packets: Array[Dictionary] = []
+var shard_pulse := 0.0
 var auto_effect_timer := 0.0
 var autosave_timer := 0.0
 var reward_selected := 0
@@ -176,6 +189,8 @@ func reset_run() -> void:
 		save_manager.clear()
 	particles.clear()
 	floating_texts.clear()
+	resource_packets.clear()
+	shard_pulse = 0.0
 	charge_held = false
 	screen_flash = 0.0
 	screen_shake = 0.0
@@ -192,6 +207,8 @@ func _process(delta: float) -> void:
 		screen_flash = maxf(0.0, screen_flash - delta * 2.4)
 	if discharge_wave > 0.0:
 		discharge_wave = maxf(0.0, discharge_wave - delta * 1.4)
+	if shard_pulse > 0.0:
+		shard_pulse = maxf(0.0, shard_pulse - delta * 1.7)
 	if message_time > 0.0:
 		message_time -= delta
 	autosave_timer -= delta
@@ -508,6 +525,8 @@ func perform_discharge(play_sound: bool = true, critical_mode: int = -1) -> Dict
 	screen_shake = 0.48 if bool(result.super) else 0.2
 	var color := Palette.AMBER if bool(result.super) else Palette.CYAN
 	spawn_sparks(Vector2(720, 260), color, 36 if bool(result.super) else 18, 260.0)
+	spawn_resource_flow(discharge_rect.get_center(), SHARD_SOCKET_CENTER, color, 8 if bool(result.super) else 5)
+	shard_pulse = 1.0
 	add_floating(Vector2(720, 285), "%s OUTPUT" % format_number(float(result.output)), color, 30 if bool(result.super) else 24)
 	var stage_result: Dictionary = run.apply_output(float(result.output), bool(result.super))
 	result.stage = stage_result
@@ -560,6 +579,8 @@ func try_purchase(index: int, play_sound: bool = true) -> bool:
 	var copy := upgrade_copy(index)
 	show_message(loc("強化完了：", "UPGRADED: ") + str(copy.title), 1.4)
 	spawn_sparks(upgrade_rects[index].get_center(), upgrade_color(index), 12, 125.0)
+	spawn_resource_flow(SHARD_SOCKET_CENTER, upgrade_rects[index].get_center(), upgrade_color(index), 5)
+	shard_pulse = 0.75
 	if play_sound:
 		synth.confirm()
 	save_progress()
@@ -626,6 +647,18 @@ func spawn_sparks(position: Vector2, color: Color, count: int, speed: float) -> 
 		var velocity: Vector2 = Vector2.from_angle(angle) * run.rng.randf_range(speed * 0.35, speed)
 		particles.append({"pos": position, "velocity": velocity, "life": run.rng.randf_range(0.28, 0.75), "max_life": 0.75, "color": color, "size": run.rng.randf_range(2.0, 5.5)})
 
+func spawn_resource_flow(start: Vector2, finish: Vector2, color: Color, count: int) -> void:
+	for index in range(count):
+		resource_packets.append({
+			"start": start + Vector2(run.rng.randf_range(-12.0, 12.0), run.rng.randf_range(-8.0, 8.0)),
+			"finish": finish + Vector2(run.rng.randf_range(-5.0, 5.0), run.rng.randf_range(-5.0, 5.0)),
+			"progress": -float(index) * 0.09,
+			"duration": run.rng.randf_range(0.48, 0.7),
+			"arc": run.rng.randf_range(38.0, 82.0),
+			"color": color,
+			"size": run.rng.randf_range(2.5, 4.8),
+		})
+
 func update_effects(delta: float) -> void:
 	for index in range(particles.size() - 1, -1, -1):
 		var item: Dictionary = particles[index]
@@ -642,6 +675,12 @@ func update_effects(delta: float) -> void:
 		floating_texts[index] = item
 		if float(item.life) <= 0.0:
 			floating_texts.remove_at(index)
+	for index in range(resource_packets.size() - 1, -1, -1):
+		var packet: Dictionary = resource_packets[index]
+		packet.progress = float(packet.progress) + delta / maxf(0.01, float(packet.duration))
+		resource_packets[index] = packet
+		if float(packet.progress) >= 1.0:
+			resource_packets.remove_at(index)
 
 func format_number(value: float) -> String:
 	if value >= 1000000.0:
@@ -703,27 +742,65 @@ func draw_background() -> void:
 
 func draw_header() -> void:
 	draw_rect(Rect2(0, 0, 1280, 86), Color("080f1f"))
-	draw_line(Vector2(0, 86), Vector2(1280, 86), Palette.with_alpha(Palette.CYAN, 0.32), 1.0)
-	draw_string(Palette.UI_FONT, Vector2(178, 34), "PROJECT CHARGE", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Palette.PAPER)
+	draw_rect(Rect2(0, 82, 1280, 4), Palette.with_alpha(Palette.INK, 0.94))
+	for index in range(16):
+		var rail_x := 8.0 + index * 80.0
+		draw_line(Vector2(rail_x, 83), Vector2(rail_x + 50, 83), Palette.with_alpha(Palette.CYAN, 0.2 if index % 3 else 0.42), 2.0)
+	draw_rect(Rect2(171, 15, 3, 52), Palette.with_alpha(Palette.CYAN, 0.34))
+	draw_string(DisplayFont, Vector2(178, 34), "PROJECT CHARGE", HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(178, 60), loc("GENERATOR CORE・縦切り版", "GENERATOR CORE · VERTICAL SLICE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.MUTED)
-	draw_texture_rect(energy_shard_texture, Rect2(568, 17, 36, 36), false)
-	draw_string(Palette.UI_FONT, Vector2(610, 34), loc("エネルギー片", "ENERGY SHARDS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(610, 65), "%04d" % run.credits, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, Palette.AMBER)
-	draw_string(Palette.UI_FONT, Vector2(770, 34), loc("経過", "ELAPSED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(770, 63), format_time(run.elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
+	var accumulator_tint := Color(1.0, 1.0, 1.0, 0.94 + shard_pulse * 0.06)
+	draw_texture_rect(ShardAccumulatorTexture, SHARD_ACCUMULATOR_RECT, false, accumulator_tint)
+	if shard_pulse > 0.0:
+		for ring in range(3):
+			draw_arc(SHARD_SOCKET_CENTER, 23.0 + ring * 7.0 + (1.0 - shard_pulse) * 8.0, 0.0, TAU, 24, Palette.with_alpha(Palette.CYAN, shard_pulse * (0.5 - ring * 0.1)), 2.0)
+	draw_texture_rect(energy_shard_texture, Rect2(SHARD_SOCKET_CENTER - Vector2(18, 18), Vector2(36, 36)), false)
+	draw_string(Palette.UI_FONT, Vector2(612, 26), loc("エネルギー片", "ENERGY SHARDS"), HORIZONTAL_ALIGNMENT_CENTER, 82, 9, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(612, 57), "%04d" % run.credits, HORIZONTAL_ALIGNMENT_CENTER, 82, 22, Palette.AMBER)
+	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("経過", "ELAPSED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(752, 62), format_time(run.elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
 	draw_small_button(reset_rect, loc("R  再起動", "R  REBOOT"), Palette.CORAL)
 	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
 	draw_small_button(menu_rect, loc("ゲーム選択", "GAME LAB"), Palette.CYAN)
 
 func draw_small_button(rect: Rect2, text: String, accent: Color) -> void:
 	var hovered := rect.has_point(mouse_position)
-	draw_style_box(Palette.rounded_box(Palette.with_alpha(accent, 0.18 if hovered else 0.06), 10, Palette.with_alpha(accent, 0.85 if hovered else 0.42), 1), rect)
+	draw_machine_plate(rect, Palette.with_alpha(accent, 0.18 if hovered else 0.055), Palette.with_alpha(accent, 0.92 if hovered else 0.45), 7.0, 1.0)
+	draw_rect(Rect2(rect.position + Vector2(7, 6), Vector2(3, rect.size.y - 12)), Palette.with_alpha(accent, 0.7 if hovered else 0.28))
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 27), text, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 13, Palette.PAPER)
+
+func machine_panel_points(rect: Rect2, cut: float) -> PackedVector2Array:
+	var amount := minf(cut, minf(rect.size.x, rect.size.y) * 0.32)
+	return PackedVector2Array([
+		rect.position + Vector2(amount, 0),
+		Vector2(rect.end.x - amount, rect.position.y),
+		Vector2(rect.end.x, rect.position.y + amount),
+		rect.end - Vector2(0, amount),
+		rect.end - Vector2(amount, 0),
+		Vector2(rect.position.x + amount, rect.end.y),
+		Vector2(rect.position.x, rect.end.y - amount),
+		rect.position + Vector2(0, amount),
+	])
+
+func draw_machine_plate(rect: Rect2, fill: Color, border: Color, cut: float = 10.0, border_width: float = 1.0) -> void:
+	var points := machine_panel_points(rect, cut)
+	draw_colored_polygon(points, fill)
+	var outline := points.duplicate()
+	outline.append(points[0])
+	draw_polyline(outline, border, border_width, true)
+	if rect.size.x >= 70.0 and rect.size.y >= 34.0:
+		var bolt_color := Palette.with_alpha(Palette.PAPER, 0.3)
+		draw_rect(Rect2(rect.position + Vector2(cut + 3, 5), Vector2(3, 3)), bolt_color)
+		draw_rect(Rect2(Vector2(rect.end.x - cut - 6, rect.position.y + 5), Vector2(3, 3)), bolt_color)
+
+func draw_console_region(source: Rect2, destination: Rect2, tint: Color = Color.WHITE) -> void:
+	draw_texture_rect_region(ControlConsoleKitTexture, destination, source, tint)
 
 func draw_reactor_panel() -> void:
 	var panel := Rect2(32, 106, 360, 582)
-	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, Palette.with_alpha(Palette.CYAN, 0.32), 2), panel)
-	draw_string(Palette.UI_FONT, Vector2(58, 140), loc("CHARGE REACTOR", "CHARGE REACTOR"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(Palette.CYAN, 0.4), 18.0, 2.0)
+	draw_line(Vector2(48, 151), Vector2(376, 151), Palette.with_alpha(Palette.CYAN, 0.18), 1.0)
+	draw_string(DisplayFont, Vector2(58, 140), loc("CHARGE REACTOR", "CHARGE REACTOR"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
 	draw_texture_rect(reactor_texture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
 	var pulse: float = 1.0 + sin(animation_time * (2.0 + run.charge_ratio() * 4.0)) * (0.015 + run.charge_ratio() * 0.025)
 	var radius: float = 100.0 * pulse
@@ -742,21 +819,30 @@ func draw_reactor_panel() -> void:
 
 	var hovered := charge_rect.has_point(mouse_position) or charge_held
 	var charge_color := Palette.AMBER if run.is_full() else Palette.CYAN
-	draw_style_box(Palette.rounded_box(Palette.with_alpha(charge_color, 0.92 if charge_held else 0.72 if hovered else 0.16), 22, charge_color, 3), charge_rect)
-	var charge_icon_center := charge_rect.position + Vector2(53, 54)
-	draw_circle(charge_icon_center, 39.0, Palette.with_alpha(charge_color, 0.18 if hovered else 0.08))
-	draw_texture_rect(charge_control_texture, Rect2(charge_rect.position + Vector2(21, 22), Vector2(64, 64)), false, Color.WHITE)
-	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(78, 47), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 31, Palette.INK if hovered else Palette.PAPER)
-	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(78, 78), loc("クリック・長押し / SPACE / A・×", "CLICK · HOLD / SPACE / A · CROSS"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 12, Palette.INK if hovered else Palette.MUTED)
+	var charge_fill := Palette.with_alpha(charge_color, 0.28 if charge_held else 0.19 if hovered else 0.065)
+	draw_machine_plate(charge_rect, charge_fill, Palette.with_alpha(charge_color, 1.0 if hovered else 0.68), 16.0, 3.0 if charge_held else 2.0)
+	var mechanism_rect := Rect2(charge_rect.position + Vector2(5, 7 + (5 if charge_held else 0)), Vector2(88, 94))
+	draw_console_region(CONTROL_CHARGE_REGION, mechanism_rect, Color(1.0, 1.0, 1.0, 1.0))
+	draw_texture_rect(charge_control_texture, Rect2(charge_rect.position + Vector2(28, 28 + (4 if charge_held else 0)), Vector2(44, 44)), false, Color.WHITE)
+	for step in range(6):
+		var contact_color := charge_color if step < run.filled_cells() else Palette.with_alpha(Palette.MUTED, 0.22)
+		draw_rect(Rect2(charge_rect.position + Vector2(107 + step * 25, 17), Vector2(17, 4)), contact_color)
+	draw_string(DisplayFont, charge_rect.position + Vector2(94, 50), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 28, Palette.PAPER)
+	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(94, 79), loc("クリック・長押し / SPACE / A・×", "CLICK · HOLD / SPACE / A · CROSS"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 11, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(58, 650), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 13, Palette.AMBER if run.is_full() else Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(58, 675), loc("入力 %d  放電 %d  事故 %d", "INPUTS %d  DISCHARGES %d  MELTDOWNS %d") % [run.manual_inputs, run.partial_discharges + run.super_discharges, run.meltdowns], HORIZONTAL_ALIGNMENT_LEFT, 310, 11, Palette.MUTED)
 
 func draw_meter(rect: Rect2, ratio: float, color: Color, label: String, value: String) -> void:
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, -7), label, HORIZONTAL_ALIGNMENT_LEFT, 150, 12, Palette.MUTED)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(146, -7), value, HORIZONTAL_ALIGNMENT_RIGHT, 150, 12, color)
-	draw_style_box(Palette.rounded_box(Palette.INK, 8), rect)
-	if ratio > 0.001:
-		draw_style_box(Palette.rounded_box(color, 8), Rect2(rect.position, Vector2(rect.size.x * clampf(ratio, 0.0, 1.0), rect.size.y)))
+	draw_machine_plate(rect, Palette.INK, Palette.with_alpha(color, 0.35), 4.0, 1.0)
+	var clamped := clampf(ratio, 0.0, 1.0)
+	var segment_gap := 3.0
+	var segment_width := (rect.size.x - 8.0 * segment_gap) / 10.0
+	for index in range(10):
+		var lit := clamped * 10.0 > float(index)
+		var segment_rect := Rect2(rect.position + Vector2(4 + index * (segment_width + segment_gap), 4), Vector2(segment_width, rect.size.y - 8))
+		draw_rect(segment_rect, color if lit else Palette.with_alpha(color, 0.1))
 
 func heat_color() -> Color:
 	if run.heat >= 80.0:
@@ -767,13 +853,23 @@ func heat_color() -> Color:
 
 func draw_circuit_panel() -> void:
 	var panel := Rect2(416, 106, 832, 582)
-	draw_style_box(Palette.rounded_box(Palette.PANEL, 24, Palette.with_alpha(Palette.VIOLET, 0.32), 2), panel)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(Palette.VIOLET, 0.42), 18.0, 2.0)
+	draw_line(Vector2(432, 151), Vector2(1232, 151), Palette.with_alpha(Palette.VIOLET, 0.18), 1.0)
 	draw_objective_header()
 	if run.stage_phase == ChargeState.StagePhase.BOSS:
 		var wraith_alpha := 0.24 + sin(animation_time * 2.4) * 0.035
 		draw_texture_rect(grid_wraith_texture, Rect2(687, 125, 256, 256), false, Color(0.82, 0.94, 1.0, wraith_alpha))
 	for index in range(6):
 		draw_cell(index)
+	if run.stage_phase == ChargeState.StagePhase.BOSS and run.boss_warning_active():
+		var target_index: int = maxi(0, run.most_charged_cell())
+		var siphon_start := Vector2(1018, 151)
+		var siphon_end := Vector2(505 + target_index * 125, 160)
+		var bend := Vector2(siphon_end.x, 147)
+		var warning_alpha := 0.45 + sin(animation_time * 15.0) * 0.25
+		draw_polyline(PackedVector2Array([siphon_start, bend, siphon_end]), Palette.with_alpha(Palette.CORAL, warning_alpha), 3.0, true)
+		var pulse_position := bend.lerp(siphon_end, fmod(animation_time * 2.2, 1.0))
+		draw_circle(pulse_position, 5.0, Palette.CORAL)
 	for index in range(5):
 		var start := Vector2(558 + index * 125, 244)
 		var finish := Vector2(571 + index * 125, 244)
@@ -783,23 +879,38 @@ func draw_circuit_panel() -> void:
 	var super_ready: bool = run.is_full()
 	var discharge_color := Palette.AMBER if super_ready else Palette.CYAN
 	var discharge_hover := discharge_rect.has_point(mouse_position)
-	draw_style_box(Palette.rounded_box(Palette.with_alpha(discharge_color, 0.82 if discharge_hover and can_discharge else 0.17 if can_discharge else 0.035), 18, Palette.with_alpha(discharge_color, 0.95 if can_discharge else 0.25), 2), discharge_rect)
-	draw_circle(discharge_rect.position + Vector2(47, 38), 33.0, Palette.with_alpha(discharge_color, 0.16 if can_discharge else 0.035))
-	draw_texture_rect(discharge_control_texture, Rect2(discharge_rect.position + Vector2(15, 6), Vector2(64, 64)), false, Color.WHITE if can_discharge else Color(0.44, 0.48, 0.54, 0.42))
-	draw_string(Palette.UI_FONT, discharge_rect.position + Vector2(74, 34), loc("SUPER DISCHARGE", "SUPER DISCHARGE") if super_ready else "DISCHARGE", HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x - 84, 24, Palette.INK if discharge_hover and can_discharge else Palette.PAPER)
-	draw_string(Palette.UI_FONT, discharge_rect.position + Vector2(74, 59), loc("ENTER / X / X・□　右クリック", "ENTER / X / X · SQUARE  ·  RIGHT CLICK"), HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x - 84, 11, Palette.INK if discharge_hover and can_discharge else Palette.MUTED)
+	var discharge_fill := Palette.with_alpha(discharge_color, 0.24 if discharge_hover and can_discharge else 0.1 if can_discharge else 0.025)
+	draw_machine_plate(discharge_rect, discharge_fill, Palette.with_alpha(discharge_color, 0.95 if can_discharge else 0.25), 13.0, 2.0)
+	draw_console_region(CONTROL_DISCHARGE_REGION, Rect2(discharge_rect.position + Vector2(3, 4), Vector2(104, 68)), Color.WHITE if can_discharge else Color(0.45, 0.5, 0.56, 0.5))
+	draw_texture_rect(discharge_control_texture, Rect2(discharge_rect.position + Vector2(34, 18), Vector2(40, 40)), false, Color.WHITE if can_discharge else Color(0.44, 0.48, 0.54, 0.42))
+	for index in range(6):
+		var contact_ratio: float = run.cells[index] / maxf(1.0, run.capacity)
+		var contact_color := Palette.AMBER if contact_ratio >= 0.999 else discharge_color
+		var contact_rect := Rect2(discharge_rect.position + Vector2(130 + index * 55, 12), Vector2(40, 7))
+		draw_rect(contact_rect, Palette.with_alpha(contact_color, 0.18 + contact_ratio * 0.72))
+		draw_line(Vector2(contact_rect.position.x, contact_rect.end.y + 2), Vector2(contact_rect.end.x, contact_rect.end.y + 2), Palette.with_alpha(contact_color, 0.36), 1.0)
+	draw_string(DisplayFont, discharge_rect.position + Vector2(108, 42), loc("SUPER DISCHARGE", "SUPER DISCHARGE") if super_ready else "DISCHARGE", HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x - 120, 22, Palette.PAPER)
+	draw_string(Palette.UI_FONT, discharge_rect.position + Vector2(108, 64), loc("ENTER / X / X・□　右クリック", "ENTER / X / X · SQUARE  ·  RIGHT CLICK"), HORIZONTAL_ALIGNMENT_CENTER, discharge_rect.size.x - 120, 10, Palette.MUTED)
 
 	var auto_color := Palette.VIOLET if run.auto_enabled else Palette.MUTED
 	var auto_hover := auto_rect.has_point(mouse_position)
-	draw_style_box(Palette.rounded_box(Palette.with_alpha(auto_color, 0.65 if auto_hover or run.auto_enabled else 0.08), 18, auto_color, 2), auto_rect)
-	draw_circle(auto_rect.position + Vector2(37, 38), 29.0, Palette.with_alpha(Palette.VIOLET, 0.24 if run.auto_enabled else 0.06))
-	draw_texture_rect(auto_control_texture, Rect2(auto_rect.position + Vector2(9, 10), Vector2(56, 56)), false, Color.WHITE if run.auto_enabled else Color(0.7, 0.72, 0.82, 0.72))
-	draw_string(Palette.UI_FONT, auto_rect.position + Vector2(56, 32), "AUTO  %s" % ("ON" if run.auto_enabled else "OFF"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x - 62, 19, Palette.PAPER)
-	draw_string(Palette.UI_FONT, auto_rect.position + Vector2(56, 57), loc("A / Y・△", "A / Y · TRIANGLE"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x - 62, 11, Palette.MUTED)
+	draw_machine_plate(auto_rect, Palette.with_alpha(auto_color, 0.2 if auto_hover or run.auto_enabled else 0.045), Palette.with_alpha(auto_color, 0.9 if run.auto_enabled else 0.42), 13.0, 2.0)
+	draw_console_region(CONTROL_AUTO_REGION, Rect2(auto_rect.position + Vector2(2, 4), Vector2(70, 68)), Color.WHITE if run.auto_enabled else Color(0.66, 0.7, 0.78, 0.72))
+	draw_texture_rect(auto_control_texture, Rect2(auto_rect.position + Vector2(20, 20), Vector2(38, 38)), false, Color.WHITE if run.auto_enabled else Color(0.64, 0.67, 0.76, 0.68))
+	var rotor_center := auto_rect.position + Vector2(39, 39)
+	if run.auto_enabled:
+		draw_arc(rotor_center, 28.0, animation_time * 2.5, animation_time * 2.5 + PI * 1.3, 18, Palette.with_alpha(Palette.VIOLET, 0.8), 2.0)
+	else:
+		draw_line(rotor_center + Vector2(-19, 19), rotor_center + Vector2(20, -20), Palette.with_alpha(Palette.CORAL, 0.62), 3.0)
+	draw_string(DisplayFont, auto_rect.position + Vector2(70, 33), "AUTO  %s" % ("ON" if run.auto_enabled else "OFF"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x - 77, 17, Palette.PAPER)
+	draw_string(Palette.UI_FONT, auto_rect.position + Vector2(70, 58), loc("A / Y・△", "A / Y · TRIANGLE"), HORIZONTAL_ALIGNMENT_CENTER, auto_rect.size.x - 77, 10, Palette.MUTED)
 
 	var status := message if message_time > 0.0 else tutorial_hint()
 	draw_string(Palette.UI_FONT, Vector2(448, 455), status, HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.AMBER if run.is_full() else Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(438, 482), loc("アップグレード — クリックまたは数字キー", "UPGRADES — CLICK OR USE NUMBER KEYS"), HORIZONTAL_ALIGNMENT_LEFT, 760, 12, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(438, 482), loc("アップグレード・モジュールラック — クリックまたは数字キー", "UPGRADE MODULE RACK — CLICK OR USE NUMBER KEYS"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
+	var rack_rect := Rect2(428, 488, 788, 178)
+	draw_machine_plate(rack_rect, Palette.with_alpha(Palette.INK, 0.68), Palette.with_alpha(Palette.CYAN, 0.24), 12.0, 1.0)
+	draw_texture_rect_region(UpgradeRackTexture, Rect2(430, 490, 784, 172), UPGRADE_RACK_CENTER_REGION, Color(0.78, 0.86, 0.95, 0.78))
 	for index in range(upgrade_rects.size()):
 		draw_upgrade(index)
 
@@ -814,20 +925,20 @@ func draw_cell(index: int) -> void:
 	var color: Color = Palette.AMBER if full else [Palette.CYAN, Palette.BLUE, Palette.VIOLET, Palette.MAGENTA, Palette.MINT, Palette.GREEN][index]
 	if run.stage_phase == ChargeState.StagePhase.BOSS and run.boss_warning_active() and index == run.most_charged_cell():
 		color = Palette.CORAL
-		draw_style_box(Palette.rounded_box(Palette.with_alpha(Palette.CORAL, 0.12 + sin(animation_time * 16.0) * 0.08), 17, Palette.CORAL, 2), rect.grow(10.0))
+		draw_machine_plate(rect.grow(10.0), Palette.with_alpha(Palette.CORAL, 0.12 + sin(animation_time * 16.0) * 0.08), Palette.CORAL, 12.0, 2.0)
 	if full:
-		draw_style_box(Palette.rounded_box(Palette.with_alpha(color, 0.12 + sin(animation_time * 5.0 + index) * 0.05), 15), rect.grow(7.0))
-	draw_style_box(Palette.rounded_box(Palette.INK, 13), rect)
+		draw_machine_plate(rect.grow(7.0), Palette.with_alpha(color, 0.12 + sin(animation_time * 5.0 + index) * 0.05), Palette.with_alpha(color, 0.5), 10.0, 1.0)
+	draw_machine_plate(rect, Palette.INK, Palette.with_alpha(color, 0.24), 9.0, 1.0)
 	var inner := Rect2(rect.position + Vector2(8, 8), rect.size - Vector2(16, 16))
 	if ratio > 0.0:
 		var fill_height := inner.size.y * ratio
 		var fill_rect := Rect2(Vector2(inner.position.x, inner.end.y - fill_height), Vector2(inner.size.x, fill_height))
-		draw_style_box(Palette.rounded_box(Palette.with_alpha(color, 0.42 if not full else 0.68), 8), fill_rect)
+		draw_machine_plate(fill_rect, Palette.with_alpha(color, 0.42 if not full else 0.68), Palette.with_alpha(color, 0.7), minf(6.0, fill_height * 0.18), 1.0)
 		for stripe in range(3):
 			var stripe_y := fill_rect.position.y + fmod(animation_time * 36.0 + stripe * 31.0, maxf(1.0, fill_rect.size.y))
 			draw_line(Vector2(fill_rect.position.x + 5, stripe_y), Vector2(fill_rect.end.x - 5, stripe_y), Palette.with_alpha(Palette.PAPER, 0.18), 1.0)
 	draw_texture_rect(cell_texture, Rect2(rect.position + Vector2(5, 5), Vector2(96, 144)), false, Color(0.9, 0.95, 1.0, 1.0))
-	draw_style_box(Palette.rounded_box(Color(0.025, 0.05, 0.10, 0.78), 7), Rect2(rect.position + Vector2(12, 61), Vector2(82, 37)))
+	draw_machine_plate(Rect2(rect.position + Vector2(12, 61), Vector2(82, 37)), Color(0.025, 0.05, 0.10, 0.78), Palette.with_alpha(color, 0.28), 5.0, 1.0)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 25), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 13, Palette.MUTED)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 91), "%d%%" % int(ratio * 100.0), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 22, Palette.PAPER)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 133), loc("同期", "SYNC") if full else loc("充電", "CHARGE"), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 11, color)
@@ -840,16 +951,29 @@ func draw_upgrade(index: int) -> void:
 	var color := upgrade_color(index)
 	var affordable: bool = run.can_purchase(id)
 	var hovered := hover_upgrade == index
-	var background := Palette.with_alpha(color, 0.22 if hovered else 0.09 if affordable else 0.035)
-	draw_style_box(Palette.rounded_box(background, 13, Palette.with_alpha(color, 0.95 if hovered else 0.5 if affordable else 0.23), 2 if hovered else 1), rect)
+	var background := Palette.with_alpha(Palette.INK, 0.9 if hovered else 0.76 if affordable else 0.84)
+	draw_machine_plate(rect, background, Palette.with_alpha(color, 0.95 if hovered else 0.46 if affordable else 0.2), 7.0, 2.0 if hovered else 1.0)
+	draw_rect(Rect2(rect.position + Vector2(5, 6), Vector2(4, rect.size.y - 12)), Palette.with_alpha(color, 0.92 if affordable else 0.22))
+	draw_rect(Rect2(rect.position + Vector2(12, 5), Vector2(rect.size.x - 24, 3)), Palette.with_alpha(color, 0.42 if affordable else 0.12))
+	draw_circle(rect.position + Vector2(rect.size.x - 12, 12), 3.5, color if affordable else Palette.with_alpha(Palette.MUTED, 0.28))
 	draw_string(Palette.UI_FONT, rect.position + Vector2(10, 20), "%d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, 22, 12, color)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(32, 20), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 140, 12, Palette.PAPER)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(10, 44), str(copy.desc), HORIZONTAL_ALIGNMENT_LEFT, 164, 10, Palette.MUTED)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(10, 70), "LV.%d" % run.upgrade_level(id), HORIZONTAL_ALIGNMENT_LEFT, 72, 11, color)
+	draw_string(DisplayFont, rect.position + Vector2(32, 20), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 136, 12, Palette.PAPER)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(12, 44), str(copy.desc), HORIZONTAL_ALIGNMENT_LEFT, 160, 10, Palette.MUTED)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(12, 70), "LV.%d" % run.upgrade_level(id), HORIZONTAL_ALIGNMENT_LEFT, 72, 11, color)
 	draw_texture_rect(energy_shard_texture, Rect2(rect.position + Vector2(100, 55), Vector2(18, 18)), false, Color.WHITE if affordable else Color(0.48, 0.52, 0.58, 0.7))
 	draw_string(Palette.UI_FONT, rect.position + Vector2(119, 70), "%d" % run.upgrade_cost(id), HORIZONTAL_ALIGNMENT_RIGHT, 55, 12, Palette.AMBER if affordable else Palette.MUTED)
 
 func draw_particles_and_text() -> void:
+	for packet in resource_packets:
+		var progress: float = float(packet.progress)
+		if progress < 0.0:
+			continue
+		var eased := 1.0 - pow(1.0 - clampf(progress, 0.0, 1.0), 3.0)
+		var packet_position := Vector2(packet.start).lerp(Vector2(packet.finish), eased)
+		packet_position.y -= sin(eased * PI) * float(packet.arc)
+		var packet_alpha := sin(clampf(progress, 0.0, 1.0) * PI)
+		draw_circle(packet_position, float(packet.size), Palette.with_alpha(Color(packet.color), packet_alpha))
+		draw_line(packet_position - Vector2(7, 0), packet_position, Palette.with_alpha(Color(packet.color), packet_alpha * 0.45), 2.0)
 	for item in particles:
 		var alpha := clampf(float(item.life) / maxf(0.01, float(item.max_life)), 0.0, 1.0)
 		draw_circle(Vector2(item.pos), float(item.size) * alpha, Palette.with_alpha(Color(item.color), alpha))
@@ -864,20 +988,31 @@ func draw_objective_header() -> void:
 	var phase := loc("吸収体を排除", "PURGE THE LEECH") if is_boss else loc("主機を復旧", "RESTORE MAIN POWER")
 	var current: float = ChargeState.BOSS_MAX_HP - run.boss_hp if is_boss else run.restore_progress
 	var target: float = ChargeState.BOSS_MAX_HP if is_boss else ChargeState.RESTORE_GOAL
-	draw_string(Palette.UI_FONT, Vector2(446, 138), title, HORIZONTAL_ALIGNMENT_LEFT, 230, 15, accent)
-	draw_string(Palette.UI_FONT, Vector2(676, 138), phase, HORIZONTAL_ALIGNMENT_LEFT, 190, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(446, 129), title, HORIZONTAL_ALIGNMENT_LEFT, 220, 15, accent)
+	draw_string(Palette.UI_FONT, Vector2(446, 147), phase, HORIZONTAL_ALIGNMENT_LEFT, 280, 10, Palette.MUTED)
 	if is_boss:
-		draw_circle(Vector2(832, 133), 24.0, Palette.with_alpha(Palette.CORAL, 0.12))
-		draw_texture_rect(grid_wraith_texture, Rect2(808, 109, 48, 48), false)
-	var bar := Rect2(862, 122, 330, 18)
-	draw_style_box(Palette.rounded_box(Palette.INK, 8, Palette.with_alpha(accent, 0.38), 1), bar)
-	var ratio: float = clampf(current / maxf(1.0, target), 0.0, 1.0)
-	if ratio > 0.001:
-		draw_style_box(Palette.rounded_box(accent, 8), Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y)))
-	var value_text := "%s / %s" % [format_number(current), format_number(target)]
-	if is_boss and run.boss_warning_active():
-		value_text = loc("吸収まで %.1f秒", "DRAIN IN %.1fs") % maxf(0.0, run.boss_attack_timer)
-	draw_string(Palette.UI_FONT, bar.position + Vector2(0, 14), value_text, HORIZONTAL_ALIGNMENT_CENTER, bar.size.x, 10, Palette.PAPER)
+		draw_texture_rect(WraithGaugeTexture, Rect2(824, 105, 390, 58), false, Color(0.9, 0.94, 1.0, 0.82))
+		var remaining_ratio: float = clampf(run.boss_hp / maxf(1.0, ChargeState.BOSS_MAX_HP), 0.0, 1.0)
+		var remaining_seals := int(ceil(remaining_ratio * 6.0))
+		var seal_positions := [842.0, 883.0, 924.0, 1080.0, 1121.0, 1162.0]
+		for index in range(6):
+			var seal_rect := Rect2(seal_positions[index], 128, 31, 13)
+			var intact := index < remaining_seals
+			draw_machine_plate(seal_rect, Palette.with_alpha(Palette.CORAL if intact else Palette.CYAN, 0.8 if intact else 0.12), Palette.CORAL if intact else Palette.with_alpha(Palette.CYAN, 0.38), 3.0, 1.0)
+		var value_text := "%d%%" % int(round(remaining_ratio * 100.0))
+		if run.boss_warning_active():
+			value_text = "%.1fs" % maxf(0.0, run.boss_attack_timer)
+		draw_string(Palette.UI_FONT, Vector2(980, 143), value_text, HORIZONTAL_ALIGNMENT_CENTER, 92, 15, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(980, 157), loc("吸収器耐久", "SIPHON INTEGRITY"), HORIZONTAL_ALIGNMENT_CENTER, 92, 7, Palette.MUTED)
+	else:
+		var ratio: float = clampf(current / maxf(1.0, target), 0.0, 1.0)
+		var bar := Rect2(820, 120, 378, 26)
+		draw_machine_plate(bar, Palette.INK, Palette.with_alpha(accent, 0.38), 5.0, 1.0)
+		for index in range(6):
+			var part_ratio := clampf(ratio * 6.0 - float(index), 0.0, 1.0)
+			var segment_rect := Rect2(bar.position + Vector2(7 + index * 61, 6), Vector2(53, 14))
+			draw_rect(segment_rect, Palette.with_alpha(accent, 0.1 + part_ratio * 0.9))
+		draw_string(Palette.UI_FONT, Vector2(820, 158), "%s / %s" % [format_number(current), format_number(target)], HORIZONTAL_ALIGNMENT_CENTER, 378, 10, Palette.PAPER)
 
 func draw_completion_overlay() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.015, 0.025, 0.06, 0.92))

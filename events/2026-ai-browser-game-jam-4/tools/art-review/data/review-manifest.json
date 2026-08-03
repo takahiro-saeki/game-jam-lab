@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-02T14:42:42.764Z",
+  "updatedAt": "2026-08-03T02:02:21.000Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -16,11 +16,11 @@
       "chargeControl": "charge-piston-a",
       "dischargeControl": "discharge-wave-a",
       "autoControl": "auto-stopped-rotor-a",
-      "note": "既存8カテゴリとUI Identity 4カテゴリのCodex一次選考を保存済み。人間レビューで変更可能です。",
+      "note": "人間レビューを反映してGodotへ統合済み。操作盤・敵ゲージ・資源装置は採用評価、ラックのみ重工業Aを交換可能な暫定採用としています。",
       "upgradeRack": "upgrade-rack-switchboard-a",
       "controlKit": "control-kit-switchboard-a",
-      "wraithGauge": "wraith-gauge-corrupted-b",
-      "shardAccumulator": "shard-accumulator-switchboard-b"
+      "wraithGauge": "wraith-gauge-switchboard-a",
+      "shardAccumulator": "shard-accumulator-corrupted-b"
     },
     "palette": [
       "#09111F",
@@ -992,10 +992,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:42:10.157Z"
           }
         }
       ]
@@ -1048,10 +1048,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:41:48.995Z"
           }
         },
         {
@@ -1093,10 +1093,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:41:52.448Z"
           }
         },
         {
@@ -1137,10 +1137,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:41:56.665Z"
           }
         }
       ]
@@ -1193,10 +1193,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:41:39.831Z"
           }
         },
         {
@@ -1238,10 +1238,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:41:39.260Z"
           }
         },
         {
@@ -1282,10 +1282,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:41:41.440Z"
           }
         }
       ]
@@ -1381,10 +1381,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:41:21.344Z"
           }
         },
         {
@@ -1481,10 +1481,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:40:52.181Z"
           }
         },
         {
@@ -1627,10 +1627,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:40:41.855Z"
           }
         },
         {
@@ -1672,10 +1672,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:40:39.373Z"
           }
         },
         {
@@ -1717,10 +1717,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:40:28.696Z"
           }
         },
         {
@@ -1762,10 +1762,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:40:32.521Z"
           }
         },
         {
@@ -1807,10 +1807,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:40:24.118Z"
           }
         },
         {
@@ -1953,10 +1953,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:40:02.293Z"
           }
         },
         {
@@ -1998,10 +1998,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:39:55.180Z"
           }
         },
         {
@@ -2043,10 +2043,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:39:55.962Z"
           }
         },
         {
@@ -2087,10 +2087,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "hold",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:39:43.865Z"
           }
         },
         {
@@ -2131,10 +2131,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-03T01:39:44.595Z"
           }
         }
       ]

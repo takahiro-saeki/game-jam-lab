@@ -2,7 +2,7 @@
 
 Generated with OpenAI's built-in image generation tool on August 1, 2026. The outputs were resized to 1280px-wide JPEGs for the Godot Web build. Generated images contain no requested text, logos, trademarks, or franchise elements.
 
-The Japanese and Latin UI typeface is [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp), distributed by Google Fonts under the SIL Open Font License 1.1. The font file and a copy of its license are stored in `godot/assets/fonts/`.
+The Japanese and Latin body UI typeface is [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp). Device labels and display headings use [DotGothic16](https://github.com/google/fonts/tree/main/ofl/dotgothic16). Both are distributed through Google Fonts under the SIL Open Font License 1.1; font files and license copies are stored in `godot/assets/fonts/`.
 
 ## PROJECT CHARGE — PixelLab Phase 2 and production-detail batch
 
@@ -20,10 +20,10 @@ Forty-four original pixel-art candidates were generated through PixelLab API v2 
 - Current provisional AUTO OFF emblem: `control/auto-stopped-rotor-a.png`
 - Current provisional upgrade rack: `ui/upgrade-rack-switchboard-a.png`
 - Current provisional control-frame kit: `ui/control-kit-switchboard-a.png`
-- Current provisional GRID WRAITH gauge: `ui/wraith-gauge-corrupted-b.png`
-- Current provisional shard accumulator: `ui/shard-accumulator-switchboard-b.png`
+- Current human-selected GRID WRAITH gauge: `ui/wraith-gauge-switchboard-a.png`
+- Current human-selected shard accumulator: `ui/shard-accumulator-corrupted-b.png`
 
-The first eight provisional selections are rendered in the game for an in-context quality check but have not been copied to `approved/`. The four UI Identity selections are shown in a composited control-board preview and await human approval before Godot gameplay integration. Every alternate remains selectable in the local review board. Focused revisions were retained in the source set even when they failed their composition requirement, so the selection process and generation disclosure remain auditable.
+The first eight provisional selections are rendered in the game for an in-context quality check but have not been copied to `approved/`. Human review selected the switchboard control kit and gauge plus the corrupted blank shard accumulator; those three are now integrated into Godot. The switchboard upgrade rack is integrated as an explicitly replaceable provisional selection because its alternate received only a hold rating. Every alternate remains selectable in the local review board. Focused revisions were retained in the source set even when they failed their composition requirement, so the selection process and generation disclosure remain auditable.
 
 ## ZERO PERCENT CITY
 
