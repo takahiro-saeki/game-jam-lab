@@ -410,6 +410,80 @@ func test_charge_clicker() -> void:
 	check(game.run.lifetime_output > 1500.0, "the prototype produces visible escalating output in a short session")
 	game.free()
 
+	var campaign_game := ChargeClickerGame.new()
+	campaign_game.persistence_enabled = false
+	root.add_child(campaign_game)
+	check(campaign_game.campaign_route.phase == campaign_game.CampaignRoute.RoutePhase.MAP, "new PROJECT CHARGE runs open on the six-stage circuit map")
+	var campaign_stick := InputEventJoypadMotion.new()
+	campaign_stick.axis = JOY_AXIS_LEFT_X
+	campaign_stick.axis_value = 1.0
+	campaign_game.handle_campaign_input(campaign_stick)
+	check(campaign_game.campaign_selected == 1, "left stick navigates the PROJECT CHARGE circuit map")
+	campaign_game.handle_campaign_input(campaign_stick)
+	check(campaign_game.campaign_selected == 1, "held analog input is latched instead of scrolling repeatedly")
+	campaign_stick.axis_value = 0.0
+	campaign_game.handle_campaign_input(campaign_stick)
+	campaign_game.campaign_selected = 0
+	check(campaign_game.start_stage_by_index(0), "the selected map card launches its playable circuit")
+	check(campaign_game.campaign_route.phase == campaign_game.CampaignRoute.RoutePhase.STAGE and campaign_game.run.current_stage_id == "generator_core", "map selection connects route and encounter state")
+	campaign_game.run.apply_output(campaign_game.run.restore_goal, true)
+	campaign_game.run.boss_hp = 1.0
+	campaign_game.run.apply_output(2.0, false)
+	check(campaign_game.select_reward(0), "a cleared campaign stage still offers a permanent build choice")
+	check(campaign_game.complete_stage_and_return_to_route(), "stage clear registers the circuit and returns to route progression")
+	check("generator_core" in campaign_game.campaign_route.completed_stage_ids and "flywheel" in campaign_game.run.circuit_rewards, "stage completion grants its named circuit reward")
+	for stage_index in [1, 2]:
+		check(campaign_game.start_stage_by_index(stage_index), "campaign stage %d launches from the map" % (stage_index + 1))
+		campaign_game.run.apply_output(campaign_game.run.restore_goal, true)
+		campaign_game.run.boss_hp = 1.0
+		campaign_game.run.apply_output(2.0, false)
+		campaign_game.select_reward(stage_index % 3)
+		campaign_game.complete_stage_and_return_to_route()
+	check(campaign_game.campaign_route.phase == campaign_game.CampaignRoute.RoutePhase.BOSS_SELECT, "three playable stage clears open the in-game boss selection screen")
+	check(campaign_game.choose_campaign_boss(0) and campaign_game.run.current_boss_id == "grid_leech", "boss selection launches the chosen boss encounter")
+	campaign_game.run.boss_hp = 1.0
+	campaign_game.run.apply_output(2.0, false)
+	check(campaign_game.complete_campaign_boss() and campaign_game.campaign_route.phase == campaign_game.CampaignRoute.RoutePhase.NORMAL_END, "the chosen boss reaches the complete normal ending screen")
+	var share_result := campaign_game.campaign_result_text()
+	check("PROJECT CHARGE" in share_result and "3/6" in share_result, "ending results produce a compact shareable campaign record")
+	check(campaign_game.campaign_route.continue_true_route(), "normal ending can continue into the same build without reset")
+	campaign_game.free()
+	var reset_guard_game := ChargeClickerGame.new()
+	reset_guard_game.persistence_enabled = false
+	root.add_child(reset_guard_game)
+	reset_guard_game.run.credits = 77
+	check(not reset_guard_game.request_reset() and reset_guard_game.run.credits == 77, "the first PROJECT CHARGE reset input only arms a confirmation window")
+	check(reset_guard_game.request_reset() and reset_guard_game.run.credits == 0, "a confirmed second reset starts a fresh campaign")
+	reset_guard_game.free()
+
+	var mechanics := ChargeClickerState.new()
+	mechanics.begin_stage("capacitor_vault", "capacity", 1000.0, 1000.0)
+	mechanics.add_charge_energy(mechanics.capacity * 2.0, 0.0, false)
+	var vault_partial: Dictionary = mechanics.discharge(0)
+	mechanics.add_charge_energy(mechanics.total_capacity(), 0.0, false)
+	var vault_super: Dictionary = mechanics.discharge(0)
+	check(float(vault_super.output) > float(vault_partial.output) * 4.0, "CAPACITOR VAULT strongly rewards six-cell burst timing")
+	mechanics.begin_stage("relay_network", "chain", 1000.0, 1000.0)
+	for chain in range(3):
+		mechanics.add_charge_energy(mechanics.capacity, 0.0, false)
+		mechanics.discharge(0)
+	check(mechanics.stage_combo == 3 and mechanics.total_charge() > 0.0, "RELAY NETWORK chains rapid discharges and feeds charge forward")
+	mechanics.begin_stage("surge_lab", "critical", 1000.0, 1000.0)
+	check(mechanics.effective_critical_chance() > mechanics.critical_chance + 0.15, "SURGE LAB exposes a visible high-variance critical window")
+	mechanics.begin_campaign_boss("thermal_titan", 1000.0, false, false)
+	mechanics.boss_attack_timer = 1.0
+	var titan_warning_hit: Dictionary = mechanics.apply_output(100.0, true)
+	check(not bool(titan_warning_hit.interrupt) and is_equal_approx(mechanics.boss_attack_timer, 1.0), "THERMAL TITAN cannot be bypassed with the GRID LEECH interrupt rule")
+	for id in ["manual", "critical", "auto", "cooling", "capacity", "discharge", "insulation", "surge"]:
+		mechanics.upgrade_levels[id] = 2
+	check(mechanics.active_synergies().size() == 4, "the eight upgrades form four functional two-part synergies")
+	var campaign_seconds := simulate_project_charge_normal_route()
+	print("PROJECT CHARGE efficient normal-route simulation: %.1f seconds" % campaign_seconds)
+	check(campaign_seconds >= 600.0 and campaign_seconds <= 1100.0, "an efficient three-stage normal route lands in the 10–18 minute automation band")
+	var true_route_seconds := simulate_project_charge_true_route()
+	print("PROJECT CHARGE efficient true-route simulation: %.1f seconds" % true_route_seconds)
+	check(true_route_seconds >= 1500.0 and true_route_seconds <= 3000.0, "an efficient full true route lands in the 25–50 minute automation band")
+
 	var stage := ChargeClickerState.new()
 	var restored: Dictionary = stage.apply_output(ChargeClickerState.RESTORE_GOAL, true)
 	check(bool(restored.boss_started) and stage.stage_phase == stage.StagePhase.BOSS, "restoration target awakens the GENERATOR CORE mini-boss")
@@ -484,3 +558,77 @@ func test_charge_clicker() -> void:
 	check(bundle_route.phase == bundle_route.RoutePhase.SINGULARITY and is_equal_approx(bundle_run.stage_clear_time, timed_run.stage_clear_time), "campaign bundle preserves both progression layers")
 	campaign_save.clear()
 	check(restored_route.defeat_current_boss() and restored_route.phase == restored_route.RoutePhase.TRUE_END, "CHARGE SINGULARITY defeat reaches the true ending")
+
+func simulate_project_charge_normal_route() -> float:
+	var simulated := ChargeClickerState.new()
+	var upgrade_plan := ["manual", "discharge", "surge", "cooling", "critical", "capacity", "auto", "insulation", "manual", "critical", "auto", "cooling", "capacity", "discharge", "insulation", "surge"]
+	var upgrade_cursor := 0
+	for stage_id in ["generator_core", "capacitor_vault", "thermal_plant"]:
+		var definition := ChargeStageCatalog.stage(stage_id)
+		simulated.begin_stage(stage_id, str(definition.build_tag), float(definition.restore_target), float(definition.climax_hp))
+		for step in range(12000):
+			simulated.manual_charge(0)
+			simulated.tick(0.15, false)
+			if simulated.is_full() and (simulated.overcharge >= 30.0 or simulated.boss_warning_active()):
+				var shot := simulated.discharge(0)
+				simulated.apply_output(float(shot.output), bool(shot.super))
+			while upgrade_cursor < upgrade_plan.size() and simulated.can_purchase(str(upgrade_plan[upgrade_cursor])):
+				simulated.purchase_upgrade(str(upgrade_plan[upgrade_cursor]))
+				upgrade_cursor += 1
+			if simulated.stage_phase == simulated.StagePhase.REWARD:
+				simulated.select_reward(["flywheel", "coolant", "relay"][simulated.circuit_rewards.size() % 3])
+				simulated.grant_stage_circuit(str(definition.reward_id))
+				break
+	var normal_boss := ChargeStageCatalog.boss("grid_leech")
+	simulated.begin_campaign_boss("grid_leech", float(normal_boss.hp), false, false)
+	for step in range(16000):
+		simulated.manual_charge(0)
+		simulated.tick(0.15, false)
+		if simulated.is_full() and (simulated.overcharge >= 30.0 or simulated.boss_warning_active()):
+			var shot: Dictionary = simulated.discharge(0)
+			simulated.apply_output(float(shot.output), bool(shot.super))
+		if simulated.stage_phase == simulated.StagePhase.REWARD:
+			break
+	return simulated.elapsed
+
+func simulate_project_charge_true_route() -> float:
+	var simulated := ChargeClickerState.new()
+	var upgrade_plan := ["manual", "discharge", "surge", "cooling", "critical", "capacity", "auto", "insulation", "manual", "critical", "auto", "cooling", "capacity", "discharge", "insulation", "surge", "manual", "discharge", "surge", "cooling", "critical", "capacity", "auto", "insulation"]
+	var upgrade_cursor := 0
+	for stage_index in range(ChargeStageCatalog.STAGES.size()):
+		var definition: Dictionary = ChargeStageCatalog.STAGES[stage_index]
+		simulated.begin_stage(str(definition.id), str(definition.build_tag), float(definition.restore_target), float(definition.climax_hp))
+		for step in range(20000):
+			simulated.manual_charge(0)
+			simulated.tick(0.15, false)
+			if simulated.is_full() and (simulated.overcharge >= 30.0 or simulated.boss_warning_active()):
+				var shot := simulated.discharge(0)
+				simulated.apply_output(float(shot.output), bool(shot.super))
+			while upgrade_cursor < upgrade_plan.size() and simulated.can_purchase(str(upgrade_plan[upgrade_cursor])):
+				simulated.purchase_upgrade(str(upgrade_plan[upgrade_cursor]))
+				upgrade_cursor += 1
+			if simulated.stage_phase == simulated.StagePhase.REWARD:
+				simulated.select_reward(["flywheel", "coolant", "relay"][stage_index % 3])
+				simulated.grant_stage_circuit(str(definition.reward_id))
+				break
+		if stage_index == 2:
+			var normal_boss := ChargeStageCatalog.boss("grid_leech")
+			simulated.begin_campaign_boss("grid_leech", float(normal_boss.hp), false, false)
+			drive_simulated_boss(simulated, 24000)
+	var enhanced_boss := ChargeStageCatalog.boss("thermal_titan")
+	simulated.begin_campaign_boss("thermal_titan", float(enhanced_boss.enhanced_hp), true, false)
+	drive_simulated_boss(simulated, 30000)
+	var singularity := ChargeStageCatalog.boss("charge_singularity")
+	simulated.begin_campaign_boss("charge_singularity", float(singularity.hp), false, true)
+	drive_simulated_boss(simulated, 48000)
+	return simulated.elapsed
+
+func drive_simulated_boss(simulated, max_steps: int) -> void:
+	for step in range(max_steps):
+		simulated.manual_charge(0)
+		simulated.tick(0.15, false)
+		if simulated.is_full() and (simulated.overcharge >= 30.0 or simulated.boss_warning_active()):
+			var shot: Dictionary = simulated.discharge(0)
+			simulated.apply_output(float(shot.output), bool(shot.super))
+		if simulated.stage_phase == simulated.StagePhase.REWARD:
+			return

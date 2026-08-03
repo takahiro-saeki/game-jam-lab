@@ -12,9 +12,9 @@
 1. **ZERO PERCENT CITY** — a compact battery-powered metroidvania.
 2. **CHARGEBACK** — a financial deck-building roguelike where your credit limit is your life.
 3. **CAPACITOR DEFENSE** — a circuit-routing tower defense driven by visible energy packets.
-4. **PROJECT CHARGE** — an active clicker prototype about six-cell synchronization, safe discharge, and risky overcharge.
+4. **PROJECT CHARGE** — a campaign-scale active clicker about six-cell synchronization, safe discharge, risky overcharge, and build-defining circuit routes.
 
-The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE is being developed through separate 30-second, 5-minute, and 20-minute quality gates before its content is expanded.
+The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE now has a complete playable campaign skeleton: any three of six circuits lead to a chosen normal boss and ending, while the remaining circuits, enhanced boss, and CHARGE SINGULARITY form its optional true route.
 
 ## Next concept: CHARGE! active clicker
 
@@ -22,6 +22,7 @@ The next candidate is a 20-minute active clicker built around six charge cells, 
 
 - [Game design document](docs/CHARGE_CLICKER_GDD.md)
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
+- [Current playtest guide](docs/PROJECT_CHARGE_PLAYTEST.md)
 - [PixelLab style and prompt brief](docs/PIXELLAB_STYLE_BRIEF.md)
 - [UI Identity / anti-AI pass](docs/UI_IDENTITY_PASS.md)
 
@@ -65,7 +66,7 @@ The next candidate is a 20-minute active clicker built around six charge cells, 
 
 ### PROJECT CHARGE
 
-- Restore GENERATOR CORE with discharge output, then defeat GRID WRAITH to finish the 5–7 minute vertical slice.
+- Choose any three of six circuit stages, defeat one of two master hostiles, and reach the normal ending. Continue with the same build through the remaining stages, enhanced boss, and CHARGE SINGULARITY for the true ending.
 - Hold the large **CHARGE** button, `Space`, or the configured primary gamepad button to fill six cells.
 - Press **DISCHARGE**, `Enter` / `X`, right-click, or the configured secondary gamepad button to bank the current output.
 - A partial discharge is safe. Filling all six cells triggers a large synchronization bonus.
@@ -73,9 +74,12 @@ The next candidate is a 20-minute active clicker built around six charge cells, 
 - Toggle slow automatic charging with `A` or the configured active-ability button.
 - Buy upgrades by clicking/tapping them or pressing `1`–`8`. Unaffordable upgrades remain readable and show their required cost.
 - On gamepad, navigate upgrades with the D-pad and purchase the selected upgrade with `Start / Options`.
-- GRID WRAITH warns before draining the fullest cell. A synchronized SUPER DISCHARGE during the warning interrupts it and gains a damage bonus.
-- Defeating the boss awards one permanent circuit and a stage result screen. Progress saves automatically and resumes after closing the browser.
-- Press `R` to reboot the current prototype.
+- Each stage changes the optimal rhythm: precise manual input, six-cell bursts, thermal redlining, discharge chains, AUTO commands, or volatile critical windows.
+- Upgrade pairs unlock four named synergies: precision feedback, autonomous cooling, burst bank, and redline armor.
+- GRID LEECH warns before draining the fullest cell. THERMAL TITAN suppresses cooling and becomes vulnerable at high heat. The true boss rotates through three trials based on all six systems.
+- Clearing a stage awards both a selectable permanent reward and its named circuit modifier. Progress saves automatically and resumes after closing the browser.
+- Use the arrow keys, D-pad, or left stick on maps, rewards, and the upgrade rack. Ending results can be copied with `C` or the configured active-ability button.
+- To erase the full campaign and start over, press `R` twice within the three-second confirmation window.
 
 ## Local development
 
@@ -111,4 +115,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE Phase 2 now contains a timed restoration objective, an interruptible mini-boss, circuit rewards, stage results, and versioned autosave in addition to the six-cell core loop. Its active-play simulation clears in 337.5 seconds. Forty-four PixelLab candidates across twelve review categories have been generated and scored. The first eight gameplay categories are available in the live Godot comparison; the four UI Identity categories are available in the composited anti-AI review before gameplay integration.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE has passed its campaign-structure implementation milestone: six differentiated stages, four upgrade synergies, two selectable bosses, the normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual results, atomic campaign saves, and mouse/touch/keyboard/remappable-gamepad navigation are all connected. Deterministic active-play simulations currently complete the normal route in 650.8 seconds and the full true route in 1907.4 seconds; these are deliberately faster than first-time human play. Forty-four PixelLab candidates across twelve review categories have been generated, scored, and partially integrated. The next major work is human playtest balancing and production art for the six environments and remaining bosses.

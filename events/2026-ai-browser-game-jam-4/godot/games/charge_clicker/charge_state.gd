@@ -59,6 +59,19 @@ var boss_drains := 0
 var boss_interrupts := 0
 var stage_clear_time := -1.0
 var reward_id := ""
+var current_stage_id := "generator_core"
+var current_build_tag := "manual"
+var current_boss_id := "grid_wraith"
+var stage_elapsed := 0.0
+var restore_goal := RESTORE_GOAL
+var boss_max_hp := BOSS_MAX_HP
+var enhanced_boss := false
+var singularity_boss := false
+var singularity_phase := 1
+var stage_combo := 0
+var combo_timer := 0.0
+var manual_boost_timer := 0.0
+var circuit_rewards: Array[String] = []
 
 func _init() -> void:
 	rng.randomize()
@@ -101,9 +114,118 @@ func reset() -> void:
 	boss_interrupts = 0
 	stage_clear_time = -1.0
 	reward_id = ""
+	current_stage_id = "generator_core"
+	current_build_tag = "manual"
+	current_boss_id = "grid_wraith"
+	stage_elapsed = 0.0
+	restore_goal = RESTORE_GOAL
+	boss_max_hp = BOSS_MAX_HP
+	enhanced_boss = false
+	singularity_boss = false
+	singularity_phase = 1
+	stage_combo = 0
+	combo_timer = 0.0
+	manual_boost_timer = 0.0
+	circuit_rewards.clear()
 	upgrade_levels.clear()
 	for definition in UPGRADE_DEFINITIONS:
 		upgrade_levels[str(definition.id)] = 0
+
+func begin_stage(stage_id: String, build_tag: String, new_restore_goal: float, new_boss_hp: float) -> void:
+	current_stage_id = stage_id
+	current_build_tag = build_tag
+	current_boss_id = str({
+		"generator_core": "grid_wraith",
+		"capacitor_vault": "vault_lock",
+		"thermal_plant": "thermal_runaway",
+		"relay_network": "relay_storm",
+		"drone_array": "rogue_foreman",
+		"surge_lab": "probability_break",
+	}.get(stage_id, "grid_wraith"))
+	restore_goal = maxf(1000.0, new_restore_goal)
+	boss_max_hp = maxf(1000.0, new_boss_hp)
+	enhanced_boss = false
+	singularity_boss = false
+	reset_encounter(StagePhase.RESTORE)
+
+func begin_campaign_boss(boss_id: String, hp: float, is_enhanced: bool = false, is_singularity: bool = false) -> void:
+	current_stage_id = ""
+	current_build_tag = "all" if is_singularity else "boss"
+	current_boss_id = boss_id
+	boss_max_hp = maxf(1000.0, hp)
+	enhanced_boss = is_enhanced
+	singularity_boss = is_singularity
+	reset_encounter(StagePhase.BOSS)
+
+func reset_encounter(next_phase: int) -> void:
+	clear_cells()
+	heat = 0.0
+	overcharge = 0.0
+	auto_buffer = 0.0
+	manual_streak = 0
+	stage_phase = next_phase
+	restore_progress = 0.0
+	boss_hp = boss_max_hp
+	boss_attack_timer = 8.0 if not enhanced_boss else 6.6
+	boss_drains = 0
+	boss_interrupts = 0
+	stage_clear_time = -1.0
+	reward_id = ""
+	stage_elapsed = 0.0
+	stage_combo = 0
+	combo_timer = 0.0
+	manual_boost_timer = 0.0
+	singularity_phase = 1
+
+func synergy_active(id: String) -> bool:
+	match id:
+		"precision_loop":
+			return upgrade_level("manual") >= 2 and upgrade_level("critical") >= 2
+		"autonomous_cooling":
+			return upgrade_level("auto") >= 2 and upgrade_level("cooling") >= 2
+		"burst_bank":
+			return upgrade_level("capacity") >= 2 and upgrade_level("discharge") >= 2
+		"redline_armor":
+			return upgrade_level("insulation") >= 2 and upgrade_level("surge") >= 2
+	return false
+
+func active_synergies() -> Array[String]:
+	var result: Array[String] = []
+	for id in ["precision_loop", "autonomous_cooling", "burst_bank", "redline_armor"]:
+		if synergy_active(id):
+			result.append(id)
+	return result
+
+func grant_stage_circuit(id: String) -> bool:
+	if id.is_empty() or id in circuit_rewards:
+		return false
+	circuit_rewards.append(id)
+	match id:
+		"flywheel":
+			manual_power *= 1.12
+		"deep_bank":
+			capacity *= 1.12
+			full_discharge_bonus += 0.1
+		"redline_loop":
+			cooling_rate *= 1.12
+			full_discharge_bonus += 0.08
+		"cascade_bus":
+			discharge_multiplier *= 1.08
+		"swarm_clock":
+			auto_rate *= 1.22
+		"loaded_dice":
+			critical_chance = minf(0.72, critical_chance + 0.08)
+	return true
+
+func effective_critical_chance() -> float:
+	var result := critical_chance
+	if current_stage_id == "surge_lab":
+		result += 0.16 + 0.08 * (0.5 + 0.5 * sin(stage_elapsed * 1.9))
+	if synergy_active("precision_loop") and manual_streak >= 6:
+		result += 0.08
+	if singularity_boss and singularity_phase == 3:
+		result += 0.12
+	return clampf(result, 0.0, 0.82)
 
 func total_capacity() -> float:
 	return capacity * CELL_COUNT
@@ -136,12 +258,18 @@ func next_cell_index() -> int:
 func manual_charge(critical_mode: int = -1) -> Dictionary:
 	manual_inputs += 1
 	manual_streak = mini(12, manual_streak + 1)
-	var is_critical := critical_mode == 1 or (critical_mode < 0 and rng.randf() < critical_chance)
+	var is_critical := critical_mode == 1 or (critical_mode < 0 and rng.randf() < effective_critical_chance())
 	if is_critical:
 		critical_hits += 1
-	var streak_multiplier := 1.0 + float(manual_streak - 1) * 0.018
+	var streak_step := 0.03 if current_stage_id == "generator_core" else 0.022 if synergy_active("precision_loop") else 0.018
+	var streak_multiplier := 1.0 + float(manual_streak - 1) * streak_step
+	if current_stage_id == "drone_array":
+		manual_boost_timer = 2.6
 	var amount := manual_power * streak_multiplier * (2.0 if is_critical else 1.0)
-	var result := add_charge_energy(amount, 2.7 * heat_generation, true)
+	var heat_modifier := 1.35 if current_stage_id == "thermal_plant" else 1.0
+	if synergy_active("redline_armor"):
+		heat_modifier *= 0.88
+	var result := add_charge_energy(amount, 2.7 * heat_generation * heat_modifier, true)
 	result.critical = is_critical
 	result.input_amount = amount
 	if heat >= MAX_HEAT:
@@ -177,16 +305,36 @@ func add_charge_energy(amount: float, heat_gain: float, allow_overcharge: bool) 
 func tick(delta: float, manual_held: bool = false) -> Dictionary:
 	if stage_phase not in [StagePhase.REWARD, StagePhase.CLEAR]:
 		elapsed += delta
+		stage_elapsed += delta
+	combo_timer = maxf(0.0, combo_timer - delta)
+	manual_boost_timer = maxf(0.0, manual_boost_timer - delta)
+	if combo_timer <= 0.0:
+		stage_combo = 0
 	var cooling_multiplier := 0.15 if manual_held else 1.0
-	heat = maxf(0.0, heat - cooling_rate * cooling_multiplier * delta)
+	if current_stage_id == "thermal_plant":
+		cooling_multiplier *= 0.7
+	if current_boss_id == "thermal_titan":
+		cooling_multiplier *= 0.58 if enhanced_boss else 0.72
+	var effective_cooling := cooling_rate * (1.28 if synergy_active("autonomous_cooling") else 1.0)
+	heat = maxf(0.0, heat - effective_cooling * cooling_multiplier * delta)
 	var auto_added := 0.0
 	var became_full := false
 	if auto_enabled and not is_full() and stage_phase not in [StagePhase.REWARD, StagePhase.CLEAR]:
-		auto_buffer += auto_rate * delta
+		var effective_auto := auto_rate
+		if current_stage_id == "drone_array":
+			effective_auto *= 1.5
+		if manual_boost_timer > 0.0:
+			effective_auto *= 1.45
+		if synergy_active("autonomous_cooling"):
+			effective_auto *= 1.32
+		auto_buffer += effective_auto * delta
 		if auto_buffer >= 0.5:
 			var amount := auto_buffer
 			auto_buffer = 0.0
-			var result := add_charge_energy(amount, amount / maxf(1.0, manual_power) * 0.42 * heat_generation, false)
+			var auto_heat := amount / maxf(1.0, manual_power) * 0.42 * heat_generation
+			if synergy_active("autonomous_cooling"):
+				auto_heat *= 0.55
+			var result := add_charge_energy(amount, auto_heat, false)
 			auto_added = float(result.added)
 			became_full = bool(result.became_full)
 	var did_meltdown := false
@@ -205,28 +353,42 @@ func tick(delta: float, manual_held: bool = false) -> Dictionary:
 		"drain_cell": int(stage_result.drain_cell),
 		"drained": float(stage_result.drained),
 		"boss_healed": float(stage_result.boss_healed),
+		"thermal_spike": bool(stage_result.thermal_spike),
+		"singularity_phase": singularity_phase,
 	}
 
 func tick_stage(delta: float) -> Dictionary:
-	var result := {"boss_warning": false, "boss_drain": false, "drain_cell": -1, "drained": 0.0, "boss_healed": 0.0}
+	var result := {"boss_warning": false, "boss_drain": false, "thermal_spike": false, "drain_cell": -1, "drained": 0.0, "boss_healed": 0.0}
 	if stage_phase != StagePhase.BOSS:
 		return result
+	if singularity_boss:
+		var ratio := boss_hp / maxf(1.0, boss_max_hp)
+		singularity_phase = 1 if ratio > 0.66 else 2 if ratio > 0.33 else 3
 	var previous_timer := boss_attack_timer
 	boss_attack_timer -= delta
 	if previous_timer > 2.0 and boss_attack_timer <= 2.0:
 		result.boss_warning = true
 	if boss_attack_timer > 0.0:
 		return result
+	if current_boss_id == "thermal_titan" or (singularity_boss and singularity_phase == 2):
+		var spike := 26.0 if enhanced_boss or singularity_boss else 18.0
+		heat = minf(MAX_HEAT, heat + spike * heat_generation)
+		boss_hp = minf(boss_max_hp, boss_hp + spike * 9.0)
+		boss_drains += 1
+		boss_attack_timer = 6.0 if enhanced_boss or singularity_boss else 7.4
+		result.thermal_spike = true
+		result.boss_healed = spike * 9.0
+		return result
 	var index := most_charged_cell()
 	var drained := 0.0
 	if index >= 0:
-		drained = cells[index] * 0.38
+		drained = cells[index] * (0.52 if enhanced_boss or singularity_boss else 0.38)
 		cells[index] = maxf(0.0, cells[index] - drained)
 	var healed := drained * 0.24
-	boss_hp = minf(BOSS_MAX_HP, boss_hp + healed)
+	boss_hp = minf(boss_max_hp, boss_hp + healed)
 	heat = minf(MAX_HEAT, heat + 8.0 * heat_generation)
 	boss_drains += 1
-	boss_attack_timer = maxf(5.8, 8.6 - float(boss_drains) * 0.22)
+	boss_attack_timer = maxf(4.8 if enhanced_boss or singularity_boss else 5.8, 8.6 - float(boss_drains) * 0.22)
 	result.boss_drain = true
 	result.drain_cell = index
 	result.drained = drained
@@ -245,6 +407,9 @@ func most_charged_cell() -> int:
 func boss_warning_active() -> bool:
 	return stage_phase == StagePhase.BOSS and boss_attack_timer <= 2.0
 
+func boss_attack_interruptible() -> bool:
+	return current_boss_id != "thermal_titan" and not (singularity_boss and singularity_phase == 2)
+
 func apply_output(output: float, was_super: bool) -> Dictionary:
 	var result := {
 		"phase_changed": false,
@@ -255,17 +420,17 @@ func apply_output(output: float, was_super: bool) -> Dictionary:
 	}
 	if stage_phase == StagePhase.RESTORE:
 		var restored := output * (1.08 if was_super else 1.0)
-		restore_progress = minf(RESTORE_GOAL, restore_progress + restored)
+		restore_progress = minf(restore_goal, restore_progress + restored)
 		result.applied = restored
-		if restore_progress >= RESTORE_GOAL:
+		if restore_progress >= restore_goal:
 			stage_phase = StagePhase.BOSS
-			boss_hp = BOSS_MAX_HP
+			boss_hp = boss_max_hp
 			boss_attack_timer = 8.0
 			result.phase_changed = true
 			result.boss_started = true
 	elif stage_phase == StagePhase.BOSS:
 		var damage := output
-		if boss_warning_active() and was_super:
+		if boss_warning_active() and was_super and boss_attack_interruptible():
 			damage *= 1.35
 			boss_attack_timer = 8.6
 			boss_interrupts += 1
@@ -274,16 +439,16 @@ func apply_output(output: float, was_super: bool) -> Dictionary:
 		result.applied = damage
 		if boss_hp <= 0.0:
 			stage_phase = StagePhase.REWARD
-			stage_clear_time = elapsed
+			stage_clear_time = stage_elapsed
 			result.phase_changed = true
 			result.boss_defeated = true
 	return result
 
 func objective_ratio() -> float:
 	if stage_phase == StagePhase.RESTORE:
-		return restore_progress / RESTORE_GOAL
+		return restore_progress / maxf(1.0, restore_goal)
 	if stage_phase == StagePhase.BOSS:
-		return 1.0 - boss_hp / BOSS_MAX_HP
+		return 1.0 - boss_hp / maxf(1.0, boss_max_hp)
 	return 1.0
 
 func select_reward(id: String) -> bool:
@@ -309,14 +474,38 @@ func discharge(critical_mode: int = -1) -> Dictionary:
 	if stored < 0.5:
 		return {"valid": false, "output": 0.0, "credits": 0, "super": false, "critical": false}
 	var was_full := is_full()
-	var is_critical := critical_mode == 1 or (critical_mode < 0 and rng.randf() < critical_chance * 0.65)
+	var is_critical := critical_mode == 1 or (critical_mode < 0 and rng.randf() < effective_critical_chance() * 0.65)
 	if is_critical:
 		critical_hits += 1
 	var full_multiplier := 1.0 + full_discharge_bonus if was_full else 1.0
+	if was_full and synergy_active("burst_bank"):
+		full_multiplier += 0.38
 	var overcharge_multiplier := 1.0 + overcharge * 0.01
-	var heat_multiplier := 1.0 + maxf(0.0, heat - 50.0) * 0.004
-	var critical_multiplier := 1.75 if is_critical else 1.0
-	var output := stored * discharge_multiplier * full_multiplier * overcharge_multiplier * heat_multiplier * critical_multiplier
+	var heat_step := 0.007 if current_stage_id == "thermal_plant" or synergy_active("redline_armor") else 0.004
+	var heat_multiplier := 1.0 + maxf(0.0, heat - 50.0) * heat_step
+	var critical_multiplier := (2.15 if synergy_active("precision_loop") else 1.75) if is_critical else 1.0
+	if current_stage_id == "surge_lab" and is_critical:
+		critical_multiplier += 0.45
+	var rule_multiplier := 1.0
+	if current_stage_id == "capacitor_vault":
+		rule_multiplier *= 1.42 if was_full else 0.72
+	elif current_stage_id == "relay_network":
+		stage_combo = mini(8, stage_combo + 1) if combo_timer > 0.0 else 1
+		combo_timer = 3.4
+		rule_multiplier *= 1.0 + float(stage_combo - 1) * 0.11
+	elif current_stage_id == "drone_array" and auto_enabled:
+		rule_multiplier *= 1.22
+	if current_boss_id == "thermal_titan":
+		rule_multiplier *= 1.48 if heat >= 68.0 else 0.82
+	if singularity_boss:
+		match singularity_phase:
+			1:
+				rule_multiplier *= 1.28 if was_full else 0.78
+			2:
+				rule_multiplier *= 1.35 if heat >= 62.0 else 0.86
+			3:
+				rule_multiplier *= 1.38 if is_critical else 0.9
+	var output := stored * discharge_multiplier * full_multiplier * overcharge_multiplier * heat_multiplier * critical_multiplier * rule_multiplier
 	var earned := maxi(1, int(round(output / 28.0)))
 	credits += earned
 	lifetime_output += output
@@ -326,6 +515,8 @@ func discharge(critical_mode: int = -1) -> Dictionary:
 	else:
 		partial_discharges += 1
 	clear_cells()
+	if current_stage_id == "relay_network" and stage_combo >= 2:
+		add_charge_energy(capacity * minf(0.34, 0.08 * float(stage_combo)), 0.0, false)
 	heat = maxf(0.0, heat - 18.0)
 	overcharge = 0.0
 	manual_streak = 0
@@ -337,8 +528,11 @@ func clear_cells() -> void:
 
 func trigger_meltdown() -> float:
 	var before := total_charge()
+	var effective_retention := meltdown_retention
+	if synergy_active("redline_armor"):
+		effective_retention = minf(0.78, effective_retention + 0.22)
 	for index in range(cells.size()):
-		cells[index] *= meltdown_retention
+		cells[index] *= effective_retention
 	var lost := before - total_charge()
 	heat = 34.0
 	overcharge = 0.0
@@ -395,7 +589,7 @@ func purchase_upgrade(id: String) -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 1,
+		"version": 2,
 		"cells": cells.duplicate(),
 		"capacity": capacity,
 		"manual_power": manual_power,
@@ -430,10 +624,24 @@ func snapshot() -> Dictionary:
 		"boss_interrupts": boss_interrupts,
 		"stage_clear_time": stage_clear_time,
 		"reward_id": reward_id,
+		"current_stage_id": current_stage_id,
+		"current_build_tag": current_build_tag,
+		"current_boss_id": current_boss_id,
+		"stage_elapsed": stage_elapsed,
+		"restore_goal": restore_goal,
+		"boss_max_hp": boss_max_hp,
+		"enhanced_boss": enhanced_boss,
+		"singularity_boss": singularity_boss,
+		"singularity_phase": singularity_phase,
+		"stage_combo": stage_combo,
+		"combo_timer": combo_timer,
+		"manual_boost_timer": manual_boost_timer,
+		"circuit_rewards": circuit_rewards.duplicate(),
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
-	if int(data.get("version", 0)) != 1:
+	var version := int(data.get("version", 0))
+	if version not in [1, 2]:
 		return false
 	reset()
 	capacity = maxf(1.0, float(data.get("capacity", capacity)))
@@ -465,13 +673,29 @@ func restore_snapshot(data: Dictionary) -> bool:
 		var id := str(definition.id)
 		upgrade_levels[id] = maxi(0, int(saved_levels.get(id, 0)))
 	stage_phase = clampi(int(data.get("stage_phase", stage_phase)), StagePhase.RESTORE, StagePhase.CLEAR)
-	restore_progress = clampf(float(data.get("restore_progress", restore_progress)), 0.0, RESTORE_GOAL)
-	boss_hp = clampf(float(data.get("boss_hp", boss_hp)), 0.0, BOSS_MAX_HP)
 	boss_attack_timer = maxf(0.01, float(data.get("boss_attack_timer", boss_attack_timer)))
 	boss_drains = maxi(0, int(data.get("boss_drains", boss_drains)))
 	boss_interrupts = maxi(0, int(data.get("boss_interrupts", boss_interrupts)))
 	stage_clear_time = float(data.get("stage_clear_time", stage_clear_time))
 	reward_id = str(data.get("reward_id", reward_id))
+	current_stage_id = str(data.get("current_stage_id", current_stage_id))
+	current_build_tag = str(data.get("current_build_tag", current_build_tag))
+	current_boss_id = str(data.get("current_boss_id", current_boss_id))
+	stage_elapsed = maxf(0.0, float(data.get("stage_elapsed", stage_clear_time if stage_clear_time >= 0.0 else elapsed)))
+	restore_goal = maxf(1000.0, float(data.get("restore_goal", restore_goal)))
+	boss_max_hp = maxf(1000.0, float(data.get("boss_max_hp", boss_max_hp)))
+	restore_progress = clampf(float(data.get("restore_progress", restore_progress)), 0.0, restore_goal)
+	boss_hp = clampf(float(data.get("boss_hp", boss_hp)), 0.0, boss_max_hp)
+	enhanced_boss = bool(data.get("enhanced_boss", false))
+	singularity_boss = bool(data.get("singularity_boss", false))
+	singularity_phase = clampi(int(data.get("singularity_phase", 1)), 1, 3)
+	stage_combo = maxi(0, int(data.get("stage_combo", 0)))
+	combo_timer = maxf(0.0, float(data.get("combo_timer", 0.0)))
+	manual_boost_timer = maxf(0.0, float(data.get("manual_boost_timer", 0.0)))
+	for value in data.get("circuit_rewards", []):
+		var circuit_id := str(value)
+		if not circuit_id.is_empty() and circuit_id not in circuit_rewards:
+			circuit_rewards.append(circuit_id)
 	var saved_cells: Array = data.get("cells", [])
 	if saved_cells.size() == CELL_COUNT:
 		for index in range(CELL_COUNT):

@@ -1,7 +1,7 @@
 # CHARGE! クリッカー企画 GDD
 
-> ステータス: 企画・検証前  
-> 更新日: 2026-08-02  
+> ステータス: キャンペーン全ルート実装済み・人間プレイテスト待ち
+> 更新日: 2026-08-03
 > 仮題: **PROJECT CHARGE**（正式名称は縦切り版の完成後に決定）  
 > 対象: AI Browser Game Jam 4 / Godot 4.6 / Web  
 > アート制作: PixelLabを中心としたオリジナルのピクセルアート
@@ -365,4 +365,3 @@ godot/
 - [AI Browser Game Jam 4](https://itch.io/jam/ai-jam-4)
 - [PixelLab Documentation](https://www.pixellab.ai/docs)
 - [PixelLab API Documentation](https://api.pixellab.ai/v2/docs)
-
