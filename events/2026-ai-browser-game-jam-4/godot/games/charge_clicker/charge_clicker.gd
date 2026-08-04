@@ -124,6 +124,7 @@ var campaign_hovered := -1
 var charge_rect := Rect2(70, 502, 284, 108)
 var discharge_rect := Rect2(452, 340, 510, 76)
 var auto_rect := Rect2(980, 340, 220, 76)
+var enemy_click_rect := Rect2(860, 160, 352, 242)
 var menu_rect := Rect2(1102, 22, 138, 42)
 var language_rect := Rect2(932, 22, 152, 42)
 var reset_rect := Rect2(34, 22, 126, 42)
@@ -170,7 +171,7 @@ func _ready() -> void:
 	queue_redraw()
 
 func migrate_vertical_slice_save() -> void:
-	# v3 intentionally uses a separate save file. Keeping this no-op makes old
+	# v4 intentionally uses a separate save file. Keeping this no-op makes old
 	# development callers harmless without importing incompatible progression.
 	pass
 
@@ -250,12 +251,14 @@ func configure_art_preview_state() -> void:
 	run.current_boss_id = "gearmaw"
 	run.boss_max_hp = ChargeState.BOSS_MAX_HP
 	run.boss_hp = run.boss_max_hp * 0.62
-	run.boss_attack_timer = 5.8
 	run.credits = 128
-	run.heat = 46.0
-	run.overcharge = 28.0
-	for index in range(run.cells.size()):
-		run.cells[index] = run.capacity * [0.94, 0.78, 0.61, 0.45, 0.28, 0.12][index]
+	run.lifetime_charge = 356
+	run.manual_inputs = 42
+	run.armor_cracks = 7
+	run.upgrade_levels["impact_coil"] = 3
+	run.upgrade_levels["auto_cannon"] = 2
+	run.upgrade_levels["charge_generator"] = 1
+	run.refresh_stats()
 
 func parse_query_string(raw_query: String) -> Dictionary:
 	var values := {}
@@ -328,29 +331,20 @@ func _process(delta: float) -> void:
 		charge_repeat_timer -= delta
 		while charge_repeat_timer <= 0.0:
 			perform_charge(true)
-			charge_repeat_timer += 0.145
+			charge_repeat_timer += 0.16
 
 	var tick_result: Dictionary = run.tick(delta, charge_held)
-	if bool(tick_result.became_full):
-		show_full_ready()
-	if bool(tick_result.meltdown):
-		show_meltdown(float(tick_result.lost))
-	if bool(tick_result.boss_warning):
-		show_boss_warning()
-	if bool(tick_result.boss_drain):
-		show_boss_drain(int(tick_result.drain_cell), float(tick_result.drained), float(tick_result.boss_healed))
-	if bool(tick_result.thermal_spike):
-		show_thermal_spike(float(tick_result.boss_healed))
-	if bool(tick_result.get("singularity_burst", false)):
-		show_message(loc("特異点が飽和 — 敵中枢が再生", "SINGULARITY SATURATED — ENEMY CORE REGENERATED"), 2.2)
-		screen_flash = 0.75
-		screen_shake = 0.5
-	if float(tick_result.auto_added) > 0.0:
+	if int(tick_result.auto_hits) > 0:
 		auto_effect_timer -= delta
 		if auto_effect_timer <= 0.0:
-			auto_effect_timer = 0.16
-			var target_index: int = maxi(0, run.next_cell_index())
-			spawn_sparks(cell_center(target_index), Palette.VIOLET, 2, 55.0)
+			auto_effect_timer = 0.10
+			spawn_sparks(Vector2(1030, 248), Palette.VIOLET, 3, 75.0)
+			add_floating(Vector2(1030, 230), "-%s" % format_number(float(tick_result.auto_damage)), Palette.VIOLET, 13)
+	if bool(tick_result.opportunity_opened):
+		show_message(loc("吸収核が開いた — 3.5秒以内に8クリック！", "SIPHON OPEN — LAND EIGHT CLICKS IN 3.5 SECONDS!"), 2.0)
+		synth.play_tone(659.25, 0.16, -19.0, 2)
+	if bool(tick_result.boss_defeated):
+		handle_enemy_defeated()
 	if autosave_timer <= 0.0:
 		autosave_timer = 5.0
 		save_progress()
@@ -395,7 +389,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			end_charge()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
-		perform_discharge()
+		perform_charge()
 	elif event is InputEventScreenTouch:
 		if event.pressed:
 			if charge_rect.has_point(event.position):
@@ -624,19 +618,19 @@ func complete_campaign_boss() -> bool:
 
 func campaign_result_text() -> String:
 	var ending := loc("通常復旧", "NORMAL RESTORATION") if campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END else loc("完全復旧", "TOTAL RESTORATION")
-	return "PROJECT CHARGE — %s\n%s %s | %s %d/6 | %s %d/2\n%s %s | %s %d/24 | %s %d" % [
+	return "PROJECT CHARGE — %s\n%s %s | %s %d/6 | %s %d/2\n%s %s | %s %d | %s %d" % [
 		ending,
 		loc("時間", "TIME"), format_time(run.elapsed),
 		loc("回路", "CIRCUITS"), campaign_route.completed_stage_ids.size(),
 		loc("ボス", "BOSSES"), campaign_route.defeated_boss_ids.size(),
-		loc("最大放電", "PEAK"), format_number(run.highest_output),
-		loc("スキル", "SKILLS"), run.skill_points_bought(),
-		loc("メルトダウン", "MELTDOWNS"), run.meltdowns,
+		loc("最大打撃", "PEAK HIT"), format_number(run.highest_output),
+		loc("強化LV", "UPGRADE LEVELS"), run.skill_points_bought(),
+		loc("累計CHARGE", "TOTAL CHARGE"), run.lifetime_charge,
 	]
 
 func respec_skill_tree() -> void:
 	var refunded: int = run.respec_skills()
-	show_message(loc("スキルツリーを初期化：機械片 +%d" % refunded, "SKILL TREE RESET: +%d SCRAP" % refunded), 2.2)
+	show_message(loc("強化経路を初期化：CHARGE +%d" % refunded, "UPGRADE ROUTES RESET: +%d CHARGE" % refunded), 2.2)
 	synth.play_chord([196.0, 261.63, 392.0], 0.26, -22.0)
 	save_progress()
 	queue_redraw()
@@ -680,9 +674,9 @@ func handle_key(event: InputEventKey) -> void:
 		return
 	match event.keycode:
 		KEY_ENTER, KEY_X:
-			perform_discharge()
+			perform_charge()
 		KEY_A:
-			toggle_auto()
+			perform_charge()
 		KEY_L:
 			toggle_language()
 		KEY_R:
@@ -725,9 +719,9 @@ func handle_controller_button(event: InputEventJoypadButton) -> void:
 	if not event.pressed:
 		return
 	if event.button_index == controller_button("secondary"):
-		perform_discharge()
+		perform_charge()
 	elif event.button_index == controller_button("combat_action"):
-		toggle_auto()
+		perform_charge()
 	elif event.button_index == controller_button("menu"):
 		try_purchase(controller_upgrade_selected)
 	elif event.button_index == controller_button("language"):
@@ -742,10 +736,8 @@ func handle_point(point: Vector2) -> void:
 		toggle_language()
 	elif reset_rect.has_point(point):
 		request_reset()
-	elif discharge_rect.has_point(point):
-		perform_discharge()
-	elif auto_rect.has_point(point):
-		toggle_auto()
+	elif enemy_click_rect.has_point(point):
+		perform_charge()
 	else:
 		var index := upgrade_at(point)
 		if index >= 0:
@@ -909,7 +901,7 @@ func begin_charge() -> void:
 	if charge_held or run.stage_phase in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]:
 		return
 	charge_held = true
-	charge_repeat_timer = 0.145
+	charge_repeat_timer = 0.16
 	perform_charge()
 
 func end_charge() -> void:
@@ -918,86 +910,66 @@ func end_charge() -> void:
 
 func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Dictionary:
 	if run.stage_phase in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]:
-		return {"critical": false, "became_full": false, "meltdown": false, "lost": 0.0}
-	var before_index: int = run.next_cell_index()
-	var result: Dictionary = run.manual_charge(critical_mode)
-	var target_index: int = before_index if before_index >= 0 else 5
-	var target := cell_center(target_index)
-	spawn_sparks(REACTOR_CENTER, Palette.AMBER if bool(result.critical) else Palette.CYAN, 4 if bool(result.critical) else 2, 105.0)
-	particles.append({"pos": REACTOR_CENTER, "velocity": (target - REACTOR_CENTER) * 2.8, "life": 0.24, "max_life": 0.24, "color": Palette.PAPER if bool(result.critical) else Palette.CYAN, "size": 4.0})
+		return {"valid": false, "critical": false, "damage": 0.0, "charge": 0, "boss_defeated": false}
+	var result: Dictionary = run.manual_attack(critical_mode)
+	var attack_origin := charge_rect.get_center()
+	var target := Vector2(1038, 248)
+	var hit_color := Palette.AMBER if bool(result.critical) else Palette.CYAN
+	spawn_sparks(target, hit_color, 8 if bool(result.critical) else 4, 150.0)
+	particles.append({"pos": attack_origin, "velocity": (target - attack_origin) * 4.4, "life": 0.18, "max_life": 0.18, "color": hit_color, "size": 5.0})
+	add_floating(target + Vector2(0, -28), "-%s" % format_number(float(result.damage)), hit_color, 25 if bool(result.critical) else 18)
+	if int(result.charge) > 0:
+		add_floating(SHARD_SOCKET_CENTER + Vector2(0, 32), "+%d CHARGE" % int(result.charge), Palette.AMBER, 14)
+		spawn_resource_flow(target, SHARD_SOCKET_CENTER, Palette.CYAN, 2)
+		shard_pulse = 0.55
 	if play_sound:
-		var pitch := 205.0 + float(run.filled_cells()) * 54.0 + float(run.manual_streak) * 7.0
-		synth.play_tone(pitch * (1.45 if bool(result.critical) else 1.0), 0.05, -23.0, 3)
+		var pitch := 190.0 + float(mini(16, run.manual_streak)) * 12.0
+		synth.play_tone(pitch * (1.5 if bool(result.critical) else 1.0), 0.045, -23.0, 3)
 	if bool(result.critical):
-		add_floating(REACTOR_CENTER + Vector2(0, -88), loc("クリティカル ×2", "CRITICAL ×2"), Palette.AMBER, 18)
-	if bool(result.get("core_pulse", false)):
-		add_floating(REACTOR_CENTER + Vector2(0, -116), loc("衝撃誘導 ×3", "IMPACT CORE ×3"), Palette.AMBER, 19)
-		screen_shake = maxf(screen_shake, 0.22)
-	if bool(result.became_full):
-		show_full_ready()
-	if bool(result.meltdown):
-		show_meltdown(float(result.lost))
-	var core_damage: float = float(run.consume_pending_core_damage())
-	if core_damage > 0.0 and run.stage_phase == ChargeState.StagePhase.BOSS:
-		var core_result: Dictionary = run.apply_output(core_damage, false)
-		add_floating(Vector2(815, 190), loc("赤熱変換 %s" % format_number(float(core_result.applied)), "REDHEAT +%s" % format_number(float(core_result.applied))), Palette.CORAL, 20)
-		if bool(core_result.boss_defeated):
-			if campaign_route.phase != CampaignRoute.RoutePhase.STAGE:
-				complete_campaign_boss()
+		add_floating(target + Vector2(0, -62), loc("クリティカル", "CRITICAL"), Palette.AMBER, 18)
+		screen_shake = maxf(screen_shake, 0.18)
+	match str(result.mechanic):
+		"armor_break":
+			show_message(loc("装甲破砕！ 12回目のクリックが4倍", "ARMOR BREAK! THE 12TH CLICK HITS FOR 4×"), 1.4)
+			add_floating(target + Vector2(0, -88), loc("装甲破砕 ×4", "ARMOR BREAK ×4"), Palette.AMBER, 20)
+		"impact_shockwave":
+			add_floating(target + Vector2(0, -88), loc("衝撃波", "SHOCKWAVE"), Palette.AMBER, 20)
+		"siphon_break":
+			show_message(loc("吸収核を破砕！ 5倍打撃＋CHARGE獲得", "SIPHON SHATTERED! 5× HIT + CHARGE"), 2.0)
+			screen_flash = 0.8
+			screen_shake = 0.55
+		"furnace_open":
+			show_message(loc("炉心露出！ 6秒間すべての攻撃が2倍", "FURNACE EXPOSED! ALL DAMAGE ×2 FOR SIX SECONDS"), 2.0)
+		"singularity_burst":
+			show_message(loc("特異点バースト！", "SINGULARITY BURST!"), 1.5)
+	if bool(result.boss_defeated):
+		handle_enemy_defeated()
+	else:
+		var multiplier_text := " ×%.2f" % run.last_damage_multiplier if absf(run.last_damage_multiplier - 1.0) > 0.05 else ""
+		show_message(loc("%sへ %sダメージ%s / CHARGE +%d" % [encounter_name(), format_number(float(result.damage)), multiplier_text, int(result.charge)], "%s DAMAGE TO %s%s / CHARGE +%d" % [format_number(float(result.damage)), encounter_name(), multiplier_text, int(result.charge)]), 0.8)
 	return result
 
 func perform_discharge(play_sound: bool = true, critical_mode: int = -1) -> Dictionary:
-	if run.stage_phase in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]:
-		return {"valid": false, "output": 0.0, "credits": 0, "super": false, "critical": false}
-	var result: Dictionary = run.discharge(critical_mode)
-	if not bool(result.valid):
-		show_message(loc("先にエネルギーを充電しよう", "CHARGE SOME ENERGY FIRST"), 1.2)
-		if play_sound:
-			synth.error()
-		return result
-	end_charge()
-	discharge_wave = 1.0
-	screen_flash = 0.8 if bool(result.super) else 0.38
-	screen_shake = 0.48 if bool(result.super) else 0.2
-	var color := Palette.AMBER if bool(result.super) else Palette.CYAN
-	spawn_sparks(Vector2(720, 260), color, 36 if bool(result.super) else 18, 260.0)
-	spawn_resource_flow(discharge_rect.get_center(), SHARD_SOCKET_CENTER, color, 8 if bool(result.super) else 5)
-	shard_pulse = 1.0
-	add_floating(Vector2(720, 285), "%s OUTPUT" % format_number(float(result.output)), color, 30 if bool(result.super) else 24)
-	var stage_result: Dictionary = run.apply_output(float(result.output), bool(result.super))
-	result.stage = stage_result
-	result.credits = int(stage_result.get("credits", 0))
-	if bool(stage_result.boss_defeated):
-		end_charge()
-		if campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
-			show_message(encounter_name() + loc("撃破 — 機械核を回収", " DEFEATED — CORE RECOVERED"), 3.0)
-		else:
-			complete_campaign_boss()
-		screen_flash = 1.0
-		screen_shake = 0.7
-		synth.play_chord([196.0, 293.66, 392.0, 587.33], 0.6, -19.0)
-	elif bool(stage_result.interrupt):
-		show_message(loc("吸収を中断！ 満充電放電ダメージ×1.4", "SIPHON INTERRUPTED! FULL DISCHARGE ×1.4"), 2.0)
-		add_floating(Vector2(815, 136), loc("中断", "INTERRUPT"), Palette.MINT, 22)
-	elif run.stage_phase == ChargeState.StagePhase.BOSS:
-		var multiplier_text := " ×%.2f" % run.last_damage_multiplier if absf(run.last_damage_multiplier - 1.0) > 0.05 else ""
-		show_message(loc("%sへ %sダメージ%s / 機械片+%d" % [encounter_name(), format_number(float(stage_result.applied)), multiplier_text, int(stage_result.credits)], "%s DAMAGE TO %s%s / SCRAP +%d" % [format_number(float(stage_result.applied)), encounter_name(), multiplier_text, int(stage_result.credits)]), 1.5)
-	if bool(result.super):
-		if play_sound:
-			synth.play_chord([130.81, 261.63, 392.0, 659.25], 0.38, -19.0)
-	else:
-		if play_sound:
-			synth.play_chord([220.0, 329.63, 440.0], 0.2, -23.0)
-	save_progress()
-	return result
+	var hit := perform_charge(play_sound, critical_mode)
+	return {"valid": bool(hit.valid), "output": float(hit.damage), "credits": int(hit.charge), "super": false, "critical": bool(hit.critical)}
 
 func toggle_auto(play_sound: bool = true) -> bool:
-	var enabled: bool = run.toggle_auto()
-	show_message(loc("AUTO充電：ON", "AUTO CHARGE: ON") if enabled else loc("AUTO充電：OFF", "AUTO CHARGE: OFF"), 1.2)
+	run.auto_enabled = true
+	show_message(loc("AUTO砲は常時稼働中", "AUTO CANNON IS ALWAYS ONLINE"), 1.2)
 	if play_sound:
-		synth.play_tone(523.25 if enabled else 261.63, 0.1, -22.0, 3)
+		synth.play_tone(523.25, 0.1, -22.0, 3)
+	return true
+
+func handle_enemy_defeated() -> void:
+	end_charge()
+	if campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
+		show_message(encounter_name() + loc("撃破 — 機械核を回収", " DEFEATED — CORE RECOVERED"), 3.0)
+	else:
+		complete_campaign_boss()
+	screen_flash = 1.0
+	screen_shake = 0.7
+	synth.play_chord([196.0, 293.66, 392.0, 587.33], 0.6, -19.0)
 	save_progress()
-	return enabled
 
 func try_purchase(index: int, play_sound: bool = true) -> bool:
 	if index < 0 or index >= ChargeState.UPGRADE_DEFINITIONS.size():
@@ -1006,16 +978,13 @@ func try_purchase(index: int, play_sound: bool = true) -> bool:
 	if not run.purchase_upgrade(id):
 		if run.upgrade_level(id) >= ChargeState.MAX_SKILL_RANK:
 			show_message(loc("この能力は最大ランクです", "THIS SKILL IS MAXED"), 1.2)
-		elif not run.skill_unlocked(id):
-			var required := str(ChargeState.UPGRADE_DEFINITIONS[index].requires)
-			show_message(loc("前提能力 %s をLV.2にすると解放" % skill_title_for_id(required), "UNLOCKS WHEN %s REACHES LV.2" % skill_title_for_id(required)), 1.8)
 		else:
-			show_message(loc("機械片が足りません", "NOT ENOUGH MECHANICAL SCRAP"), 1.1)
+			show_message(loc("CHARGEが足りません", "NOT ENOUGH CHARGE"), 1.1)
 		if play_sound:
 			synth.error()
 		return false
 	var copy := upgrade_copy(index)
-	show_message(loc("能力獲得：", "SKILL ACQUIRED: ") + str(copy.title) + " LV.%d" % run.upgrade_level(id), 1.4)
+	show_message(loc("出力経路を強化：", "SYSTEM UPGRADED: ") + str(copy.title) + " LV.%d" % run.upgrade_level(id), 1.4)
 	spawn_sparks(upgrade_rects[index].get_center(), upgrade_color(index), 12, 125.0)
 	spawn_resource_flow(SHARD_SOCKET_CENTER, upgrade_rects[index].get_center(), upgrade_color(index), 5)
 	shard_pulse = 0.75
@@ -1111,24 +1080,36 @@ func stage_circuit_label(id: String) -> String:
 			return str(definition.get("core_name_ja" if is_japanese else "core_name_en", id))
 	return id.to_upper()
 
+func build_tag_label(id: String) -> String:
+	var labels := {
+		"manual": ["手動", "MANUAL"],
+		"charge": ["発電", "CHARGE"],
+		"upgrade": ["強化購入", "UPGRADES"],
+		"chain": ["連鎖", "CHAIN"],
+		"auto": ["AUTO", "AUTO"],
+		"critical": ["臨界", "CRITICAL"],
+	}
+	var copy: Array = labels.get(id, [id.to_upper(), id.to_upper()])
+	return str(copy[0] if is_japanese else copy[1])
+
 func current_rule_copy() -> String:
 	if run.singularity_boss:
 		if run.singularity_phase == 1:
-			var seals_ja := ["手動連打", "6セル同期", "高熱制御", "連続放電", "AUTO稼働", "臨界放電", "全封印解除"]
-			var seals_en := ["MANUAL RHYTHM", "SIX-CELL SYNC", "REDLINE HEAT", "DISCHARGE CHAIN", "AUTO ONLINE", "CRITICAL HIT", "ALL SEALS BROKEN"]
-			return loc("六獣封鎖 %d/6：%s" % [run.singularity_seal, seals_ja[run.singularity_seal]], "SIX-CORE SEALS %d/6: %s" % [run.singularity_seal, seals_en[run.singularity_seal]])
+			var source_ja := "クリック" if run.singularity_seal % 2 == 0 else "AUTO"
+			var source_en := "MANUAL" if run.singularity_seal % 2 == 0 else "AUTO"
+			return loc("六獣共鳴 %d/6：%s命中 %d/10" % [run.singularity_seal, source_ja, run.singularity_progress], "SIX-CORE RESONANCE %d/6: %s HITS %d/10" % [run.singularity_seal, source_en, run.singularity_progress])
 		if run.singularity_phase == 2:
-			var rules_ja := ["部分放電優勢", "満充電のみ有効", "高熱のみ有効", "臨界のみ有効"]
-			var rules_en := ["PARTIAL POWER", "FULL ONLY", "REDLINE ONLY", "CRITICAL ONLY"]
-			return loc("回路反転：%s" % rules_ja[run.singularity_rule], "CIRCUIT REVERSED: %s" % rules_en[run.singularity_rule])
-		return loc("特異点充電 %d%% — 100%%で敵が再生" % int(run.enemy_charge), "SINGULARITY CHARGE %d%% — HEALS AT 100%%" % int(run.enemy_charge))
+			var rules_ja := ["クリック優勢", "AUTO優勢", "臨界優勢", "連打優勢"]
+			var rules_en := ["MANUAL BONUS", "AUTO BONUS", "CRITICAL BONUS", "COMBO BONUS"]
+			return loc("攻撃系統転換：%s" % rules_ja[run.singularity_rule], "ATTACK DIRECTIVE: %s" % rules_en[run.singularity_rule])
+		return loc("特異点共鳴 %d%% — 100%%で自動バースト" % int(run.enemy_charge), "SINGULARITY RESONANCE %d%% — AUTO BURST AT 100%%" % int(run.enemy_charge))
 	if run.current_boss_id == "thermal_titan":
-		return loc("高熱時のみ弱点露出 — 68%以上で放電", "WEAK AT HIGH HEAT — DISCHARGE ABOVE 68%")
+		return loc("20クリックで炉心露出 — 開放中は全攻撃2倍", "TWENTY CLICKS EXPOSE THE FURNACE — ALL DAMAGE ×2")
 	if run.current_boss_id == "grid_leech":
-		return loc("予告吸収を満充電放電で中断", "INTERRUPT TELEGRAPHED DRAINS WITH A FULL DISCHARGE")
+		return loc("吸収核が開いたら3.5秒以内に8クリック", "WHEN THE SIPHON OPENS, LAND EIGHT CLICKS IN 3.5 SECONDS")
 	var definition := current_stage_definition()
 	if definition.is_empty():
-		return loc("6セルを充電して放電", "CHARGE SIX CELLS AND DISCHARGE")
+		return loc("クリックで即攻撃し、得たCHARGEで武器を強化", "CLICK TO HIT; SPEND CHARGE TO UPGRADE YOUR ARSENAL")
 	return str(definition.get("objective_ja" if is_japanese else "objective_en", ""))
 
 func upgrade_at(point: Vector2) -> int:
@@ -1142,14 +1123,14 @@ func upgrade_color(index: int) -> Color:
 
 func upgrade_copy(index: int) -> Dictionary:
 	var copies := [
-		{"title": loc("手動コイル", "HAND COIL"), "desc": loc("手動充電 +20% / LV3で入力窓延長", "+20% MANUAL / LV3 RHYTHM")},
-		{"title": loc("臨界演算", "CRITICAL MATH"), "desc": loc("臨界率 +5% / LV3で×2.5", "+5% CRIT / LV3 ×2.5")},
-		{"title": loc("六連サージ", "SIXFOLD SURGE"), "desc": loc("満充電放電 +20%", "+20% FULL DISCHARGE")},
-		{"title": loc("拡張セル", "WIDE CELLS"), "desc": loc("各セル容量 +15%", "+15% CELL CAPACITY")},
-		{"title": loc("放電増幅器", "DISCHARGE AMP"), "desc": loc("全放電 +18% / LV3で装甲貫通", "+18% DAMAGE / LV3 PIERCE")},
-		{"title": loc("自動ドローン", "AUTO DRONE"), "desc": loc("AUTO速度 +25%", "+25% AUTO RATE")},
-		{"title": loc("冷却ループ", "COOLING LOOP"), "desc": loc("冷却 +20%・AUTO発熱減", "+20% COOLING, LESS AUTO HEAT")},
-		{"title": loc("耐熱被膜", "HEAT SHIELD"), "desc": loc("事故保持 +15% / LV3で1回防止", "+15% RETAIN / LV3 GUARD")},
+		{"title": loc("衝撃コイル", "IMPACT COIL"), "desc": loc("クリック威力 ×1.48\n5LV毎に出力跳躍", "CLICK DAMAGE ×1.48\nPOWER SPIKE / 5 LV")},
+		{"title": loc("連打ギア", "COMBO GEAR"), "desc": loc("連打倍率と上限を強化", "STRONGER, LONGER\nCLICK COMBOS")},
+		{"title": loc("臨界演算", "CRITICAL MATH"), "desc": loc("臨界率 +2.5%\n5LV毎に倍率上昇", "+2.5% CRIT\nCRIT POWER / 5 LV")},
+		{"title": loc("オートキャノン", "AUTO CANNON"), "desc": loc("常時AUTO威力 ×1.43", "ALWAYS-ON AUTO\nDAMAGE ×1.43")},
+		{"title": loc("高速リレー", "RAPID RELAY"), "desc": loc("AUTO射撃間隔を短縮", "SHORTER AUTO\nFIRE INTERVAL")},
+		{"title": loc("ドローンベイ", "DRONE BAY"), "desc": loc("AUTO強化・4LV毎に+1機", "AUTO BOOST\n+1 DRONE / 4 LV")},
+		{"title": loc("高効率発電機", "CHARGE GENERATOR"), "desc": loc("全攻撃のCHARGE獲得増加", "MORE CHARGE FROM\nEVERY ATTACK")},
+		{"title": loc("共鳴回路", "CORE RESONANCE"), "desc": loc("全機械核効果 +12%", "+12% POWER TO\nEVERY CORE")},
 	]
 	return copies[index]
 
@@ -1209,18 +1190,10 @@ func format_time(seconds: float) -> String:
 	return "%02d:%02d" % [total / 60, total % 60]
 
 func tutorial_hint() -> String:
-	if run.stage_phase == ChargeState.StagePhase.BOSS and run.boss_warning_active() and run.current_boss_id != "thermal_titan" and not (run.singularity_boss and run.singularity_phase == 2):
-		return loc("超放電で吸収を中断するか、先に部分放電で退避", "INTERRUPT WITH SUPER, OR BANK A PARTIAL DISCHARGE NOW")
 	if run.manual_inputs == 0:
-		return loc("大きなCHARGEボタンを押す / Space / A・×", "PRESS CHARGE / SPACE / A · CROSS")
-	if run.partial_discharges + run.super_discharges == 0 and run.filled_cells() < 6:
-		return loc("いつでも放電できる。6セルなら出力が大幅上昇", "DISCHARGE ANY TIME. FILL ALL SIX FOR A LARGE BONUS.")
+		return loc("CHARGE ATTACKを押すと即ダメージ＋CHARGE獲得", "PRESS CHARGE ATTACK FOR INSTANT DAMAGE + CHARGE")
 	if run.purchases == 0 and run.credits > 0:
-		return loc("獲得したエネルギー片で強化を購入", "SPEND ENERGY SHARDS ON AN UPGRADE")
-	if run.is_full():
-		return loc("今なら安全に超放電。押し続ければ高倍率だが発熱する", "SUPER DISCHARGE NOW, OR HOLD FOR RISKY OVERCHARGE")
-	if run.stage_phase == ChargeState.StagePhase.BOSS:
-		return current_rule_copy()
+		return loc("獲得したCHARGEで下の8能力を強化", "SPEND CHARGE ON THE EIGHT UPGRADES BELOW")
 	return current_rule_copy()
 
 func _draw() -> void:
@@ -1281,10 +1254,10 @@ func draw_campaign_map() -> void:
 	for index in range(StageCatalog.STAGES.size()):
 		draw_stage_map_card(index, StageCatalog.STAGES[index])
 	draw_string(Palette.UI_FONT, Vector2(0, 598), loc("クリック / 方向キーで魔獣を選択　決定で討伐開始", "SELECT A BEAST WITH CLICK OR DIRECTION · CONFIRM TO HUNT"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 13, Palette.MUTED)
-	var build_text := loc("統合コア %d/6　能力ランク %d/24", "INTEGRATED CORES %d/6  ·  SKILL RANKS %d/24") % [run.beast_cores.size(), run.skill_points_bought()]
+	var build_text := loc("統合コア %d/6　強化LV %d/200　CHARGE %s", "INTEGRATED CORES %d/6  ·  UPGRADE LV %d/200  ·  CHARGE %s") % [run.beast_cores.size(), run.skill_points_bought(), format_number(run.credits)]
 	draw_string(DisplayFont, Vector2(62, 632), build_text, HORIZONTAL_ALIGNMENT_LEFT, 780, 14, Palette.AMBER if not run.beast_cores.is_empty() else Palette.MUTED)
 	draw_campaign_button(respec_rect, loc("T  無料リスペック", "T  FREE RESPEC"), Palette.MINT, false)
-	draw_string(Palette.UI_FONT, Vector2(62, 660), loc("進行・機械片・能力・コアは戦闘ごとに自動保存", "PROGRESS, SCRAP, SKILLS AND CORES AUTOSAVE AFTER EVERY BATTLE"), HORIZONTAL_ALIGNMENT_LEFT, 850, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 660), loc("武器・CHARGE・コアは全ステージへ引き継がれ、自動保存される", "WEAPONS, CHARGE AND CORES PERSIST ACROSS EVERY HUNT AND AUTOSAVE"), HORIZONTAL_ALIGNMENT_LEFT, 850, 11, Palette.MUTED)
 
 func draw_campaign_progress(origin: Vector2, accent: Color) -> void:
 	for index in range(6):
@@ -1312,7 +1285,7 @@ func draw_stage_map_card(index: int, definition: Dictionary) -> void:
 	draw_texture_rect(portrait, Rect2(rect.position + Vector2(252, 78), Vector2(72, 72)), false, Color(0.9, 0.94, 1.0, 0.9 if not completed else 0.38))
 	if completed:
 		draw_string(Palette.UI_FONT, rect.position + Vector2(30, 124), loc("統合核：", "CORE: ") + stage_circuit_label(str(definition.core_id)), HORIZONTAL_ALIGNMENT_LEFT, 214, 10, Palette.MINT)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(30, 145), loc("推奨：", "BUILD: ") + str(definition.build_tag).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, 190, 11, accent)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(30, 145), loc("推奨：", "BUILD: ") + build_tag_label(str(definition.build_tag)), HORIZONTAL_ALIGNMENT_LEFT, 190, 11, accent)
 	if completed:
 		draw_string(DisplayFont, rect.position + Vector2(218, 145), loc("討伐済み", "DEFEATED"), HORIZONTAL_ALIGNMENT_RIGHT, 100, 12, Palette.MINT)
 	elif selected:
@@ -1368,9 +1341,9 @@ func draw_campaign_ending(true_end: bool) -> void:
 		[loc("総プレイ時間", "TOTAL TIME"), format_time(run.elapsed)],
 		[loc("討伐魔獣", "BEASTS"), "%d / 6" % campaign_route.completed_stage_ids.size()],
 		[loc("撃破ボス", "BOSSES"), "%d / 2" % campaign_route.defeated_boss_ids.size()],
-		[loc("最大放電", "PEAK OUTPUT"), format_number(run.highest_output)],
-		[loc("能力ランク", "SKILL RANKS"), "%d / 24" % run.skill_points_bought()],
-		[loc("メルトダウン", "MELTDOWNS"), str(run.meltdowns)],
+		[loc("最大打撃", "PEAK HIT"), format_number(run.highest_output)],
+		[loc("強化LV", "UPGRADE LEVELS"), "%d / 200" % run.skill_points_bought()],
+		[loc("累計CHARGE", "TOTAL CHARGE"), format_number(run.lifetime_charge)],
 	]
 	for index in range(stats.size()):
 		var row := index % 3
@@ -1407,8 +1380,8 @@ func draw_header() -> void:
 		for ring in range(3):
 			draw_arc(SHARD_SOCKET_CENTER, 23.0 + ring * 7.0 + (1.0 - shard_pulse) * 8.0, 0.0, TAU, 24, Palette.with_alpha(Palette.CYAN, shard_pulse * (0.5 - ring * 0.1)), 2.0)
 	draw_texture_rect(energy_shard_texture, Rect2(SHARD_SOCKET_CENTER - Vector2(18, 18), Vector2(36, 36)), false)
-	draw_string(Palette.UI_FONT, Vector2(612, 26), loc("機械片", "MACHINE SCRAP"), HORIZONTAL_ALIGNMENT_CENTER, 82, 9, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(612, 57), "%04d" % run.credits, HORIZONTAL_ALIGNMENT_CENTER, 82, 22, Palette.AMBER)
+	draw_string(Palette.UI_FONT, Vector2(606, 25), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 94, 10, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(606, 56), format_number(run.credits), HORIZONTAL_ALIGNMENT_CENTER, 94, 22, Palette.AMBER)
 	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("経過", "ELAPSED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(752, 62), format_time(run.elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
 	draw_small_button(reset_rect, loc("R  もう一度", "R  CONFIRM") if reset_confirm_time > 0.0 else loc("R  初期化", "R  RESET"), Palette.CORAL)
@@ -1467,37 +1440,51 @@ func draw_reactor_panel() -> void:
 	var panel := Rect2(32, 106, 360, 582)
 	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(Palette.CYAN, 0.4), 18.0, 2.0)
 	draw_line(Vector2(48, 151), Vector2(376, 151), Palette.with_alpha(Palette.CYAN, 0.18), 1.0)
-	draw_string(DisplayFont, Vector2(58, 140), loc("CHARGE REACTOR", "CHARGE REACTOR"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(58, 140), loc("CHARGE攻撃機関", "CHARGE ATTACK ENGINE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
 	draw_texture_rect(reactor_texture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
 	var pulse: float = 1.0 + sin(animation_time * (2.0 + run.charge_ratio() * 4.0)) * (0.015 + run.charge_ratio() * 0.025)
 	var radius: float = 100.0 * pulse
 	for ring in range(4):
 		draw_arc(REACTOR_CENTER, radius + ring * 9.0, -PI * 0.75 + animation_time * (0.24 + ring * 0.05) * (-1.0 if ring % 2 else 1.0), PI * 1.1 + animation_time * (0.24 + ring * 0.05) * (-1.0 if ring % 2 else 1.0), 48, Palette.with_alpha(Palette.CYAN, 0.42 - ring * 0.07), 2.0)
-	var reactor_color: Color = Palette.CORAL if run.heat > 80.0 else Palette.AMBER if run.is_full() else Palette.CYAN
-	draw_circle(REACTOR_CENTER, 78.0, Palette.with_alpha(reactor_color, 0.1 + run.charge_ratio() * 0.16))
+	var reactor_color: Color = Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.CYAN
+	draw_circle(REACTOR_CENTER, 78.0, Palette.with_alpha(reactor_color, 0.12 + run.charge_ratio() * 0.18))
 	draw_arc(REACTOR_CENTER, 80.0, -PI * 0.5, -PI * 0.5 + TAU * run.charge_ratio(), 64, reactor_color, 8.0)
 	draw_circle(REACTOR_CENTER, 51.0, Palette.with_alpha(Palette.INK, 0.96))
 	draw_circle(REACTOR_CENTER, 43.0 + sin(animation_time * 4.0) * 2.0, Palette.with_alpha(reactor_color, 0.16 + run.charge_ratio() * 0.32))
-	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, -5), "%d / %d" % [int(run.total_charge()), int(run.total_capacity())], HORIZONTAL_ALIGNMENT_CENTER, 156, 22, Palette.PAPER)
-	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, 23), loc("蓄積電力", "STORED POWER"), HORIZONTAL_ALIGNMENT_CENTER, 156, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, -7), format_number(run.credits), HORIZONTAL_ALIGNMENT_CENTER, 156, 23, Palette.PAPER)
+	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, 23), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 156, 11, Palette.MUTED)
 
-	draw_meter(Rect2(64, 408, 296, 20), run.heat / 100.0, heat_color(), loc("熱", "HEAT"), "%d%%" % int(run.heat))
-	draw_meter(Rect2(64, 452, 296, 20), run.overcharge / 100.0, Palette.AMBER, loc("過充電", "OVERCHARGE"), "×%.2f" % (1.0 + run.overcharge * 0.01))
+	var manual_stat := Rect2(58, 398, 144, 70)
+	var auto_stat := Rect2(216, 398, 144, 70)
+	draw_machine_plate(manual_stat, Palette.with_alpha(Palette.CYAN, 0.07), Palette.with_alpha(Palette.CYAN, 0.34), 8.0, 1.0)
+	draw_machine_plate(auto_stat, Palette.with_alpha(Palette.VIOLET, 0.07), Palette.with_alpha(Palette.VIOLET, 0.34), 8.0, 1.0)
+	draw_string(Palette.UI_FONT, manual_stat.position + Vector2(0, 23), loc("クリック威力", "CLICK POWER"), HORIZONTAL_ALIGNMENT_CENTER, manual_stat.size.x, 11, Palette.MUTED)
+	draw_string(DisplayFont, manual_stat.position + Vector2(0, 53), format_number(run.manual_damage), HORIZONTAL_ALIGNMENT_CENTER, manual_stat.size.x, 22, Palette.CYAN)
+	draw_string(Palette.UI_FONT, auto_stat.position + Vector2(0, 23), loc("AUTO DPS", "AUTO DPS"), HORIZONTAL_ALIGNMENT_CENTER, auto_stat.size.x, 11, Palette.MUTED)
+	draw_string(DisplayFont, auto_stat.position + Vector2(0, 53), format_number(run.estimated_auto_dps()), HORIZONTAL_ALIGNMENT_CENTER, auto_stat.size.x, 22, Palette.VIOLET)
 
 	var hovered := charge_rect.has_point(mouse_position) or charge_held
-	var charge_color := Palette.AMBER if run.is_full() else Palette.CYAN
+	var charge_color := Palette.AMBER if charge_held else Palette.CYAN
 	var charge_fill := Palette.with_alpha(charge_color, 0.28 if charge_held else 0.19 if hovered else 0.065)
 	draw_machine_plate(charge_rect, charge_fill, Palette.with_alpha(charge_color, 1.0 if hovered else 0.68), 16.0, 3.0 if charge_held else 2.0)
 	var mechanism_rect := Rect2(charge_rect.position + Vector2(5, 7 + (5 if charge_held else 0)), Vector2(88, 94))
 	draw_console_region(CONTROL_CHARGE_REGION, mechanism_rect, Color(1.0, 1.0, 1.0, 1.0))
 	draw_texture_rect(charge_control_texture, Rect2(charge_rect.position + Vector2(28, 28 + (4 if charge_held else 0)), Vector2(44, 44)), false, Color.WHITE)
 	for step in range(6):
-		var contact_color := charge_color if step < run.filled_cells() else Palette.with_alpha(Palette.MUTED, 0.22)
+		var contact_color := charge_color if step < mini(6, run.manual_streak) else Palette.with_alpha(Palette.MUTED, 0.22)
 		draw_rect(Rect2(charge_rect.position + Vector2(107 + step * 25, 17), Vector2(17, 4)), contact_color)
-	draw_string(DisplayFont, charge_rect.position + Vector2(94, 50), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 28, Palette.PAPER)
-	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(94, 79), loc("クリック・長押し / SPACE / A・×", "CLICK · HOLD / SPACE / A · CROSS"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 11, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(58, 650), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 13, Palette.AMBER if run.is_full() else Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(58, 675), loc("入力 %d  放電 %d  事故 %d", "INPUTS %d  DISCHARGES %d  MELTDOWNS %d") % [run.manual_inputs, run.partial_discharges + run.super_discharges, run.meltdowns], HORIZONTAL_ALIGNMENT_LEFT, 310, 11, Palette.MUTED)
+	draw_string(DisplayFont, charge_rect.position + Vector2(94, 50), loc("CHARGE攻撃", "CHARGE ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 24, Palette.PAPER)
+	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(94, 79), loc("即攻撃＋CHARGE獲得 / 長押し可", "INSTANT HIT + CHARGE / HOLD OK"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 10, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(58, 650), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 13, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(58, 675), loc("クリック %d  AUTO命中 %d  臨界 %d", "CLICKS %d  AUTO HITS %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 310, 11, Palette.MUTED)
+
+func cheapest_upgrade_cost() -> int:
+	var cheapest := 2147483647
+	for definition in ChargeState.UPGRADE_DEFINITIONS:
+		var id := str(definition.id)
+		if run.upgrade_level(id) < ChargeState.MAX_SKILL_RANK:
+			cheapest = mini(cheapest, run.upgrade_cost(id))
+	return 0 if cheapest == 2147483647 else cheapest
 
 func draw_meter(rect: Rect2, ratio: float, color: Color, label: String, value: String) -> void:
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, -7), label, HORIZONTAL_ALIGNMENT_LEFT, 150, 12, Palette.MUTED)
@@ -1523,6 +1510,8 @@ func draw_circuit_panel() -> void:
 	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(Palette.VIOLET, 0.42), 18.0, 2.0)
 	draw_line(Vector2(432, 151), Vector2(1232, 151), Palette.with_alpha(Palette.VIOLET, 0.18), 1.0)
 	draw_objective_header()
+	draw_direct_attack_combat_panel()
+	return
 	if run.stage_phase == ChargeState.StagePhase.BOSS:
 		var enemy_texture := current_enemy_texture()
 		var enemy_pulse := 0.94 + sin(animation_time * 2.4) * 0.04
@@ -1591,48 +1580,98 @@ func draw_circuit_panel() -> void:
 		var progress: float = 1.0 - discharge_wave
 		draw_arc(Vector2(815, 245), 70.0 + progress * 410.0, 0.0, TAU, 64, Palette.with_alpha(Palette.AMBER if run.super_discharges > 0 else Palette.CYAN, discharge_wave * 0.8), 5.0)
 
+func draw_direct_attack_combat_panel() -> void:
+	var manual_panel := Rect2(448, 174, 380, 108)
+	var auto_panel := Rect2(448, 294, 380, 108)
+	draw_machine_plate(manual_panel, Palette.with_alpha(Palette.CYAN, 0.055), Palette.with_alpha(Palette.CYAN, 0.34), 12.0, 1.0)
+	draw_machine_plate(auto_panel, Palette.with_alpha(Palette.VIOLET, 0.055), Palette.with_alpha(Palette.VIOLET, 0.34), 12.0, 1.0)
+	draw_string(DisplayFont, manual_panel.position + Vector2(18, 28), loc("MANUAL // 即時打撃", "MANUAL // DIRECT HIT"), HORIZONTAL_ALIGNMENT_LEFT, 240, 14, Palette.CYAN)
+	draw_string(Palette.UI_FONT, manual_panel.position + Vector2(18, 56), loc("1クリック", "PER CLICK"), HORIZONTAL_ALIGNMENT_LEFT, 115, 11, Palette.MUTED)
+	draw_string(DisplayFont, manual_panel.position + Vector2(126, 58), format_number(run.manual_damage), HORIZONTAL_ALIGNMENT_LEFT, 95, 21, Palette.PAPER)
+	draw_string(Palette.UI_FONT, manual_panel.position + Vector2(222, 56), "COMBO", HORIZONTAL_ALIGNMENT_LEFT, 66, 11, Palette.MUTED)
+	draw_string(DisplayFont, manual_panel.position + Vector2(290, 58), "×%.2f" % (1.0 + float(maxi(0, run.manual_streak - 1)) * run.combo_bonus_per_stack), HORIZONTAL_ALIGNMENT_LEFT, 78, 18, Palette.AMBER)
+	draw_string(Palette.UI_FONT, manual_panel.position + Vector2(18, 87), loc("敵または左のCHARGE攻撃をクリック / SPACE・A", "CLICK THE ENEMY OR CHARGE ATTACK / SPACE · A"), HORIZONTAL_ALIGNMENT_LEFT, 344, 10, Palette.MUTED)
+
+	draw_string(DisplayFont, auto_panel.position + Vector2(18, 28), loc("AUTO // 常時稼働", "AUTO // ALWAYS ONLINE"), HORIZONTAL_ALIGNMENT_LEFT, 240, 14, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, auto_panel.position + Vector2(18, 56), "DPS", HORIZONTAL_ALIGNMENT_LEFT, 46, 11, Palette.MUTED)
+	draw_string(DisplayFont, auto_panel.position + Vector2(64, 58), format_number(run.estimated_auto_dps()), HORIZONTAL_ALIGNMENT_LEFT, 82, 21, Palette.PAPER)
+	draw_string(Palette.UI_FONT, auto_panel.position + Vector2(160, 56), loc("射撃間隔", "INTERVAL"), HORIZONTAL_ALIGNMENT_LEFT, 76, 11, Palette.MUTED)
+	draw_string(DisplayFont, auto_panel.position + Vector2(240, 58), "%.2fs" % run.auto_interval, HORIZONTAL_ALIGNMENT_LEFT, 68, 18, Palette.MINT)
+	draw_string(Palette.UI_FONT, auto_panel.position + Vector2(304, 56), "×%d" % run.drone_count, HORIZONTAL_ALIGNMENT_LEFT, 54, 18, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, auto_panel.position + Vector2(18, 87), loc("クリックしていない間も攻撃とCHARGE生成が継続", "KEEPS ATTACKING AND GENERATING CHARGE WITHOUT CLICKS"), HORIZONTAL_ALIGNMENT_LEFT, 344, 10, Palette.MUTED)
+
+	if run.stage_phase == ChargeState.StagePhase.BOSS:
+		var enemy_texture := current_enemy_texture()
+		var enemy_center := enemy_click_rect.get_center()
+		var enemy_pulse := 0.96 + sin(animation_time * 2.4) * 0.035
+		var hovered := enemy_click_rect.has_point(mouse_position)
+		draw_circle(enemy_center, 116.0, Palette.with_alpha(Palette.CORAL, 0.05 + (0.05 if hovered else 0.0)))
+		draw_arc(enemy_center, 120.0, -PI * 0.5, -PI * 0.5 + TAU * (1.0 - run.objective_ratio()), 56, Palette.with_alpha(Palette.CORAL, 0.48), 4.0)
+		draw_texture_rect(enemy_texture, Rect2(enemy_center - Vector2(116, 116) + Vector2(0, sin(animation_time * 1.7) * 2.0), Vector2(232, 232)), false, Color(enemy_pulse, enemy_pulse, enemy_pulse, 1.0))
+		if hovered:
+			draw_string(DisplayFont, Vector2(enemy_click_rect.position.x, enemy_click_rect.end.y + 15), loc("クリックで攻撃", "CLICK TO ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, enemy_click_rect.size.x, 13, Palette.AMBER)
+		var tracer_progress := fmod(animation_time / maxf(0.15, run.auto_interval), 1.0)
+		var tracer_start := Vector2(810, 350)
+		var tracer_end := enemy_center - Vector2(88, 0)
+		draw_line(tracer_start, tracer_end, Palette.with_alpha(Palette.VIOLET, 0.12), 2.0)
+		draw_circle(tracer_start.lerp(tracer_end, tracer_progress), 4.0, Palette.VIOLET)
+
+	draw_stage_rule_indicator()
+	var status := message if message_time > 0.0 else tutorial_hint()
+	draw_string(Palette.UI_FONT, Vector2(448, 455), status, HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(438, 482), loc("8系統アップグレード — 全てLV.25・全ステージ引き継ぎ", "EIGHT UPGRADE LINES — LV.25 · PERSIST ACROSS EVERY HUNT"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(1030, 482), "%d / 200" % run.skill_points_bought(), HORIZONTAL_ALIGNMENT_RIGHT, 184, 11, Palette.AMBER if run.skill_points_bought() > 0 else Palette.MUTED)
+	var rack_rect := Rect2(428, 488, 788, 178)
+	draw_machine_plate(rack_rect, Palette.with_alpha(Palette.INK, 0.68), Palette.with_alpha(Palette.CYAN, 0.24), 12.0, 1.0)
+	draw_texture_rect_region(UpgradeRackTexture, Rect2(430, 490, 784, 172), UPGRADE_RACK_CENTER_REGION, Color(0.78, 0.86, 0.95, 0.78))
+	for index in range(upgrade_rects.size()):
+		draw_upgrade(index)
+	draw_skill_tree_links()
+
 func draw_stage_rule_indicator() -> void:
 	var rect := Rect2(452, 424, 748, 20)
 	var ratio := 0.0
-	var label := ""
+	var label := current_rule_copy()
 	var accent := Palette.CYAN
 	if run.singularity_boss:
-		ratio = float(run.singularity_seal) / 6.0 if run.singularity_phase == 1 else run.singularity_rule_timer / 7.0 if run.singularity_phase == 2 else run.enemy_charge / 100.0
-		label = current_rule_copy()
-		accent = Palette.PAPER if run.singularity_phase < 3 else Palette.CORAL
+		ratio = (float(run.singularity_seal) + float(run.singularity_progress) / 10.0) / 6.0 if run.singularity_phase == 1 else run.singularity_rule_timer / 7.0 if run.singularity_phase == 2 else run.enemy_charge / 100.0
+		accent = Palette.PAPER if run.singularity_phase < 3 else Palette.AMBER
 	elif run.current_boss_id == "thermal_titan":
-		ratio = run.heat / 100.0
-		label = loc("弱点温度 %d%% / 65〜90%%", "WEAKNESS HEAT %d%% / 65–90%%") % int(run.heat)
-		accent = Palette.CORAL if run.heat >= 65.0 and run.heat <= 90.0 else Palette.AMBER
+		ratio = run.furnace_open_timer / 6.0 if run.furnace_open_timer > 0.0 else float(run.furnace_hits) / 20.0
+		label = loc("炉心開放 %.1f秒 — 全攻撃×2" % run.furnace_open_timer, "FURNACE OPEN %.1fs — ALL DAMAGE ×2" % run.furnace_open_timer) if run.furnace_open_timer > 0.0 else loc("炉心解析 %d/20クリック" % run.furnace_hits, "FURNACE SCAN %d/20 CLICKS" % run.furnace_hits)
+		accent = Palette.CORAL if run.furnace_open_timer > 0.0 else Palette.AMBER
+	elif run.current_boss_id == "grid_leech":
+		ratio = float(run.siphon_hits) / 8.0 if run.siphon_window_timer > 0.0 else 1.0 - run.siphon_cooldown / 7.0
+		label = loc("吸収核 %d/8クリック・残り%.1f秒" % [run.siphon_hits, run.siphon_window_timer], "SIPHON %d/8 CLICKS · %.1fs" % [run.siphon_hits, run.siphon_window_timer]) if run.siphon_window_timer > 0.0 else loc("吸収核の開放まで %.1f秒" % run.siphon_cooldown, "SIPHON OPENS IN %.1fs" % run.siphon_cooldown)
+		accent = Palette.MINT if run.siphon_window_timer > 0.0 else Palette.CYAN
 	else:
 		match run.current_stage_id:
 			"gearmaw":
-				ratio = float(run.armor_cracks) / 6.0
-				label = loc("装甲 %d層・亀裂 %d/6", "ARMOR %d · CRACKS %d/6") % [run.enemy_armor_layers, run.armor_cracks]
+				ratio = float(run.armor_cracks) / 12.0
+				label = loc("装甲亀裂 %d/12 — 次の破砕打撃×4", "ARMOR CRACKS %d/12 — BREAK HIT ×4") % run.armor_cracks
 				accent = Palette.AMBER
 			"vaultback":
-				ratio = float(run.filled_cells()) / 6.0
-				label = loc("6セル同期 %d/6・開殻 %.1f秒", "SIX-CELL %d/6 · OPEN %.1fs") % [run.filled_cells(), run.shell_open_timer]
+				ratio = run.shell_open_timer / 6.0 if run.shell_open_timer > 0.0 else run.vault_charge_meter / 50.0
+				label = loc("甲殻開放 %.1f秒 — 全攻撃×2.1" % run.shell_open_timer, "SHELL OPEN %.1fs — ALL DAMAGE ×2.1" % run.shell_open_timer) if run.shell_open_timer > 0.0 else loc("開殻CHARGE %d/50" % int(run.vault_charge_meter), "SHELL CHARGE %d/50" % int(run.vault_charge_meter))
 				accent = Palette.BLUE
 			"pyre_wyrm":
-				ratio = run.heat / 100.0
-				label = loc("赤熱弱点 %d%% / 65〜90%%", "REDLINE %d%% / 65–90%%") % int(run.heat)
-				accent = Palette.CORAL if run.heat >= 65.0 and run.heat <= 90.0 else Palette.AMBER
+				ratio = run.overdrive_timer / maxf(5.0, 5.0 * run.core_power)
+				label = loc("オーバードライブ %.1f秒 — 能力購入で点火" % run.overdrive_timer, "OVERDRIVE %.1fs — BUY AN UPGRADE TO IGNITE" % run.overdrive_timer)
+				accent = Palette.CORAL if run.overdrive_timer > 0.0 else Palette.AMBER
 			"relay_hydra":
-				ratio = float(run.stage_combo) / 5.0
-				label = loc("残頭 %d・放電チェイン ×%d", "HEADS %d · CHAIN ×%d") % [run.hydra_heads, maxi(1, run.stage_combo)]
+				ratio = float(run.stage_combo) / 6.0
+				label = loc("残頭 %d・手動/AUTO連鎖 ×%.2f", "HEADS %d · MANUAL/AUTO CHAIN ×%.2f") % [run.hydra_heads, 1.0 + float(run.stage_combo) * 0.14]
 				accent = Palette.VIOLET
 			"swarm_matriarch":
 				ratio = float(run.marked_drones) / float(maxi(1, run.drones))
-				label = loc("妨害子機 %d・標識 %d", "JAMMERS %d · MARKED %d") % [run.drones, run.marked_drones]
+				label = loc("子機標識 %d/%d — 次のAUTOで掃討", "DRONES MARKED %d/%d — NEXT AUTO PURGES") % [run.marked_drones, run.drones]
 				accent = Palette.MINT
 			"phase_mantis":
 				ratio = run.analysis / 100.0
-				label = loc("解析 %d%%・弱点位相 %d/4", "ANALYSIS %d%% · PHASE %d/4") % [int(run.analysis), run.phase_index + 1]
+				label = loc("解析 %d%%・位相 %d/4（第三位相で臨界率上昇）", "ANALYSIS %d%% · PHASE %d/4 (CRIT BOOST IN PHASE 3)") % [int(run.analysis), run.phase_index + 1]
 				accent = Palette.AMBER
 			_:
 				ratio = run.objective_ratio()
-				label = current_rule_copy()
 	draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.84), Palette.with_alpha(accent, 0.32), 4.0, 1.0)
 	for index in range(12):
 		var lit := ratio * 12.0 > float(index)
@@ -1682,7 +1721,9 @@ func draw_upgrade(index: int) -> void:
 	draw_circle(rect.position + Vector2(rect.size.x - 12, 12), 3.5, color if affordable else Palette.with_alpha(Palette.MUTED, 0.28))
 	draw_string(Palette.UI_FONT, rect.position + Vector2(10, 20), "%d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, 22, 12, color)
 	draw_string(DisplayFont, rect.position + Vector2(32, 20), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 136, 12, Palette.PAPER if unlocked else Palette.MUTED)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(12, 44), str(copy.desc), HORIZONTAL_ALIGNMENT_LEFT, 160, 10, Palette.MUTED if unlocked else Palette.with_alpha(Palette.MUTED, 0.45))
+	var description_lines := str(copy.desc).split("\n")
+	for line_index in range(mini(2, description_lines.size())):
+		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 39 + line_index * 12), str(description_lines[line_index]), HORIZONTAL_ALIGNMENT_LEFT, 160, 9, Palette.MUTED if unlocked else Palette.with_alpha(Palette.MUTED, 0.45))
 	draw_string(Palette.UI_FONT, rect.position + Vector2(12, 70), "LV.%d" % run.upgrade_level(id), HORIZONTAL_ALIGNMENT_LEFT, 72, 11, color)
 	if maxed:
 		draw_string(Palette.UI_FONT, rect.position + Vector2(105, 70), "MAX", HORIZONTAL_ALIGNMENT_RIGHT, 69, 12, Palette.MINT)
@@ -1697,21 +1738,8 @@ func upgrade_has_active_synergy(index: int) -> bool:
 	return run.skill_unlocked(id) and run.upgrade_level(id) > 0
 
 func draw_skill_tree_links() -> void:
-	var links := [
-		[0, 1, Palette.AMBER],
-		[1, 2, Palette.MAGENTA],
-		[3, 4, Palette.BLUE],
-		[5, 6, Palette.MINT],
-		[6, 7, Palette.CORAL],
-	]
-	for link in links:
-		var start: Vector2 = upgrade_rects[int(link[0])].get_center()
-		var finish: Vector2 = upgrade_rects[int(link[1])].get_center()
-		var color: Color = link[2]
-		var target_id := str(ChargeState.UPGRADE_DEFINITIONS[int(link[1])].id)
-		var live: bool = run.skill_unlocked(target_id)
-		var pulse := 0.42 + sin(animation_time * 4.0 + int(link[0])) * 0.12 if live else 0.08
-		draw_polyline(PackedVector2Array([start, start.lerp(finish, 0.5) + Vector2(0, -8), finish]), Palette.with_alpha(color, pulse), 2.0, true)
+	# v4 uses eight independent upgrade lines. Order matters, prerequisites do not.
+	pass
 
 func draw_particles_and_text() -> void:
 	for packet in resource_packets:
@@ -1739,8 +1767,8 @@ func draw_objective_header() -> void:
 	var phase := current_rule_copy()
 	var current: float = run.boss_max_hp - run.boss_hp if is_boss else run.restore_progress
 	var target: float = run.boss_max_hp if is_boss else run.restore_goal
-	draw_string(DisplayFont, Vector2(446, 129), title, HORIZONTAL_ALIGNMENT_LEFT, 220, 15, accent)
-	draw_string(Palette.UI_FONT, Vector2(446, 147), phase, HORIZONTAL_ALIGNMENT_LEFT, 280, 10, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(446, 129), title, HORIZONTAL_ALIGNMENT_LEFT, 360, 15, accent)
+	draw_string(Palette.UI_FONT, Vector2(446, 147), phase, HORIZONTAL_ALIGNMENT_LEFT, 360, 10, Palette.MUTED)
 	if is_boss:
 		draw_texture_rect(WraithGaugeTexture, Rect2(824, 105, 390, 58), false, Color(0.9, 0.94, 1.0, 0.82))
 		var remaining_ratio: float = clampf(run.boss_hp / maxf(1.0, run.boss_max_hp), 0.0, 1.0)
@@ -1751,8 +1779,6 @@ func draw_objective_header() -> void:
 			var intact := index < remaining_seals
 			draw_machine_plate(seal_rect, Palette.with_alpha(Palette.CORAL if intact else Palette.CYAN, 0.8 if intact else 0.12), Palette.CORAL if intact else Palette.with_alpha(Palette.CYAN, 0.38), 3.0, 1.0)
 		var value_text := "%d%%" % int(round(remaining_ratio * 100.0))
-		if run.boss_warning_active():
-			value_text = "%.1fs" % maxf(0.0, run.boss_attack_timer)
 		draw_string(Palette.UI_FONT, Vector2(980, 143), value_text, HORIZONTAL_ALIGNMENT_CENTER, 92, 15, Palette.PAPER)
 		draw_string(Palette.UI_FONT, Vector2(980, 157), boss_integrity_label(), HORIZONTAL_ALIGNMENT_CENTER, 92, 7, Palette.MUTED)
 	else:
@@ -1806,10 +1832,10 @@ func draw_clear_overlay() -> void:
 		core_name = str(definition.get("core_name_ja" if is_japanese else "core_name_en", "CORE"))
 	var stats := [
 		[loc("クリアタイム", "CLEAR TIME"), format_time(run.stage_clear_time)],
-		[loc("最大放電", "PEAK OUTPUT"), format_number(run.highest_output)],
-		[loc("満充電放電", "FULL DISCHARGES"), str(run.super_discharges)],
-		[loc("吸収中断", "DRAIN INTERRUPTS"), str(run.boss_interrupts)],
-		[loc("メルトダウン", "MELTDOWNS"), str(run.meltdowns)],
+		[loc("手動 / AUTO命中", "MANUAL / AUTO HITS"), "%d / %d" % [run.manual_inputs, run.auto_hits]],
+		[loc("最大打撃", "PEAK HIT"), format_number(run.highest_output)],
+		[loc("累計CHARGE", "TOTAL CHARGE"), format_number(run.lifetime_charge)],
+		[loc("強化レベル合計", "TOTAL UPGRADE LEVELS"), str(run.skill_points_bought())],
 		[loc("回収機械核", "RECOVERED CORE"), core_name],
 	]
 	for index in range(stats.size()):
