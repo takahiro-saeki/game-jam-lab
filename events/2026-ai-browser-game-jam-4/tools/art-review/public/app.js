@@ -1,6 +1,7 @@
+const requestedBatch = new URLSearchParams(window.location.search).get("batch");
 const state = {
   manifest: null,
-  batch: "all",
+  batch: requestedBatch || "all",
   status: "all",
   query: "",
   backdrop: "void",
@@ -67,6 +68,7 @@ function renderBatchFilter() {
   elements.batchFilter.innerHTML = `<option value="all">すべてのバッチ</option>${state.manifest.batches
     .map((batch) => `<option value="${batch.id}">${batch.order}. ${batch.titleJa}</option>`)
     .join("")}`;
+  if (!state.manifest.batches.some((batch) => batch.id === state.batch)) state.batch = "all";
   elements.batchFilter.value = state.batch;
 }
 
@@ -409,7 +411,13 @@ document.querySelectorAll("#scale-control button").forEach((button) => button.ad
   document.querySelectorAll("#scale-control button").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
   render();
 }));
-elements.batchFilter.addEventListener("change", () => { state.batch = elements.batchFilter.value; render(); });
+elements.batchFilter.addEventListener("change", () => {
+  state.batch = elements.batchFilter.value;
+  const url = new URL(window.location.href);
+  state.batch === "all" ? url.searchParams.delete("batch") : url.searchParams.set("batch", state.batch);
+  window.history.replaceState(null, "", url);
+  render();
+});
 elements.statusFilter.addEventListener("change", () => { state.status = elements.statusFilter.value; render(); });
 elements.search.addEventListener("input", () => { state.query = elements.search.value.trim(); render(); });
 elements.clearCompare.addEventListener("click", () => { state.compare.clear(); render(); });

@@ -1,6 +1,6 @@
 # PROJECT CHARGE — PixelLab Style Brief
 
-> Status: 44 candidates generated; eight gameplay selections integrated; four UI Identity selections await human approval
+> Status: 80 candidates generated; eight gameplay selections integrated; 27 v5 protagonist / gear / environment candidates await human approval
 > Scope: Phase 2 style validation and first production-detail batch
 > Rule: compare every candidate in the actual Godot HUD before final approval
 
@@ -184,3 +184,15 @@ The review tool can switch every candidate across all eight categories inside a 
 Before generating 24 upgrade icons, the project inserted a structural UI pass. Eighteen additional candidates explore upgrade racks, a three-part main-control family, a six-part GRID WRAITH integrity device, and an energy-shard accumulator. The first gauge and accumulator prompts exposed two repeatable generation risks: exact counts drifted above six, and counter language caused fake digits. Focused revisions replaced counter language with a blank maintenance plate and reduced the gauge to isolated breakable chambers.
 
 The current mixed provisional direction is heavy switchboard machinery for the normal HUD and a corrupted six-cell frame for GRID WRAITH. Full rationale, Godot layer ownership, integration behavior, and the morning review checklist are recorded in [`UI_IDENTITY_PASS.md`](UI_IDENTITY_PASS.md).
+
+## 10. v5 protagonist, five-gear, and environment pass — August 4, 2026
+
+Twenty-seven additional candidates were generated after the five dedicated gear trees became playable:
+
+- Three 192×192 transparent protagonist concepts designed to support idle, direct-attack, and PURE CHARGE poses.
+- Three 96×96 transparent emblems for each of Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame.
+- Three 320×180 environments for each of Scrap Mine, Geothermal Core, and Biocircuit Crystal depths.
+
+All 27 files passed PNG, dimension, and transparency validation. Codex's provisional selections are Forge Pilgrim, Piston Gauntlet, Flywheel Heart, Rotor Cannon, Tri-Dock Hive, Memory Spine, Machine Ossuary, Coolant Cathedral, and Cable Root Grotto. These remain proposals only: no v5 candidate is copied to `approved/` or integrated into gameplay until the human review is saved in the local art board.
+
+The protagonist and gear prompts intentionally leave text, numerical ranks, lighting state, and animation to Godot. Background prompts reserve a calm dark center and concentrate detail near the edges so enemy silhouettes and exact HP remain readable. Full prompts, generation timestamps, API usage, scores, and concerns are stored in the review manifest.

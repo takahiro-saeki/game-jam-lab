@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-04T04:36:48.277Z",
+  "updatedAt": "2026-08-04T13:55:16.686Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -20,7 +20,16 @@
       "upgradeRack": "upgrade-rack-switchboard-a",
       "controlKit": "control-kit-switchboard-a",
       "wraithGauge": "wraith-gauge-switchboard-a",
-      "shardAccumulator": "shard-accumulator-corrupted-b"
+      "shardAccumulator": "shard-accumulator-corrupted-b",
+      "v5Protagonist": "protagonist-forge-pilgrim-a",
+      "v5GearStriker": "gear-striker-piston-a",
+      "v5GearDynamo": "gear-dynamo-flywheel-a",
+      "v5GearAutogun": "gear-autogun-rotor-a",
+      "v5GearDrone": "gear-drone-dock-a",
+      "v5GearCore": "gear-core-spine-a",
+      "v5BackgroundScrap": "bg-scrap-ossuary-a",
+      "v5BackgroundGeothermal": "bg-geo-coolant-cathedral-a",
+      "v5BackgroundBiocrystal": "bg-biocrystal-root-grotto-a"
     },
     "palette": [
       "#09111F",
@@ -2537,6 +2546,1267 @@
             ],
             "concerns": [
               "マップ用縮小では細部が密なため、真ボス戦では大判表示を維持する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-protagonist",
+      "order": 14,
+      "title": "Protagonist automaton concepts",
+      "titleJa": "主人公ロボット・基本造形",
+      "objective": "装置中心だった戦闘画面へ物語上の主体を置き、待機・打撃・PURE CHARGEへ展開できる固有シルエットを決める。",
+      "gate": "3案を96pxで比較し、顔・手動攻撃・発電機構が読める1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "protagonist-forge-pilgrim-a",
+          "title": "Forge Pilgrim",
+          "titleJa": "炉巡礼機 フォージ・ピルグリム",
+          "variation": "Compact relic biped with pile-driver arm and six empty salvage sockets.",
+          "prompt": "A single original player-character automaton, front three-quarter view facing right, compact relic-like biped made to hunt mechanical beasts, oversized right pile-driver gauntlet, small utility hand, one calm horizontal cyan eye in an ivory faceplate, circular dynamo heart in the chest, exactly six empty salvage sockets on a short back frame, sturdy modular legs, supports idle recoil, forward attack and crouched charging poses, determined not cute, not resembling an existing franchise. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/protagonist/protagonist-forge-pilgrim-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:36:55.943Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "本命。巨大な撃鉄腕、胸部機関、左右非対称の輪郭が主人公の役割を説明し、待機・打撃・発電へ展開しやすいです。",
+            "strengths": [
+              "96pxでも撃鉄腕と顔が明瞭",
+              "装備追加を受け止める余白がある"
+            ],
+            "concerns": [
+              "背部ソケット数はGodot側で補う"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "protagonist-coil-ranger-a",
+          "title": "Coil Ranger",
+          "titleJa": "環導機 コイル・レンジャー",
+          "variation": "Agile maintenance hunter with broken induction ring and shock-lance arm.",
+          "prompt": "A single original player-character automaton, front three-quarter view facing right, agile long-legged underground maintenance hunter, asymmetric broken induction-ring backpack, short cable scarf, telescoping shock-lance right forearm, compact cyan monocular visor, exposed amber flywheel at waist, large hands and feet for readable animation, supports idle, attack and energy-generation poses, industrial worker transformed into beast hunter, not resembling an existing franchise. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/protagonist/protagonist-coil-ranger-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:38:04.180Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 87,
+            "summary": "軽快で人物性が強い良案ですが、剣状装備が増え、クリック機械よりスチームパンク剣士へ寄りました。",
+            "strengths": [
+              "親しみやすい顔と姿勢"
+            ],
+            "concerns": [
+              "剣が主武器に見える"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "protagonist-core-bearer-a",
+          "title": "Core Bearer",
+          "titleJa": "機核運搬機 コア・ベアラー",
+          "variation": "Stout four-legged salvage automaton with two arms and empty core cradle.",
+          "prompt": "A single original player-character automaton, front three-quarter view facing right, stout low industrial salvage robot with four short walking legs and two forward manipulator arms, one hammer-claw for direct attacks, protected empty hexagonal core cradle in torso, small ivory sensor head with two cyan slit lights, folded drone rails over shoulders, can rear up to attack and settle down to generate energy, sympathetic not cute, clearly player not enemy, not resembling an existing franchise. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 192,
+          "height": 192,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/protagonist/protagonist-core-bearer-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:39:06.353Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 82,
+            "summary": "空の胸部ソケットと工具腕は物語に合いますが、四脚指定は反映されず定番の人型作業ロボットになりました。",
+            "strengths": [
+              "空の機核ソケットが明瞭"
+            ],
+            "concerns": [
+              "指定した四脚ではない"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-gear-striker",
+      "order": 15,
+      "title": "Striker Arm emblems",
+      "titleJa": "ギア紋章・撃鉄アーム",
+      "objective": "手動・連打・臨界を40〜64pxでも拳と衝撃が読める機械紋章にする。",
+      "gate": "他4ギアと輪郭が重ならない1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "gear-striker-piston-a",
+          "title": "Piston Gauntlet",
+          "titleJa": "撃鉄アーム・ピストン拳",
+          "variation": "Armored gauntlet driven by one cyan piston.",
+          "prompt": "A single Striker Arm gear emblem, side-facing armored pile-driver gauntlet pointing right, one large square fist, one visible cyan hydraulic piston, one amber impact plate, compact diagonal forward-punch silhouette, quiet interior for procedural rank highlights. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-striker-piston-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:39:53.490Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 92,
+            "summary": "本命。拳、ピストン、戻りばねが一つにまとまり、40pxでも手動打撃ギアとして読めます。",
+            "strengths": [
+              "拳と筐体の明度差が強い"
+            ],
+            "concerns": [
+              "外周歯車は他ギアと似る"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-striker-hammer-a",
+          "title": "Twin Contact Hammer",
+          "titleJa": "撃鉄アーム・接点槌",
+          "variation": "Industrial hammer between two electrical contacts.",
+          "prompt": "A single Striker Arm gear emblem, asymmetric industrial shock hammer shaped like a machine fist, two separated cyan contacts around one dark hammer head, amber strike face, bold horizontal silhouette, no circular reactor shape. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-striker-hammer-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:40:34.855Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 80,
+            "summary": "拳の意味は直接的ですが、人間のグローブを機械枠へ置いただけにも見えます。",
+            "strengths": [
+              "縮小しても拳が分かる"
+            ],
+            "concerns": [
+              "世界観に対して記号的すぎる"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-striker-knuckle-a",
+          "title": "Ratchet Knuckle",
+          "titleJa": "撃鉄アーム・歯止拳",
+          "variation": "Three knuckle plates around one ratchet wheel.",
+          "prompt": "A single Striker Arm gear emblem, three heavy rectangular knuckle plates around one ratchet wheel, forward coral spark gap, cyan return spring, unmistakable fist silhouette without anatomy, compact aggressive engineered shape. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-striker-knuckle-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:41:36.456Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 63,
+            "summary": "中央核と四方接点がリアクターに見え、撃鉄アームとして読めません。",
+            "strengths": [
+              "パレットとの整合性は高い"
+            ],
+            "concerns": [
+              "発電心臓と混同する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-gear-dynamo",
+      "order": 16,
+      "title": "Dynamo Heart emblems",
+      "titleJa": "ギア紋章・発電心臓",
+      "objective": "CHARGE経済とPURE CHARGEを循環・発電・蓄積の形で伝える。",
+      "gate": "心臓と工業発電機を両立し、既存リアクターと混同しない1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "gear-dynamo-flywheel-a",
+          "title": "Flywheel Heart",
+          "titleJa": "発電心臓・双輪型",
+          "variation": "Two offset flywheels feed a cyan chamber.",
+          "prompt": "A single Dynamo Heart gear emblem, two offset toothed flywheels pumping into one vertical cyan induction chamber, subtle heart silhouette made from machinery, amber governor below, visible circulation path, avoid a symmetric circular reactor. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-dynamo-flywheel-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:42:20.694Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 93,
+            "summary": "本命。縦の発電管と二本の循環路がCHARGEを回す装置だと明確に伝えます。",
+            "strengths": [
+              "発光経路が明瞭"
+            ],
+            "concerns": [
+              "通常時の発光量を抑える"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-dynamo-coil-a",
+          "title": "Vacuum Coil Heart",
+          "titleJa": "発電心臓・真空管型",
+          "variation": "Vertical induction vessel held by curved pump armor.",
+          "prompt": "A single Dynamo Heart gear emblem, tall empty vacuum-coil vessel with cyan spiral induction path, held between two curved armored pump housings suggesting a mechanical heart, amber valve below, strong vertical silhouette, no liquid, avoid a circular reactor. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-dynamo-coil-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:42:54.071Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 85,
+            "summary": "真空管とコイルの工業感は強い一方、中央の細線は小表示で潰れやすいです。",
+            "strengths": [
+              "暗い筐体と橙端子が上品"
+            ],
+            "concerns": [
+              "64px以下で内部が弱い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-dynamo-bellows-a",
+          "title": "Six-Stroke Bellows",
+          "titleJa": "発電心臓・六拍型",
+          "variation": "Hexagonal bellows engine with two breathing plates.",
+          "prompt": "A single Dynamo Heart gear emblem, compact hexagonal bellows engine, two opposing breathing plates, cyan pulse slit, exactly six chunky compression ribs, tiny amber exhaust valve, readable expand-and-contract mechanism, not an ornamental reactor. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-dynamo-bellows-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:43:30.797Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 72,
+            "summary": "六拍ベローズより汎用的な歯車と軸受けに見えます。",
+            "strengths": [
+              "円形輪郭は読みやすい"
+            ],
+            "concerns": [
+              "発電心臓固有の意味が薄い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-gear-autogun",
+      "order": 17,
+      "title": "Autogun Rig emblems",
+      "titleJa": "ギア紋章・自律砲座",
+      "objective": "終盤主砲を照準と自律性のある独立武装シルエットへする。",
+      "gate": "砲口と方向が読み取れ、二つの変異へ派生しやすい1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "gear-autogun-rotor-a",
+          "title": "Rotor Cannon",
+          "titleJa": "自律砲座・回転砲型",
+          "variation": "Three-barrel cannon on autonomous tracking cradle.",
+          "prompt": "A single Autogun Rig gear emblem, side-facing three-barrel rotary cannon pointing right, compact tracking cradle, cyan targeting lens, amber ammunition feed, bold long silhouette with clear muzzle, suitable for gatling mutation. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-autogun-rotor-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:43:52.952Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 96,
+            "summary": "本命。砲口、銃身、弾帯、照準部が明瞭で、機能を最も正確に説明しています。",
+            "strengths": [
+              "40pxでも右向き火器と読める"
+            ],
+            "concerns": [
+              "レール変異は別差分が必要"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-autogun-rail-a",
+          "title": "Split-Rail Sentry",
+          "titleJa": "自律砲座・双軌型",
+          "variation": "Separated rail arms around a cyan projectile.",
+          "prompt": "A single Autogun Rig gear emblem, side-facing sentry with two separated dark rail arms, suspended cyan projectile between them, tracking eye and heavy rear capacitor, clean horizontal silhouette for rail mutation, no tripod. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-autogun-rail-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:44:29.332Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 86,
+            "summary": "二本の軌条と光弾が分かりやすく、レール砲変異の差分として優秀です。",
+            "strengths": [
+              "射撃方向が明瞭"
+            ],
+            "concerns": [
+              "基本砲としては静的"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-autogun-iris-a",
+          "title": "Iris Repeater",
+          "titleJa": "自律砲座・照準眼型",
+          "variation": "Targeting iris joined to repeater and ammo spine.",
+          "prompt": "A single Autogun Rig gear emblem, mechanical cyan targeting iris connected to a short right-facing repeater barrel, segmented ammunition spine behind, autonomous predator-like aiming without becoming a creature, clear eye-and-muzzle silhouette. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-autogun-iris-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:45:09.106Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 73,
+            "summary": "照準眼は残っていますが、砲身が短く配管口やタービンに見えます。",
+            "strengths": [
+              "回転演出へ使える"
+            ],
+            "concerns": [
+              "武器として読みづらい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-gear-drone",
+      "order": 18,
+      "title": "Drone Hive emblems",
+      "titleJa": "ギア紋章・群制格納庫",
+      "objective": "複数機・標識・支援を母艦と子機の関係で読ませる。",
+      "gate": "64pxで母艦と複数ドローンの階層が保たれる1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "gear-drone-dock-a",
+          "title": "Tri-Dock Hive",
+          "titleJa": "群制格納庫・三連ドック",
+          "variation": "Carrier bay launching exactly three diamond drones.",
+          "prompt": "A single Drone Hive gear emblem, one angular carrier bay with exactly three separated diamond drones launching outward, cyan docking rails, amber command beacon, clear mother-child hierarchy, engineered not insect anatomy. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-drone-dock-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:45:48.655Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 91,
+            "summary": "本命。中央母艦と左右の子機が階層として読め、支援・展開能力を素直に表現します。",
+            "strengths": [
+              "母艦と子機の関係が明瞭"
+            ],
+            "concerns": [
+              "小表示では発光補助が必要"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-drone-orbit-a",
+          "title": "Orbital Rack",
+          "titleJa": "群制格納庫・軌道環型",
+          "variation": "Broken hex launch ring with three orbital pods.",
+          "prompt": "A single Drone Hive gear emblem, broken hexagonal launch ring with exactly three autonomous pods at unequal orbital positions, incomplete cyan guidance arcs, empty amber target marker in center, readable swarm motion, not a reactor. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-drone-orbit-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:46:20.488Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 81,
+            "summary": "軌道運動は伝わりますが、中央核が主役になり格納庫より発電機に見えます。",
+            "strengths": [
+              "周回演出と相性が良い"
+            ],
+            "concerns": [
+              "母艦と子機の区別が弱い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-drone-crown-a",
+          "title": "Command Crown",
+          "titleJa": "群制格納庫・指令冠型",
+          "variation": "Command rack with three folded wing drones.",
+          "prompt": "A single Drone Hive gear emblem, low heavy command rack with exactly three folded wing-shaped drones rising like an industrial crown, cyan synchronization contacts, amber fabricator nozzle, wide stable machinery silhouette. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-drone-crown-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:47:21.009Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 88,
+            "summary": "昆虫的な司令塔として固有ですが、プレイヤー装備より敵の群体女王に近く見えます。",
+            "strengths": [
+              "他ギアと重ならない輪郭"
+            ],
+            "concerns": [
+              "スウォーム敵と意匠が近い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-gear-core",
+      "order": 19,
+      "title": "Core Frame emblems",
+      "titleJa": "ギア紋章・機核架台",
+      "objective": "奪った核を受け入れる空の架台を、記憶・収集の記号にする。",
+      "gate": "空ソケットと接続先が明確で差分化しやすい1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "gear-core-cradle-a",
+          "title": "Relic Cradle",
+          "titleJa": "機核架台・遺核受座",
+          "variation": "Empty hex core cradle held by six clamps.",
+          "prompt": "A single Core Frame gear emblem, visibly empty dark hexagonal cradle held by exactly six asymmetrical salvage clamps, thin cyan memory conduits ending at empty contacts, ivory relic fragments and coral fracture, mounting frame not active reactor. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-core-cradle-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:47:48.103Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 80,
+            "summary": "遺物感はありますが、中央が既に満たされた核に見え、空の架台という前提を弱めます。",
+            "strengths": [
+              "希少装置としての格がある"
+            ],
+            "concerns": [
+              "空ソケットに見えない"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-core-spine-a",
+          "title": "Memory Spine",
+          "titleJa": "機核架台・記憶脊柱",
+          "variation": "Vertical spine with six empty side sockets.",
+          "prompt": "A single Core Frame gear emblem, vertical industrial memory spine with exactly six empty side sockets and one larger protected empty boss socket at top, cyan data threads, ivory fossil-metal plates, strong tall silhouette, no installed glowing core. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-core-spine-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:48:25.211Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 94,
+            "summary": "本命。暗い空洞、保持爪、骨色の筐体が奪った核を収める空席として最も明瞭です。",
+            "strengths": [
+              "取得前後の差分を作りやすい"
+            ],
+            "concerns": [
+              "縦の脊柱指定は弱い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "gear-core-altar-a",
+          "title": "Calibration Altar",
+          "titleJa": "機核架台・校正祭壇",
+          "variation": "Low altar with suspended empty socket.",
+          "prompt": "A single Core Frame gear emblem, low mechanical calibration altar with one empty suspended central socket, three paired connection jaws, cyan diagnostic filaments, ivory relic casing and dark negative space, integration not energy generation. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy #09111F #111D31 #182B43, cyan #4DEEEA, restrained amber #FFB703 and coral #FF5C5C, ivory #F5F0DB, dark navy one-to-two pixel outline, readable at 64 to 96 pixels, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no symbols, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 96,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/gear/gear-core-altar-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:49:11.451Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 88,
+            "summary": "三方向の端子と空の中央は統合装置として読めますが、外周が少し汎用的です。",
+            "strengths": [
+              "空ソケットが明瞭"
+            ],
+            "concerns": [
+              "物語性は弱め"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-bg-scrap-mine",
+      "order": 20,
+      "title": "Scrap Mine environments",
+      "titleJa": "追加背景・廃棄坑道",
+      "objective": "再利用・採掘・捨てられた機械の歴史が見える序盤坑道を作る。",
+      "gate": "20〜35%濃度でHUDと敵を邪魔しない1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "bg-scrap-conveyor-a",
+          "title": "Abandoned Sorting Trench",
+          "titleJa": "廃棄坑道・選別溝",
+          "variation": "Collapsed conveyors descend toward a crushing pit.",
+          "prompt": "Collapsed machine-beast scrap mine, broken conveyor belts descend from both edges toward a silent dark crushing pit, gear and armor heaps only in lower corners, sparse cyan current in severed cables, tiny amber lamps. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-scrap-conveyor-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:49:51.524Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 86,
+            "summary": "暗い破砕孔とスクラップは印象的ですが、中央円がポータルにも見えます。",
+            "strengths": [
+              "HUDを邪魔しない暗さ"
+            ],
+            "concerns": [
+              "中央円が敵と競合する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "bg-scrap-lift-a",
+          "title": "Drowned Lift Shaft",
+          "titleJa": "廃棄坑道・沈降昇降路",
+          "variation": "Deep freight shaft with rails and salvage cages.",
+          "prompt": "Enormous abandoned freight lift shaft in a scrap mine, old vertical rails, hanging empty salvage cages near side edges, broken distant gantries, cyan depth lights, rust and ivory debris, clear horizontal floor and calm central void. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-scrap-lift-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:50:31.054Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 89,
+            "summary": "縦坑、昇降籠、レールによる奥行きが優秀で、採掘施設の規模感があります。",
+            "strengths": [
+              "中央へ敵を置きやすい"
+            ],
+            "concerns": [
+              "既存背景と少し似る"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "bg-scrap-ossuary-a",
+          "title": "Machine Ossuary",
+          "titleJa": "廃棄坑道・機骸墓層",
+          "variation": "Fossil machine shells form ribbed tunnel walls.",
+          "prompt": "Subterranean machine ossuary, fossilized mechanical-beast shells and curved armor ribs embedded in both walls, central mine track into darkness, cyan cable veins reclaimed from wreckage, restrained amber lamps, industrial not organic gore. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-scrap-ossuary-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:51:05.488Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 94,
+            "summary": "本命。機械骸の壁、再利用配線、線路が世界の歴史を説明し、戦闘も邪魔しません。",
+            "strengths": [
+              "廃棄坑道の物語が伝わる"
+            ],
+            "concerns": [
+              "橙ランプは低彩度で使う"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-bg-geothermal",
+      "order": 21,
+      "title": "Geothermal Core environments",
+      "titleJa": "追加背景・地熱炉心層",
+      "objective": "高熱の圧力と青い冷却機構を同時に見せる。",
+      "gate": "危険色がHPや警告と競合しない1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "bg-geo-furnace-bridge-a",
+          "title": "Furnace Bridge",
+          "titleJa": "地熱炉心層・炉橋",
+          "variation": "Maintenance bridge over sealed magma turbine.",
+          "prompt": "Vast geothermal furnace chamber, narrow dark maintenance bridge at bottom, sealed magma turbine far behind gameplay area, huge pressure pipes at sides, cyan coolant opposing restrained coral cracks, small amber furnace windows. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-geo-furnace-bridge-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:51:39.532Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 78,
+            "summary": "配管と冷却水は美しいものの、地熱炉心より水力施設へ見えます。",
+            "strengths": [
+              "温冷対比は明快"
+            ],
+            "concerns": [
+              "中央が明るい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "bg-geo-coolant-cathedral-a",
+          "title": "Coolant Cathedral",
+          "titleJa": "地熱炉心層・冷却聖堂",
+          "variation": "Ceramic exchangers and cyan coolant falls.",
+          "prompt": "Colossal geothermal coolant cathedral, tall ivory ceramic heat exchangers at edges, thin cyan coolant falls and vapor vents, distant restrained coral core behind shutters, dark central chamber, geometric ribs, no lava filling screen. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-geo-coolant-cathedral-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:52:07.431Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "本命。白い熱交換柱、遠景の赤い炉心、青い冷却管が巨大な温度管理施設を表現します。",
+            "strengths": [
+              "中央の暗さで敵が映える"
+            ],
+            "concerns": [
+              "白い柱は低濃度で使う"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "bg-geo-pressure-foundry-a",
+          "title": "Pressure Foundry",
+          "titleJa": "地熱炉心層・圧力鋳造区",
+          "variation": "Pressure tanks and presses frame foundry floor.",
+          "prompt": "Abandoned geothermal pressure foundry, massive pressure tanks and piston presses at side edges, dark superheated floor through center, cyan cooling valves, amber sight glasses and a few coral stress seams, dense machinery away from HUD zones. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-geo-pressure-foundry-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:52:59.165Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 91,
+            "summary": "炉、圧力容器、蒸気が具体的で、通常魔獣戦の工場背景に向きます。",
+            "strengths": [
+              "設備の説得力が高い"
+            ],
+            "concerns": [
+              "右の容器が敵と重なる可能性"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v5-bg-biocrystal",
+      "order": 22,
+      "title": "Biocircuit Crystal environments",
+      "titleJa": "追加背景・生体回路／結晶深層",
+      "objective": "機械と鉱物が境界を失う終盤の異質な深層を作る。",
+      "gate": "紫とシアンを抑え、他背景と異なる1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "bg-biocrystal-root-grotto-a",
+          "title": "Cable Root Grotto",
+          "titleJa": "生体回路深層・根絡洞",
+          "variation": "Cable roots grow through crystal rock.",
+          "prompt": "Deep biocircuit grotto, bundled machine cables branch like roots through dark crystal rock at edges, empty hex sockets in walls, faint cyan pulses and restrained violet reflections, center nearly black, engineered ecology without flesh. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-biocrystal-root-grotto-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:53:50.677Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 96,
+            "summary": "本命。黒い中央空洞、結晶、ケーブル根、六角配列が可読性と終盤の異質さを両立します。",
+            "strengths": [
+              "既存工業背景と明確に違う"
+            ],
+            "concerns": [
+              "紫発光は低彩度で使う"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "bg-biocrystal-nerve-cathedral-a",
+          "title": "Crystal Nerve Cathedral",
+          "titleJa": "結晶深層・演算神経殿",
+          "variation": "Crystal signal columns joined by nerve traces.",
+          "prompt": "Ancient crystal nerve cathedral, faceted signal columns at both sides connected overhead by thin cyan and restrained violet circuits, dark central nave, fossil-metal braces fused into mineral growth, sparse amber memory nodes, no religious symbols. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-biocrystal-nerve-cathedral-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:54:23.234Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 89,
+            "summary": "結晶ケーブルの神殿として上品ですが、中央扉が強く選択画面向きです。",
+            "strengths": [
+              "終盤施設の格がある"
+            ],
+            "concerns": [
+              "中央扉が敵と競合する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "bg-biocrystal-observatory-a",
+          "title": "Flooded Phase Observatory",
+          "titleJa": "結晶深層・位相観測所",
+          "variation": "Flooded observatory reflects broken phase rings.",
+          "prompt": "Abandoned flooded phase-computation observatory, shallow still black water below, broken non-concentric phase rings and crystal instruments at edges, cyan reflections and restrained violet refraction, distant dark center aperture, no complete reactor circle. Wide 16:9 side-view underground game backdrop, premium authored 16-bit pixel art, crisp large pixel clusters, deep navy #09111F #111D31, restrained cyan #4DEEEA energy and small amber #FFB703 accents, three clear depth layers, calm nearly-black gameplay space through the center, brighter detail at the edges, readable beneath a dark HUD overlay, no characters, no creatures, no object blocking the center, no text, no letters, no numbers, no signs, no logo, no watermark, no UI, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 320,
+          "height": 180,
+          "noBackground": false,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/environment/bg-biocrystal-observatory-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T13:55:16.686Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 76,
+            "summary": "異世界感は強い一方、中央の巨大な紫円と明るい床がHUD背景として過密です。",
+            "strengths": [
+              "真ボス演出には使える"
+            ],
+            "concerns": [
+              "通常戦闘では敵を圧倒する"
             ]
           },
           "humanReview": {
