@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-03T02:02:21.000Z",
+  "updatedAt": "2026-08-04T04:36:48.277Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -2135,6 +2135,415 @@
             "rating": 4,
             "note": "",
             "reviewedAt": "2026-08-03T01:39:44.595Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v3-mechanical-beasts",
+      "order": 13,
+      "title": "Mechanical Beast Hunt — provisional cast",
+      "titleJa": "機械魔獣9体・初回立ち絵",
+      "objective": "新ルールを実画面で検証できるよう、6機械魔獣・2通常ボス・真ボスに固有シルエットを与える。今回は各1案を暫定実装し、プレイテスト後に重要キャラだけ3案へ展開する。",
+      "gate": "実寸192px表示で9体を識別でき、文字・偽UI・背景の混入がないこと。帰宅後のプレイ評価で上位キャラの追加案を決める。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "beast-gearmaw-a",
+          "title": "Gearmaw — Armored Borer",
+          "titleJa": "鉄殻穿獣 ギアモウ",
+          "variation": "Low mole-wolf silhouette with three breakable armor bands and an oversized drill jaw.",
+          "prompt": "A single low-slung mechanical mole-wolf beast called Gearmaw, side three-quarter view facing left, enormous rotating drill jaw, exactly three thick breakable iron armor bands across its back, powerful digging forelimbs, cracked amber seams under dark navy steel, underground dark-fantasy machine predator, premium authored 16-bit pixel art, bold readable silhouette, crisp large pixel clusters, limited navy cyan amber palette, isolated complete creature on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/beast-gearmaw-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:31:10.854Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 93,
+            "summary": "生成後確認済み。低い獣型、巨大ドリル、橙の装甲帯が実画面でも明瞭で、初回採用に十分です。",
+            "strengths": [
+              "装甲破壊の段階を絵で示せる",
+              "低い横長シルエットで他の8体と区別できる"
+            ],
+            "concerns": [
+              "装甲帯は厳密な三本線より複数の背部プレートとして見えるため、破壊段階はUIも併用する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "beast-vaultback-a",
+          "title": "Vaultback — Thunder Shell",
+          "titleJa": "蓄雷甲獣 ヴォルトバック",
+          "variation": "Tortoise-crab hybrid whose six capacitor chambers form one opening vault shell.",
+          "prompt": "A single massive mechanical tortoise-crab beast called Vaultback, side three-quarter view facing left, one armored vault shell built from exactly six large capacitor chambers, shell seam visibly able to open, broad grounded legs and two compact clamp claws, cyan stored lightning behind deep navy armor, restrained amber locks, underground dark-fantasy machinery, premium authored 16-bit pixel art, bold readable silhouette, crisp large pixel clusters, limited palette, isolated complete creature on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/beast-vaultback-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:31:52.076Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 92,
+            "summary": "生成後確認済み。亀と蟹を混ぜた重量感と青い分割甲殻が、六セル防御型として実寸でも機能します。",
+            "strengths": [
+              "6セル同期との対応が明快",
+              "亀型の重さで防御型と理解しやすい"
+            ],
+            "concerns": [
+              "甲殻の分割数は実寸では数えにくいため、六セル対応はルール表示で補強する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "beast-pyre-wyrm-a",
+          "title": "Pyre Wyrm — Furnace Serpent",
+          "titleJa": "灼炉蛇 パイア・ワーム",
+          "variation": "Long segmented furnace serpent with an exposed biological-red core ribcage.",
+          "prompt": "A single long mechanical furnace serpent called Pyre Wyrm, coiled side three-quarter view facing left, segmented black iron body, one large exposed red-hot furnace ribcage in the center, restrained organic crimson tissue fused between machine plates, smoke vents, cyan coolant pipes and amber heat rivets, threatening underground dark fantasy, premium authored 16-bit pixel art, bold serpentine silhouette, crisp large pixel clusters, limited navy coral amber palette, isolated complete creature on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/beast-pyre-wyrm-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:32:40.833Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 94,
+            "summary": "生成後確認済み。黒鉄の蛇型と赤熱炉心が強く分離し、高熱ステージを一覧でも即識別できます。",
+            "strengths": [
+              "長い蛇型で即座に識別可能",
+              "赤熱弱点へ視線を誘導できる"
+            ],
+            "concerns": [
+              "赤色面積は大きいが、暗いUI上では弱点色として有効"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "beast-relay-hydra-a",
+          "title": "Relay Hydra — Three-Head Bus",
+          "titleJa": "継電多頭獣 リレイ・ヒドラ",
+          "variation": "Exactly three cable necks terminate in different electrical tool heads.",
+          "prompt": "A single mechanical relay hydra called Relay Hydra, front three-quarter view, exactly three distinct heads on thick flexible cable necks, one breaker head, one coil head, one clamp head, all connected to one compact transformer torso, severable illuminated neck joints, purple relay arcs with cyan contacts, underground dark-fantasy machine beast, premium authored 16-bit pixel art, bold readable three-pronged silhouette, crisp large pixel clusters, limited navy violet cyan palette, isolated complete creature on transparent background, no extra heads, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/beast-relay-hydra-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:33:29.039Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 97,
+            "summary": "生成後確認済み。三本のケーブル首と異なる工具頭が正確に残り、今回のキャストで最もルール一致度が高い一体です。",
+            "strengths": [
+              "頭部破壊がシルエット変化になる",
+              "紫の継電色で他個体と差別化"
+            ],
+            "concerns": [
+              "細い首は縮小時に弱くなるため、戦闘画面では現在の残頭表示も維持する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "beast-swarm-matriarch-a",
+          "title": "Swarm Matriarch — Drone Mother",
+          "titleJa": "群制母機 スウォーム・マトリアーク",
+          "variation": "Tall spider-bee foundry mother carrying four detachable jammer drones.",
+          "prompt": "A single mechanical spider-bee mother beast called Swarm Matriarch, side three-quarter view facing left, tall angular abdomen shaped like a mobile drone foundry, exactly four small detachable jammer drones docked visibly around her, six thin articulated legs, one cyan command eye, mint signal lights and dark navy armor, underground dark-fantasy machine queen, premium authored 16-bit pixel art, bold readable silhouette, crisp large pixel clusters, limited navy mint cyan palette, isolated complete creature on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/beast-swarm-matriarch-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:34:02.759Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "生成後確認済み。蜘蛛蜂の母機と周囲の四子機が明確で、AUTO妨害ルールを一枚で伝えられます。",
+            "strengths": [
+              "子機残数を造形へ重ねられる",
+              "縦長の女王型で識別しやすい"
+            ],
+            "concerns": [
+              "マップ縮小では子機が小さいため、残機数は戦闘UIで補助する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "beast-phase-mantis-a",
+          "title": "Phase Mantis — Crystal Calculator",
+          "titleJa": "位相蟷螂 フェイズ・マンティス",
+          "variation": "Four rotating crystal phase vanes frame a precise mantis silhouette.",
+          "prompt": "A single elegant mechanical mantis called Phase Mantis, side three-quarter view facing left, two long blade forearms, narrow computation torso, exactly four large rotating crystal phase vanes behind its shoulders, one bright magenta analysis eye, cyan calculation traces on deep navy armor, underground occult machine predator, premium authored 16-bit pixel art, sharp readable mantis silhouette, crisp large pixel clusters, limited navy magenta cyan palette, isolated complete creature on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/beast-phase-mantis-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:34:39.907Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 1,
+            "score": 86,
+            "summary": "暫定統合。細身の鎌型と結晶位相は美しい一方、羽根が五枚前後に見え、四位相ルールとの厳密な対応は弱いです。",
+            "strengths": [
+              "細身の鎌型で即識別可能",
+              "位相番号を四枚羽根に対応できる"
+            ],
+            "concerns": [
+              "羽根数が四枚に見えない",
+              "細線がマップ縮小でやや密になるため追加3案の優先候補"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "boss-grid-leech-v3-a",
+          "title": "Grid Leech — Abyssal Siphon",
+          "titleJa": "深淵吸核獣 グリッド・リーチ",
+          "variation": "Manta-leech boss with six cell-targeting siphon tentacles; evolves the approved prior asset.",
+          "prompt": "A single huge abyssal mechanical manta-leech boss called Grid Leech, front three-quarter view, broad torn manta silhouette, exactly six long siphon tentacles hanging below and ending in capacitor needles, one hollow circular mouth-core, cyan stolen power traveling through black cables, restrained coral wounds and amber clamps, underground dark-fantasy machine horror, premium authored 16-bit pixel art, monumental readable silhouette, crisp large pixel clusters, limited navy cyan coral palette, isolated complete creature on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/boss-grid-leech-v3-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:35:20.243Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 97,
+            "summary": "生成後確認済み。幅広いマンタ体型、空洞核、六本の吸収触手がルールと直結し、通常ボスの本命です。",
+            "strengths": [
+              "六触手がセル攻撃と直結",
+              "横幅のあるボスらしい威圧感"
+            ],
+            "concerns": [
+              "触手の細部は縮小で消えるため、吸収予告UIとの連携が必要"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "boss-thermal-titan-a",
+          "title": "Thermal Titan — Forge Colossus",
+          "titleJa": "熔炉巨獣 サーマル・タイタン",
+          "variation": "Broad humanoid furnace colossus whose chest shutters expose one red core.",
+          "prompt": "A single colossal mechanical furnace golem called Thermal Titan, front three-quarter view, extremely broad industrial shoulders, massive piston arms, one central chest furnace behind thick opening shutter armor, red-hot core and white ceramic heat shields, cyan coolant exhausts, blackened navy iron, underground dark-fantasy forge giant, premium authored 16-bit pixel art, monumental readable humanoid silhouette, crisp large pixel clusters, limited navy coral ivory palette, isolated complete creature on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/boss-thermal-titan-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:36:11.909Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 1,
+            "score": 84,
+            "summary": "暫定統合。胸部炉心と重量感は優秀ですが、現状は機械魔獣より正統派の人型ロボットに見えます。",
+            "strengths": [
+              "熱弱点の場所が一目で分かる",
+              "マンタ型ボスと正反対の直立シルエット"
+            ],
+            "concerns": [
+              "人型ロボット寄りで、獣が並ぶマップ世界観から少し離れる",
+              "四足・多腕・炉獣寄りの追加3案を優先候補にする"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "boss-arch-singularity-a",
+          "title": "Arch Singularity — World Engine",
+          "titleJa": "地核機神 アーク・シンギュラリティ",
+          "variation": "Ancient six-wing world engine orbiting a charged black singularity.",
+          "prompt": "A single ancient subterranean world-engine deity called Arch Singularity, front view, one levitating black singularity core surrounded by exactly six enormous asymmetric machine wings made from fossil iron and broken cathedral mechanisms, six captured beast-core sockets around the center, ivory relic armor, cyan charge rings, restrained coral fractures, biomechanical dark-fantasy final boss, premium authored 16-bit pixel art, colossal sacred and terrifying silhouette, crisp large pixel clusters, limited navy ivory cyan coral palette, isolated complete entity on transparent background, no ground, no scenery, no text, no letters, no numbers, no UI, no logo, no watermark, no blur, no antialiasing.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/boss-arch-singularity-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-04T04:36:48.277Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 96,
+            "summary": "生成後確認済み。黒い中心核、聖遺物的な翼、周回する機構が他8体を明確に超える最終ボス感を持ちます。",
+            "strengths": [
+              "六つの封印ルールを造形へ統合",
+              "黒い中心核が最終局面の充電ゲージと噛み合う"
+            ],
+            "concerns": [
+              "マップ用縮小では細部が密なため、真ボス戦では大判表示を維持する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
           }
         }
       ]

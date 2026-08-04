@@ -1,6 +1,6 @@
 extends RefCounted
 
-const DEFAULT_PATH := "user://project_charge_phase2.cfg"
+const DEFAULT_PATH := "user://project_charge_beast_hunt_v3.cfg"
 const SECTION := "run"
 const KEY := "snapshot"
 const CAMPAIGN_SECTION := "campaign"

@@ -30,7 +30,7 @@ func run_tests() -> void:
 	test_zero_percent_city()
 	test_chargeback()
 	test_capacitor_defense()
-	test_charge_clicker()
+	test_charge_clicker_v3()
 	await process_frame
 	await process_frame
 	if failures.is_empty():
@@ -343,6 +343,157 @@ func improve_test_grid(game: Node) -> void:
 		game.handle_node(4)
 		game.build_mode = game.BuildMode.ARC
 		game.handle_node(4)
+
+func test_charge_clicker_v3() -> void:
+	print("\nPROJECT CHARGE V3 — MECHANICAL BEAST HUNT")
+	var state := ChargeClickerState.new()
+	state.rng.seed = 404
+	check(state.cells.size() == 6 and state.stage_phase == state.StagePhase.BOSS, "v3 starts with six cells and direct enemy combat")
+	state.begin_stage("gearmaw", "manual", 1.0, 10000.0, 0)
+	for input in range(3):
+		state.manual_charge(0)
+	check(state.armor_cracks >= 3, "manual CHARGE visibly cracks GEARMAW armor")
+	state.add_charge_energy(state.total_capacity(), 0.0, false)
+	var gear_shot := state.discharge(0)
+	var gear_hit := state.apply_output(float(gear_shot.output), true)
+	check(state.enemy_armor_layers == 2 and str(gear_hit.mechanic) == "armor_break", "full discharge breaks one GEARMAW armor layer")
+	check(float(gear_hit.applied) > 0.0 and int(gear_hit.credits) > 0, "damage directly lowers enemy HP and awards mechanical scrap")
+
+	state.begin_stage("vaultback", "capacity", 1.0, 10000.0, 1)
+	state.add_charge_energy(state.capacity * 2.0, 0.0, false)
+	var partial := state.discharge(0)
+	var partial_hit := state.apply_output(float(partial.output), false)
+	state.add_charge_energy(state.total_capacity(), 0.0, false)
+	var full := state.discharge(0)
+	var full_hit := state.apply_output(float(full.output), true)
+	check(float(full_hit.applied) > float(partial_hit.applied) * 5.0 and state.shell_open_timer > 0.0, "VAULTBACK strongly rewards a six-cell shell break")
+
+	state.credits = 1000
+	check(state.skill_unlocked("manual") and not state.skill_unlocked("critical"), "skill-tree roots are readable while later nodes start locked")
+	check(state.purchase_upgrade("manual") and state.purchase_upgrade("manual"), "HAND COIL can reach the rank-2 branch threshold")
+	check(state.skill_unlocked("critical") and state.purchase_upgrade("critical"), "rank 2 unlocks the next skill-tree node")
+	var credits_before_respec := state.credits
+	var refunded := state.respec_skills()
+	check(refunded > 0 and state.skill_points_bought() == 0 and state.credits > credits_before_respec, "map respec refunds every purchased rank")
+
+	state.grant_beast_core("deep_storage")
+	state.add_charge_energy(state.total_capacity(), 0.0, false)
+	state.discharge(0)
+	check(state.total_charge() >= state.total_capacity() * 0.14, "VAULTBACK core automatically retains charge after full discharge")
+	state.grant_beast_core("phase_computation")
+	state.analysis = 100.0
+	state.add_charge_energy(state.capacity, 0.0, false)
+	var guaranteed := state.discharge(-1)
+	check(bool(guaranteed.critical) and state.analysis == 0.0, "PHASE MANTIS core converts full analysis into a guaranteed critical")
+
+	var game := ChargeClickerGame.new()
+	game.persistence_enabled = false
+	root.add_child(game)
+	game.is_japanese = true
+	check(game.start_stage_by_index(0) and game.run.current_stage_id == "gearmaw", "hunt-map selection launches the chosen mechanical beast")
+	game.run.boss_hp = 1.0
+	game.run.add_charge_energy(game.run.capacity, 0.0, false)
+	game.perform_discharge(false, 1)
+	check(game.run.stage_phase == game.ChargeState.StagePhase.CLEAR, "depleting beast HP opens the direct hunt-clear screen without a reward draft")
+	check(game.complete_stage_and_return_to_route(), "hunt clear returns to the six-beast map")
+	check("gearmaw" in game.campaign_route.completed_stage_ids and "impact_guidance" in game.run.beast_cores, "defeated beast core is integrated automatically")
+	game.free()
+
+	var route := ChargeCampaignRoute.new()
+	for id in ["gearmaw", "vaultback", "pyre_wyrm"]:
+		check(route.select_stage(id), "route can select beast %s" % id)
+		check(route.complete_current_stage(str(ChargeStageCatalog.stage(id).core_id)), "route records defeated beast %s" % id)
+	check(route.phase == route.RoutePhase.BOSS_SELECT, "any three beast defeats unlock normal boss selection")
+	check(route.choose_first_boss("grid_leech") and route.defeat_current_boss(), "one normal boss produces a complete normal ending")
+	check(route.continue_true_route(), "normal ending can continue into the true route")
+	for id in route.available_stage_ids():
+		route.select_stage(id)
+		route.complete_current_stage(str(ChargeStageCatalog.stage(id).core_id))
+	check(route.phase == route.RoutePhase.ENHANCED_BOSS and route.current_boss_id == "thermal_titan", "the unchosen boss returns enhanced after all six beasts")
+	check(route.defeat_current_boss() and route.phase == route.RoutePhase.SINGULARITY, "six beast cores and two boss victories unlock ARCH SINGULARITY")
+	check(route.current_boss_id == "arch_singularity", "true boss uses the finalized ARCH SINGULARITY identity")
+
+	var save_path := "/tmp/project_charge_v3_smoke_test.cfg"
+	var save := ChargeClickerSave.new(save_path)
+	check(save.save_bundle(state, route) == OK, "v3 run and hunt route serialize atomically")
+	var restored_state := ChargeClickerState.new()
+	var restored_route := ChargeCampaignRoute.new()
+	check(save.load_bundle_into(restored_state, restored_route), "v3 campaign save restores successfully")
+	check("deep_storage" in restored_state.beast_cores and restored_route.phase == restored_route.RoutePhase.SINGULARITY, "save preserves cores, skills and true-route position")
+	save.clear()
+
+	var normal_seconds := simulate_project_charge_v3(false)
+	var true_seconds := simulate_project_charge_v3(true)
+	print("PROJECT CHARGE v3 efficient normal route: %.1f seconds" % normal_seconds)
+	print("PROJECT CHARGE v3 efficient true route: %.1f seconds" % true_seconds)
+	check(normal_seconds > 0.0 and normal_seconds < true_seconds, "true route is materially longer than the normal judging route")
+
+func simulate_project_charge_v3(include_true_route: bool) -> float:
+	var simulated := ChargeClickerState.new()
+	var stages: Array[String] = []
+	if include_true_route:
+		stages = ChargeStageCatalog.stage_ids()
+	else:
+		stages.assign(["gearmaw", "vaultback", "pyre_wyrm"])
+	for stage_index in range(stages.size()):
+		var id: String = str(stages[stage_index])
+		var definition := ChargeStageCatalog.stage(id)
+		simulated.begin_stage(id, str(definition.build_tag), 1.0, ChargeStageCatalog.stage_hp(id, stage_index), stage_index)
+		var encounter_started := simulated.elapsed
+		drive_project_charge_v3(simulated, 18000)
+		print("  v3 sim %s: %.1fs, hp %.0f, skills %d" % [id, simulated.elapsed - encounter_started, simulated.boss_hp, simulated.skill_points_bought()])
+		simulated.grant_beast_core(str(definition.core_id))
+		if stage_index == 2:
+			var boss := ChargeStageCatalog.boss("grid_leech")
+			simulated.begin_campaign_boss("grid_leech", float(boss.hp), false, false)
+			var boss_started := simulated.elapsed
+			drive_project_charge_v3(simulated, 30000)
+			print("  v3 sim grid_leech: %.1fs, hp %.0f" % [simulated.elapsed - boss_started, simulated.boss_hp])
+			simulated.grant_boss_core(str(boss.core_id))
+			if not include_true_route:
+				return simulated.elapsed
+	if include_true_route:
+		var enhanced := ChargeStageCatalog.boss("thermal_titan")
+		simulated.begin_campaign_boss("thermal_titan", float(enhanced.enhanced_hp), true, false)
+		var enhanced_started := simulated.elapsed
+		drive_project_charge_v3(simulated, 50000)
+		print("  v3 sim thermal_titan+: %.1fs, hp %.0f" % [simulated.elapsed - enhanced_started, simulated.boss_hp])
+		simulated.grant_boss_core(str(enhanced.core_id))
+		var singularity := ChargeStageCatalog.boss("arch_singularity")
+		simulated.begin_campaign_boss("arch_singularity", float(singularity.hp), false, true)
+		var singularity_started := simulated.elapsed
+		var singularity_output_started := simulated.lifetime_output
+		drive_project_charge_v3(simulated, 90000)
+		print("  v3 sim arch_singularity: %.1fs, hp %.0f phase %d seal %d, shots %d, skills %d, damage %.0f" % [simulated.elapsed - singularity_started, simulated.boss_hp, simulated.singularity_phase, simulated.singularity_seal, simulated.partial_discharges + simulated.super_discharges, simulated.skill_points_bought(), simulated.lifetime_output - singularity_output_started])
+	return simulated.elapsed
+
+func drive_project_charge_v3(simulated, max_steps: int) -> void:
+	for step in range(max_steps):
+		simulated.manual_charge(1 if simulated.current_stage_id == "phase_mantis" or simulated.singularity_boss and simulated.singularity_phase == 1 and simulated.singularity_seal >= 5 else 0)
+		simulated.tick(0.15, false)
+		var needs_heat: bool = simulated.current_stage_id == "pyre_wyrm" or simulated.current_boss_id == "thermal_titan" or simulated.singularity_boss and ((simulated.singularity_phase == 1 and simulated.singularity_seal == 2) or (simulated.singularity_phase == 2 and simulated.singularity_rule == 2))
+		var needs_partial: bool = simulated.singularity_boss and simulated.singularity_phase == 2 and simulated.singularity_rule == 0
+		var should_fire: bool = simulated.total_charge() >= simulated.capacity * 3.0 if needs_partial else simulated.is_full() and ((needs_heat and simulated.heat >= 70.0) or (not needs_heat and simulated.overcharge >= 24.0) or simulated.boss_warning_active())
+		if should_fire:
+			var needs_critical: bool = simulated.singularity_boss and ((simulated.singularity_phase == 1 and simulated.singularity_seal == 5) or (simulated.singularity_phase == 2 and simulated.singularity_rule == 3))
+			var shot: Dictionary = simulated.discharge(1 if needs_critical else 0)
+			simulated.apply_output(float(shot.output), bool(shot.super))
+			purchase_affordable_skills(simulated)
+		if simulated.stage_phase == simulated.StagePhase.CLEAR:
+			return
+
+func purchase_affordable_skills(simulated) -> void:
+	# Breadth-first buying keeps all three roots viable, then follows unlocked
+	# branches. Repeat because one rank can immediately unlock the next node.
+	for pass_index in range(4):
+		var bought := false
+		for definition in ChargeClickerState.UPGRADE_DEFINITIONS:
+			var id := str(definition.id)
+			if simulated.can_purchase(id):
+				simulated.purchase_upgrade(id)
+				bought = true
+		if not bought:
+			return
 
 func test_charge_clicker() -> void:
 	print("\nPROJECT CHARGE")

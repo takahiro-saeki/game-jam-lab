@@ -12,15 +12,16 @@
 1. **ZERO PERCENT CITY** — a compact battery-powered metroidvania.
 2. **CHARGEBACK** — a financial deck-building roguelike where your credit limit is your life.
 3. **CAPACITOR DEFENSE** — a circuit-routing tower defense driven by visible energy packets.
-4. **PROJECT CHARGE** — a campaign-scale active clicker about six-cell synchronization, safe discharge, risky overcharge, and build-defining circuit routes.
+4. **PROJECT CHARGE** — a mechanical-beast hunting clicker about six-cell synchronization, risk-managed discharge, an eight-node skill tree, and stolen cores that permanently change the build.
 
-The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE now has a complete playable campaign skeleton: any three of six circuits lead to a chosen normal boss and ending, while the remaining circuits, enhanced boss, and CHARGE SINGULARITY form its optional true route.
+The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE has been rebuilt around six visible mechanical-beast battles: any three hunts lead to a chosen normal boss and ending, while the remaining beasts, enhanced boss, and ARCH SINGULARITY form its optional true route.
 
 ## Next concept: CHARGE! active clicker
 
 The next candidate is a 20-minute active clicker built around six charge cells, player-selected circuit stages, and a complete normal ending that can continue into an approximately one-hour true route.
 
 - [Game design document](docs/CHARGE_CLICKER_GDD.md)
+- [Current v3 mechanical-beast specification](docs/PROJECT_CHARGE_V3_GDD.md)
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
 - [Current playtest guide](docs/PROJECT_CHARGE_PLAYTEST.md)
 - [PixelLab style and prompt brief](docs/PIXELLAB_STYLE_BRIEF.md)
@@ -66,19 +67,21 @@ The next candidate is a 20-minute active clicker built around six charge cells, 
 
 ### PROJECT CHARGE
 
-- Choose any three of six circuit stages, defeat one of two master hostiles, and reach the normal ending. Continue with the same build through the remaining stages, enhanced boss, and CHARGE SINGULARITY for the true ending.
+- Choose any three of six mechanical beasts, defeat one of two abyssal bosses, and reach the normal ending. Continue with the same build through the remaining hunts, enhanced boss, and ARCH SINGULARITY for the true ending.
 - Hold the large **CHARGE** button, `Space`, or the configured primary gamepad button to fill six cells.
-- Press **DISCHARGE**, `Enter` / `X`, right-click, or the configured secondary gamepad button to bank the current output.
+- Press **DISCHARGE**, `Enter` / `X`, right-click, or the configured secondary gamepad button to turn stored energy directly into damage.
 - A partial discharge is safe. Filling all six cells triggers a large synchronization bonus.
 - Continue charging after all six cells are full to raise the Overcharge multiplier. Excess heat causes a meltdown and removes most stored energy.
 - Toggle slow automatic charging with `A` or the configured active-ability button.
-- Buy upgrades by clicking/tapping them or pressing `1`–`8`. Unaffordable upgrades remain readable and show their required cost.
+- Damage awards mechanical scrap, making every attack feed immediately into the skill tree.
+- Buy one of eight three-rank skills by clicking/tapping it or pressing `1`–`8`. Raising a predecessor to LV2 unlocks the next node.
 - On gamepad, navigate upgrades with the D-pad and purchase the selected upgrade with `Start / Options`.
-- Each stage changes the optimal rhythm: precise manual input, six-cell bursts, thermal redlining, discharge chains, AUTO commands, or volatile critical windows.
-- Upgrade pairs unlock four named synergies: precision feedback, autonomous cooling, burst bank, and redline armor.
+- Respec the full tree for free from the hunt map with `T` or gamepad `Start / Options`.
+- Each beast changes the optimal rhythm: cracking armor manually, breaking a shell with six-cell sync, thermal redlining, severing heads through discharge chains, marking drones for AUTO purge, or reading critical windows.
+- Every defeated beast grants a named core automatically. Its rule becomes a permanent player ability for later battles.
 - GRID LEECH warns before draining the fullest cell. THERMAL TITAN suppresses cooling and becomes vulnerable at high heat. The true boss rotates through three trials based on all six systems.
-- Clearing a stage awards both a selectable permanent reward and its named circuit modifier. Progress saves automatically and resumes after closing the browser.
-- Use the arrow keys, D-pad, or left stick on maps, rewards, and the upgrade rack. Ending results can be copied with `C` or the configured active-ability button.
+- Progress, scrap, skill ranks, acquired cores, and the current hunt save automatically and resume after closing the browser.
+- Use the arrow keys, D-pad, or left stick on maps and the skill tree. Ending results can be copied with `C` or the configured active-ability button.
 - To erase the full campaign and start over, press `R` twice within the three-second confirmation window.
 
 ## Local development
@@ -106,7 +109,7 @@ godot --headless --path events/2026-ai-browser-game-jam-4/godot \
 ## AI and asset disclosure
 
 - Game concepts, GDScript implementation, testing, balancing, and documentation were created in collaboration with OpenAI Codex.
-- The three original launcher/key-art images and the ZERO PERCENT CITY gameplay backdrop were created with OpenAI image generation from original prompts written for this project. PROJECT CHARGE combines procedural Godot effects with original PixelLab reactor and generator-chamber candidates; prompts, API settings, generations used, and selection notes are recorded locally.
+- The three original launcher/key-art images and the ZERO PERCENT CITY gameplay backdrop were created with OpenAI image generation from original prompts written for this project. PROJECT CHARGE combines procedural Godot effects with original PixelLab machinery, UI, and nine mechanical-beast candidates; prompts, API settings, generations used, and selection notes are recorded locally.
 - No third-party game code, trademarked characters, or downloaded art assets are included.
 - Japanese UI text uses Noto Sans JP from Google Fonts under the SIL Open Font License 1.1; the license is included at [`godot/assets/fonts/OFL-NotoSansJP.txt`](godot/assets/fonts/OFL-NotoSansJP.txt).
 - Runtime visuals, particles, UI, and sound effects are generated by the Godot project itself.
@@ -115,4 +118,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE has passed its campaign-structure implementation milestone: six differentiated stages, four upgrade synergies, two selectable bosses, the normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual results, atomic campaign saves, and mouse/touch/keyboard/remappable-gamepad navigation are all connected. Deterministic active-play simulations currently complete the normal route in 650.8 seconds and the full true route in 1907.4 seconds; these are deliberately faster than first-time human play. Forty-four PixelLab candidates across twelve review categories have been generated, scored, and partially integrated. The next major work is human playtest balancing and production art for the six environments and remaining bosses.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v3 now contains six direct mechanical-beast battles, six automatically integrated cores, a branching eight-skill tree with free respec, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual UI/results, atomic v3 saves, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic efficient-play simulations complete the normal route in about 11.5 minutes and the full true route in about 53 minutes; first-time human targets remain 18–25 and 50–70 minutes. Fifty-three PixelLab candidates have been generated and recorded, including the newly integrated first-pass art for all nine enemies. The next major milestone is the returning user playtest, followed by targeted balance and three-variant art revisions only where the in-game cast is weakest.

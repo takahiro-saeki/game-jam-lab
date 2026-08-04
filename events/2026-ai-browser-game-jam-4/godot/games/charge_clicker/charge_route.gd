@@ -66,7 +66,7 @@ func complete_current_stage(reward_id: String = "") -> bool:
 func adopt_vertical_slice(reward_id: String) -> bool:
 	if not completed_stage_ids.is_empty() or phase != RoutePhase.MAP:
 		return false
-	if not select_stage("generator_core"):
+	if not select_stage("gearmaw"):
 		return false
 	return complete_current_stage(reward_id)
 
@@ -137,7 +137,7 @@ func true_route_ready() -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 1,
+		"version": 2,
 		"phase": phase,
 		"current_stage_id": current_stage_id,
 		"current_boss_id": current_boss_id,
@@ -150,7 +150,7 @@ func snapshot() -> Dictionary:
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
-	if int(data.get("version", 0)) != 1:
+	if int(data.get("version", 0)) != 2:
 		return false
 	reset()
 	var valid_stages := Catalog.stage_ids()
