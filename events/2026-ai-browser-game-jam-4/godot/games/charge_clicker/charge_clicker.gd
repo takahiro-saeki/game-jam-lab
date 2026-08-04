@@ -7,6 +7,7 @@ const Palette = preload("res://shared/palette.gd")
 const Synth = preload("res://shared/synth.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 const ChargeState = preload("res://games/charge_clicker/charge_state.gd")
+const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
 const CampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
@@ -117,11 +118,14 @@ var auto_effect_timer := 0.0
 var autosave_timer := 0.0
 var reward_selected := 0
 var controller_upgrade_selected := 0
+var selected_gear_index := 0
+var gear_tree_open := false
 var controller_axis_latch := Vector2i.ZERO
 var campaign_selected := 0
 var campaign_hovered := -1
 
-var charge_rect := Rect2(70, 502, 284, 108)
+var charge_rect := Rect2(70, 502, 284, 88)
+var mode_toggle_rect := Rect2(70, 598, 284, 44)
 var discharge_rect := Rect2(452, 340, 510, 76)
 var auto_rect := Rect2(980, 340, 220, 76)
 var enemy_click_rect := Rect2(860, 160, 352, 242)
@@ -129,6 +133,11 @@ var menu_rect := Rect2(1102, 22, 138, 42)
 var language_rect := Rect2(932, 22, 152, 42)
 var reset_rect := Rect2(34, 22, 126, 42)
 var upgrade_rects: Array[Rect2] = []
+var gear_rects: Array[Rect2] = []
+var tree_tab_rects: Array[Rect2] = []
+var tree_close_rect := Rect2(1132, 112, 82, 46)
+var tree_purchase_rect := Rect2(918, 560, 286, 50)
+var tree_respec_rect := Rect2(918, 622, 286, 42)
 var reward_rects: Array[Rect2] = [Rect2(154, 300, 300, 220), Rect2(490, 300, 300, 220), Rect2(826, 300, 300, 220)]
 var clear_retry_rect := Rect2(382, 554, 236, 54)
 var clear_menu_rect := Rect2(662, 554, 236, 54)
@@ -146,9 +155,9 @@ func _ready() -> void:
 	run = ChargeState.new()
 	campaign_route = CampaignRoute.new()
 	save_manager = ChargeSave.new()
-	for row in range(2):
-		for column in range(4):
-			upgrade_rects.append(Rect2(438 + column * 194, 494 + row * 94, 184, 84))
+	for index in range(GearCatalog.GEARS.size()):
+		gear_rects.append(Rect2(438 + index * 156, 500, 148, 160))
+		tree_tab_rects.append(Rect2(58 + index * 214, 112, 202, 52))
 	for row in range(2):
 		for column in range(3):
 			stage_map_rects.append(Rect2(62 + column * 404, 180 + row * 208, 348, 176))
@@ -256,8 +265,12 @@ func configure_art_preview_state() -> void:
 	run.manual_inputs = 42
 	run.armor_cracks = 7
 	run.upgrade_levels["impact_coil"] = 3
-	run.upgrade_levels["auto_cannon"] = 2
-	run.upgrade_levels["charge_generator"] = 1
+	run.upgrade_levels["combo_gear"] = 2
+	run.upgrade_levels["critical_math"] = 1
+	run.upgrade_levels["auto_cannon"] = 3
+	run.upgrade_levels["rapid_relay"] = 2
+	run.upgrade_levels["charge_generator"] = 3
+	run.upgrade_levels["drone_bay"] = 2
 	run.refresh_stats()
 
 func parse_query_string(raw_query: String) -> Dictionary:
@@ -281,6 +294,7 @@ func reset_run() -> void:
 	resource_packets.clear()
 	shard_pulse = 0.0
 	charge_held = false
+	gear_tree_open = false
 	screen_flash = 0.0
 	screen_shake = 0.0
 	discharge_wave = 0.0
@@ -327,13 +341,7 @@ func _process(delta: float) -> void:
 		queue_redraw()
 		return
 
-	if charge_held:
-		charge_repeat_timer -= delta
-		while charge_repeat_timer <= 0.0:
-			perform_charge(true)
-			charge_repeat_timer += 0.16
-
-	var tick_result: Dictionary = run.tick(delta, charge_held)
+	var tick_result: Dictionary = run.tick(delta, false)
 	if int(tick_result.auto_hits) > 0:
 		auto_effect_timer -= delta
 		if auto_effect_timer <= 0.0:
@@ -369,6 +377,9 @@ func campaign_screen_visible() -> bool:
 	return campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY] and run.stage_phase == ChargeState.StagePhase.CLEAR
 
 func _unhandled_input(event: InputEvent) -> void:
+	if gear_tree_open:
+		handle_gear_tree_input(event)
+		return
 	if campaign_screen_visible():
 		handle_campaign_input(event)
 		return
@@ -377,7 +388,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseMotion:
 		mouse_position = event.position
-		hover_upgrade = upgrade_at(event.position)
+		hover_upgrade = gear_at(event.position)
 		queue_redraw()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		mouse_position = event.position
@@ -427,7 +438,7 @@ func handle_campaign_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_R:
 			request_reset()
 		elif event.keycode == KEY_T and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
-			respec_skill_tree()
+			open_gear_tree(0)
 		elif event.keycode == KEY_ESCAPE:
 			return_to_menu.emit()
 		elif event.keycode in [KEY_LEFT, KEY_A]:
@@ -458,7 +469,7 @@ func handle_campaign_input(event: InputEvent) -> void:
 				elif event.button_index == controller_button("language"):
 					toggle_language()
 				elif event.button_index == controller_button("menu") and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
-					respec_skill_tree()
+					open_gear_tree(selected_gear_index)
 				elif event.button_index == controller_button("back"):
 					return_to_menu.emit()
 	elif event is InputEventJoypadMotion:
@@ -480,7 +491,7 @@ func handle_campaign_point(point: Vector2) -> void:
 		request_reset()
 		return
 	if respec_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
-		respec_skill_tree()
+		open_gear_tree(0)
 		return
 	if campaign_copy_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
 		copy_campaign_result()
@@ -677,26 +688,24 @@ func handle_key(event: InputEventKey) -> void:
 			perform_charge()
 		KEY_A:
 			perform_charge()
+		KEY_G:
+			toggle_generation_mode()
+		KEY_T:
+			open_gear_tree(selected_gear_index)
 		KEY_L:
 			toggle_language()
 		KEY_R:
 			request_reset()
 		KEY_1, KEY_KP_1:
-			try_purchase(0)
+			open_gear_tree(0)
 		KEY_2, KEY_KP_2:
-			try_purchase(1)
+			open_gear_tree(1)
 		KEY_3, KEY_KP_3:
-			try_purchase(2)
+			open_gear_tree(2)
 		KEY_4, KEY_KP_4:
-			try_purchase(3)
+			open_gear_tree(3)
 		KEY_5, KEY_KP_5:
-			try_purchase(4)
-		KEY_6, KEY_KP_6:
-			try_purchase(5)
-		KEY_7, KEY_KP_7:
-			try_purchase(6)
-		KEY_8, KEY_KP_8:
-			try_purchase(7)
+			open_gear_tree(4)
 
 func handle_controller_button(event: InputEventJoypadButton) -> void:
 	if event.pressed and event.button_index in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_DOWN]:
@@ -721,9 +730,9 @@ func handle_controller_button(event: InputEventJoypadButton) -> void:
 	if event.button_index == controller_button("secondary"):
 		perform_charge()
 	elif event.button_index == controller_button("combat_action"):
-		perform_charge()
+		toggle_generation_mode()
 	elif event.button_index == controller_button("menu"):
-		try_purchase(controller_upgrade_selected)
+		open_gear_tree(selected_gear_index)
 	elif event.button_index == controller_button("language"):
 		toggle_language()
 	elif event.button_index == controller_button("back"):
@@ -736,12 +745,14 @@ func handle_point(point: Vector2) -> void:
 		toggle_language()
 	elif reset_rect.has_point(point):
 		request_reset()
+	elif mode_toggle_rect.has_point(point):
+		toggle_generation_mode()
 	elif enemy_click_rect.has_point(point):
 		perform_charge()
 	else:
-		var index := upgrade_at(point)
+		var index := gear_at(point)
 		if index >= 0:
-			try_purchase(index)
+			open_gear_tree(index)
 
 func handle_completion_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
@@ -886,22 +897,172 @@ func controller_button(action: String) -> int:
 	return int(controller_bindings.get(action, ControllerConfig.DEFAULTS.get(action, JOY_BUTTON_A)))
 
 func navigate_upgrade(direction: Vector2i) -> void:
-	var column := controller_upgrade_selected % 4
-	var row := controller_upgrade_selected / 4
-	column = wrapi(column + direction.x, 0, 4)
-	row = wrapi(row + direction.y, 0, 2)
-	controller_upgrade_selected = row * 4 + column
-	hover_upgrade = controller_upgrade_selected
-	var copy := upgrade_copy(controller_upgrade_selected)
-	show_message(loc("選択：", "SELECTED: ") + str(copy.title) + loc("　STARTで購入", "  ·  START TO BUY"), 1.4)
+	if gear_tree_open:
+		navigate_tree_node(direction)
+		return
+	if direction.x != 0 or direction.y != 0:
+		selected_gear_index = wrapi(selected_gear_index + (1 if direction.x > 0 or direction.y > 0 else -1), 0, GearCatalog.GEARS.size())
+		hover_upgrade = selected_gear_index
+		var gear: Dictionary = GearCatalog.GEARS[selected_gear_index]
+		show_message(loc("選択：", "SELECTED: ") + gear_name(gear) + loc("　STARTでツリー", "  ·  START FOR TREE"), 1.4)
 	synth.click()
 	queue_redraw()
+
+func open_gear_tree(index: int) -> void:
+	selected_gear_index = clampi(index, 0, GearCatalog.GEARS.size() - 1)
+	gear_tree_open = true
+	controller_upgrade_selected = 0
+	end_charge()
+	synth.play_tone(392.0, 0.08, -24.0, 2)
+	queue_redraw()
+
+func close_gear_tree() -> void:
+	gear_tree_open = false
+	synth.click()
+	queue_redraw()
+
+func selected_gear_id() -> String:
+	return str(GearCatalog.GEARS[selected_gear_index].id)
+
+func selected_tree_skills() -> Array[Dictionary]:
+	return GearCatalog.skills_for_gear(selected_gear_id())
+
+func selected_skill_definition() -> Dictionary:
+	var skills := selected_tree_skills()
+	if skills.is_empty():
+		return {}
+	controller_upgrade_selected = clampi(controller_upgrade_selected, 0, skills.size() - 1)
+	return skills[controller_upgrade_selected]
+
+func tree_node_rect(definition: Dictionary) -> Rect2:
+	return Rect2(66 + int(definition.col) * 246, 190 + int(definition.row) * 104, 216, 76)
+
+func tree_tab_at(point: Vector2) -> int:
+	for index in range(tree_tab_rects.size()):
+		if tree_tab_rects[index].has_point(point):
+			return index
+	return -1
+
+func tree_node_at(point: Vector2) -> int:
+	var skills := selected_tree_skills()
+	for index in range(skills.size()):
+		if tree_node_rect(skills[index]).has_point(point):
+			return index
+	return -1
+
+func navigate_tree_node(direction: Vector2i) -> void:
+	var skills := selected_tree_skills()
+	if skills.is_empty():
+		return
+	controller_upgrade_selected = clampi(controller_upgrade_selected, 0, skills.size() - 1)
+	var current := skills[controller_upgrade_selected]
+	var best_index := controller_upgrade_selected
+	var best_score := 99999.0
+	for index in range(skills.size()):
+		if index == controller_upgrade_selected:
+			continue
+		var candidate := skills[index]
+		var dx := int(candidate.col) - int(current.col)
+		var dy := int(candidate.row) - int(current.row)
+		if direction.x < 0 and dx >= 0 or direction.x > 0 and dx <= 0 or direction.y < 0 and dy >= 0 or direction.y > 0 and dy <= 0:
+			continue
+		var score := float(dx * dx + dy * dy * 2)
+		if score < best_score:
+			best_score = score
+			best_index = index
+	controller_upgrade_selected = best_index
+	synth.click()
+	queue_redraw()
+
+func handle_gear_tree_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		mouse_position = event.position
+		var hovered := tree_node_at(event.position)
+		if hovered >= 0:
+			controller_upgrade_selected = hovered
+		queue_redraw()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		handle_gear_tree_point(event.position)
+	elif event is InputEventScreenTouch and event.pressed:
+		handle_gear_tree_point(event.position)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_ESCAPE, KEY_T]:
+			close_gear_tree()
+		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
+			purchase_selected_tree_node()
+		elif event.keycode == KEY_G:
+			toggle_generation_mode()
+		elif event.keycode in [KEY_LEFT, KEY_A]:
+			navigate_tree_node(Vector2i.LEFT)
+		elif event.keycode in [KEY_RIGHT, KEY_D]:
+			navigate_tree_node(Vector2i.RIGHT)
+		elif event.keycode in [KEY_UP, KEY_W]:
+			navigate_tree_node(Vector2i.UP)
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			navigate_tree_node(Vector2i.DOWN)
+		elif event.keycode == KEY_Q:
+			open_gear_tree(wrapi(selected_gear_index - 1, 0, GearCatalog.GEARS.size()))
+		elif event.keycode == KEY_E:
+			open_gear_tree(wrapi(selected_gear_index + 1, 0, GearCatalog.GEARS.size()))
+		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
+			open_gear_tree(int(event.keycode - KEY_1))
+	elif event is InputEventJoypadButton and event.pressed:
+		match event.button_index:
+			JOY_BUTTON_DPAD_LEFT:
+				navigate_tree_node(Vector2i.LEFT)
+			JOY_BUTTON_DPAD_RIGHT:
+				navigate_tree_node(Vector2i.RIGHT)
+			JOY_BUTTON_DPAD_UP:
+				navigate_tree_node(Vector2i.UP)
+			JOY_BUTTON_DPAD_DOWN:
+				navigate_tree_node(Vector2i.DOWN)
+			JOY_BUTTON_LEFT_SHOULDER:
+				open_gear_tree(wrapi(selected_gear_index - 1, 0, GearCatalog.GEARS.size()))
+			JOY_BUTTON_RIGHT_SHOULDER:
+				open_gear_tree(wrapi(selected_gear_index + 1, 0, GearCatalog.GEARS.size()))
+			_:
+				if event.button_index == controller_button("primary"):
+					purchase_selected_tree_node()
+				elif event.button_index in [controller_button("back"), controller_button("menu")]:
+					close_gear_tree()
+				elif event.button_index == controller_button("combat_action"):
+					toggle_generation_mode()
+				elif event.button_index == controller_button("language"):
+					toggle_language()
+	elif event is InputEventJoypadMotion:
+		var direction := controller_motion_direction(event)
+		if direction != Vector2i.ZERO:
+			navigate_tree_node(direction)
+
+func handle_gear_tree_point(point: Vector2) -> void:
+	if tree_close_rect.has_point(point):
+		close_gear_tree()
+		return
+	if tree_purchase_rect.has_point(point):
+		purchase_selected_tree_node()
+		return
+	if tree_respec_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
+		respec_skill_tree()
+		return
+	var tab_index := tree_tab_at(point)
+	if tab_index >= 0:
+		open_gear_tree(tab_index)
+		return
+	var node_index := tree_node_at(point)
+	if node_index >= 0:
+		controller_upgrade_selected = node_index
+		purchase_selected_tree_node()
+
+func purchase_selected_tree_node() -> bool:
+	var definition := selected_skill_definition()
+	if definition.is_empty():
+		return false
+	return try_purchase_skill(str(definition.id), tree_node_rect(definition).get_center())
 
 func begin_charge() -> void:
 	if charge_held or run.stage_phase in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]:
 		return
 	charge_held = true
-	charge_repeat_timer = 0.16
 	perform_charge()
 
 func end_charge() -> void:
@@ -912,18 +1073,22 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 	if run.stage_phase in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]:
 		return {"valid": false, "critical": false, "damage": 0.0, "charge": 0, "boss_defeated": false}
 	var result: Dictionary = run.manual_attack(critical_mode)
+	var generating := bool(result.get("generating", false))
 	var attack_origin := charge_rect.get_center()
 	var target := Vector2(1038, 248)
-	var hit_color := Palette.AMBER if bool(result.critical) else Palette.CYAN
-	spawn_sparks(target, hit_color, 8 if bool(result.critical) else 4, 150.0)
-	particles.append({"pos": attack_origin, "velocity": (target - attack_origin) * 4.4, "life": 0.18, "max_life": 0.18, "color": hit_color, "size": 5.0})
-	add_floating(target + Vector2(0, -28), "-%s" % format_number(float(result.damage)), hit_color, 25 if bool(result.critical) else 18)
+	var hit_color := Palette.MINT if generating else Palette.AMBER if bool(result.critical) else Palette.CYAN
+	spawn_sparks(SHARD_SOCKET_CENTER if generating else target, hit_color, 8 if bool(result.critical) else 4, 150.0)
+	particles.append({"pos": attack_origin, "velocity": ((SHARD_SOCKET_CENTER if generating else target) - attack_origin) * 4.4, "life": 0.18, "max_life": 0.18, "color": hit_color, "size": 5.0})
+	if generating:
+		add_floating(target + Vector2(0, -28), loc("発電指令", "GENERATOR COMMAND"), Palette.MINT, 18)
+	else:
+		add_floating(target + Vector2(0, -28), "-%s" % format_number(float(result.damage)), hit_color, 25 if bool(result.critical) else 18)
 	if int(result.charge) > 0:
 		add_floating(SHARD_SOCKET_CENTER + Vector2(0, 32), "+%d CHARGE" % int(result.charge), Palette.AMBER, 14)
-		spawn_resource_flow(target, SHARD_SOCKET_CENTER, Palette.CYAN, 2)
+		spawn_resource_flow(attack_origin if generating else target, SHARD_SOCKET_CENTER, Palette.MINT if generating else Palette.CYAN, 3 if generating else 2)
 		shard_pulse = 0.55
 	if play_sound:
-		var pitch := 190.0 + float(mini(16, run.manual_streak)) * 12.0
+		var pitch := (420.0 if generating else 190.0) + float(mini(16, run.manual_streak)) * 12.0
 		synth.play_tone(pitch * (1.5 if bool(result.critical) else 1.0), 0.045, -23.0, 3)
 	if bool(result.critical):
 		add_floating(target + Vector2(0, -62), loc("クリティカル", "CRITICAL"), Palette.AMBER, 18)
@@ -934,6 +1099,12 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 			add_floating(target + Vector2(0, -88), loc("装甲破砕 ×4", "ARMOR BREAK ×4"), Palette.AMBER, 20)
 		"impact_shockwave":
 			add_floating(target + Vector2(0, -88), loc("衝撃波", "SHOCKWAVE"), Palette.AMBER, 20)
+		"armor_punch":
+			add_floating(target + Vector2(0, -88), loc("穿孔衝撃波", "PUNCH SHOCKWAVE"), Palette.AMBER, 20)
+		"harvest":
+			show_message(loc("動力刈取：追加CHARGE", "POWER HARVEST: BONUS CHARGE"), 1.2)
+		"twin_trigger":
+			show_message(loc("双発指令：AUTO即時追撃", "TWIN TRIGGER: INSTANT AUTO VOLLEY"), 1.2)
 		"siphon_break":
 			show_message(loc("吸収核を破砕！ 5倍打撃＋CHARGE獲得", "SIPHON SHATTERED! 5× HIT + CHARGE"), 2.0)
 			screen_flash = 0.8
@@ -944,6 +1115,8 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 			show_message(loc("特異点バースト！", "SINGULARITY BURST!"), 1.5)
 	if bool(result.boss_defeated):
 		handle_enemy_defeated()
+	elif generating:
+		show_message(loc("PURE CHARGE：ダメージ0 / CHARGE +%d / AUTO過給 ×%d" % [int(result.charge), run.auto_boost_stacks], "PURE CHARGE: 0 DAMAGE / +%d CHARGE / AUTO BOOST ×%d" % [int(result.charge), run.auto_boost_stacks]), 0.9)
 	else:
 		var multiplier_text := " ×%.2f" % run.last_damage_multiplier if absf(run.last_damage_multiplier - 1.0) > 0.05 else ""
 		show_message(loc("%sへ %sダメージ%s / CHARGE +%d" % [encounter_name(), format_number(float(result.damage)), multiplier_text, int(result.charge)], "%s DAMAGE TO %s%s / CHARGE +%d" % [format_number(float(result.damage)), encounter_name(), multiplier_text, int(result.charge)]), 0.8)
@@ -962,6 +1135,7 @@ func toggle_auto(play_sound: bool = true) -> bool:
 
 func handle_enemy_defeated() -> void:
 	end_charge()
+	gear_tree_open = false
 	if campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
 		show_message(encounter_name() + loc("撃破 — 機械核を回収", " DEFEATED — CORE RECOVERED"), 3.0)
 	else:
@@ -974,23 +1148,42 @@ func handle_enemy_defeated() -> void:
 func try_purchase(index: int, play_sound: bool = true) -> bool:
 	if index < 0 or index >= ChargeState.UPGRADE_DEFINITIONS.size():
 		return false
-	var id := str(ChargeState.UPGRADE_DEFINITIONS[index].id)
+	var definition: Dictionary = ChargeState.UPGRADE_DEFINITIONS[index]
+	return try_purchase_skill(str(definition.id), SHARD_SOCKET_CENTER, play_sound)
+
+func try_purchase_skill(id: String, effect_position: Vector2 = SHARD_SOCKET_CENTER, play_sound: bool = true) -> bool:
+	var definition: Dictionary = run.upgrade_definition(id)
+	if definition.is_empty():
+		return false
 	if not run.purchase_upgrade(id):
-		if run.upgrade_level(id) >= ChargeState.MAX_SKILL_RANK:
+		if run.upgrade_level(id) >= run.skill_max_rank(id):
 			show_message(loc("この能力は最大ランクです", "THIS SKILL IS MAXED"), 1.2)
+		elif not run.skill_unlocked(id):
+			show_message(skill_lock_text(id), 1.8)
 		else:
 			show_message(loc("CHARGEが足りません", "NOT ENOUGH CHARGE"), 1.1)
 		if play_sound:
 			synth.error()
 		return false
-	var copy := upgrade_copy(index)
+	var copy := skill_copy(definition)
 	show_message(loc("出力経路を強化：", "SYSTEM UPGRADED: ") + str(copy.title) + " LV.%d" % run.upgrade_level(id), 1.4)
-	spawn_sparks(upgrade_rects[index].get_center(), upgrade_color(index), 12, 125.0)
-	spawn_resource_flow(SHARD_SOCKET_CENTER, upgrade_rects[index].get_center(), upgrade_color(index), 5)
+	var color := gear_color(str(definition.gear))
+	spawn_sparks(effect_position, color, 12, 125.0)
+	spawn_resource_flow(SHARD_SOCKET_CENTER, effect_position, color, 5)
 	shard_pulse = 0.75
 	if play_sound:
 		synth.confirm()
 	save_progress()
+	return true
+
+func toggle_generation_mode() -> bool:
+	if not run.toggle_manual_mode():
+		show_message(loc("発電心臓の『零出力発電』でPURE CHARGEを解禁", "UNLOCK ZERO-OUTPUT DRIVE IN THE DYNAMO TREE"), 2.0)
+		synth.error()
+		return false
+	show_message(loc("手動モード：", "MANUAL MODE: ") + (loc("PURE CHARGE — ダメージ0 / 発電6倍", "PURE CHARGE — 0 DAMAGE / 6× GENERATION") if run.manual_mode == "generate" else loc("CHARGE ATTACK — 直接攻撃", "CHARGE ATTACK — DIRECT DAMAGE")), 2.0)
+	synth.play_chord([261.63, 392.0, 523.25], 0.18, -22.0)
+	queue_redraw()
 	return true
 
 func skill_title_for_id(id: String) -> String:
@@ -1112,27 +1305,47 @@ func current_rule_copy() -> String:
 		return loc("クリックで即攻撃し、得たCHARGEで武器を強化", "CLICK TO HIT; SPEND CHARGE TO UPGRADE YOUR ARSENAL")
 	return str(definition.get("objective_ja" if is_japanese else "objective_en", ""))
 
-func upgrade_at(point: Vector2) -> int:
-	for index in range(upgrade_rects.size()):
-		if upgrade_rects[index].has_point(point):
+func gear_at(point: Vector2) -> int:
+	for index in range(gear_rects.size()):
+		if gear_rects[index].has_point(point):
 			return index
 	return -1
 
 func upgrade_color(index: int) -> Color:
-	return [Palette.CYAN, Palette.BLUE, Palette.VIOLET, Palette.MINT, Palette.AMBER, Palette.MAGENTA, Palette.GREEN, Palette.CORAL][index]
+	if index < 0 or index >= ChargeState.UPGRADE_DEFINITIONS.size():
+		return Palette.CYAN
+	return gear_color(str(ChargeState.UPGRADE_DEFINITIONS[index].gear))
 
 func upgrade_copy(index: int) -> Dictionary:
-	var copies := [
-		{"title": loc("衝撃コイル", "IMPACT COIL"), "desc": loc("クリック威力 ×1.48\n5LV毎に出力跳躍", "CLICK DAMAGE ×1.48\nPOWER SPIKE / 5 LV")},
-		{"title": loc("連打ギア", "COMBO GEAR"), "desc": loc("連打倍率と上限を強化", "STRONGER, LONGER\nCLICK COMBOS")},
-		{"title": loc("臨界演算", "CRITICAL MATH"), "desc": loc("臨界率 +2.5%\n5LV毎に倍率上昇", "+2.5% CRIT\nCRIT POWER / 5 LV")},
-		{"title": loc("オートキャノン", "AUTO CANNON"), "desc": loc("常時AUTO威力 ×1.43", "ALWAYS-ON AUTO\nDAMAGE ×1.43")},
-		{"title": loc("高速リレー", "RAPID RELAY"), "desc": loc("AUTO射撃間隔を短縮", "SHORTER AUTO\nFIRE INTERVAL")},
-		{"title": loc("ドローンベイ", "DRONE BAY"), "desc": loc("AUTO強化・4LV毎に+1機", "AUTO BOOST\n+1 DRONE / 4 LV")},
-		{"title": loc("高効率発電機", "CHARGE GENERATOR"), "desc": loc("全攻撃のCHARGE獲得増加", "MORE CHARGE FROM\nEVERY ATTACK")},
-		{"title": loc("共鳴回路", "CORE RESONANCE"), "desc": loc("全機械核効果 +12%", "+12% POWER TO\nEVERY CORE")},
-	]
-	return copies[index]
+	if index < 0 or index >= ChargeState.UPGRADE_DEFINITIONS.size():
+		return {"title": "", "desc": ""}
+	return skill_copy(ChargeState.UPGRADE_DEFINITIONS[index])
+
+func skill_copy(definition: Dictionary) -> Dictionary:
+	return {
+		"title": str(definition.get("name_ja" if is_japanese else "name_en", definition.get("id", "SKILL"))),
+		"desc": str(definition.get("desc_ja" if is_japanese else "desc_en", "")),
+	}
+
+func gear_name(definition: Dictionary) -> String:
+	return str(definition.get("name_ja" if is_japanese else "name_en", definition.get("id", "GEAR")))
+
+func gear_color(gear_id: String) -> Color:
+	var definition := GearCatalog.gear(gear_id)
+	return Color(str(definition.get("accent", "4deeea")))
+
+func skill_lock_text(id: String) -> String:
+	var reason: String = run.skill_lock_reason(id)
+	if reason.begins_with("parent:"):
+		var parts: PackedStringArray = reason.split(":")
+		return loc("前提：%s をLV.%sへ", "REQUIRES %s LV.%s") % [skill_title_for_id(str(parts[1])), str(parts[2])]
+	if reason.begins_with("core:"):
+		return loc("未回収の機械核が必要：", "RECOVER REQUIRED CORE: ") + stage_circuit_label(reason.trim_prefix("core:"))
+	if reason.begins_with("exclusive:"):
+		return loc("別の変異を選択済み：", "OTHER MUTATION ALREADY CHOSEN: ") + skill_title_for_id(reason.trim_prefix("exclusive:"))
+	if reason == "boss_core":
+		return loc("通常ボスの機械核を回収すると解禁", "RECOVER A NORMAL BOSS CORE TO UNLOCK")
+	return loc("このノードはまだロックされています", "THIS NODE IS STILL LOCKED")
 
 func add_floating(position: Vector2, text: String, color: Color, size: int) -> void:
 	floating_texts.append({"pos": position, "text": text, "color": color, "size": size, "life": 1.25, "max_life": 1.25})
@@ -1185,6 +1398,15 @@ func format_number(value: float) -> String:
 		return "%.1fK" % (value / 1000.0)
 	return str(int(round(value)))
 
+func format_integer(value: float) -> String:
+	var digits := str(maxi(0, int(round(value))))
+	var formatted := ""
+	for index in range(digits.length()):
+		if index > 0 and (digits.length() - index) % 3 == 0:
+			formatted += ","
+		formatted += digits[index]
+	return formatted
+
 func format_time(seconds: float) -> String:
 	var total := int(seconds)
 	return "%02d:%02d" % [total / 60, total % 60]
@@ -1193,7 +1415,7 @@ func tutorial_hint() -> String:
 	if run.manual_inputs == 0:
 		return loc("CHARGE ATTACKを押すと即ダメージ＋CHARGE獲得", "PRESS CHARGE ATTACK FOR INSTANT DAMAGE + CHARGE")
 	if run.purchases == 0 and run.credits > 0:
-		return loc("獲得したCHARGEで下の8能力を強化", "SPEND CHARGE ON THE EIGHT UPGRADES BELOW")
+		return loc("獲得したCHARGEで下の5ギアを開き、ツリーを強化", "OPEN ONE OF FIVE GEARS AND SPEND CHARGE IN ITS TREE")
 	return current_rule_copy()
 
 func _draw() -> void:
@@ -1211,6 +1433,8 @@ func _draw() -> void:
 		draw_circuit_panel()
 	draw_particles_and_text()
 	draw_set_transform(Vector2.ZERO)
+	if gear_tree_open:
+		draw_gear_tree_overlay()
 	if not campaign_screen_visible() and run.stage_phase in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]:
 		draw_completion_overlay()
 	if screen_flash > 0.0:
@@ -1254,9 +1478,9 @@ func draw_campaign_map() -> void:
 	for index in range(StageCatalog.STAGES.size()):
 		draw_stage_map_card(index, StageCatalog.STAGES[index])
 	draw_string(Palette.UI_FONT, Vector2(0, 598), loc("クリック / 方向キーで魔獣を選択　決定で討伐開始", "SELECT A BEAST WITH CLICK OR DIRECTION · CONFIRM TO HUNT"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 13, Palette.MUTED)
-	var build_text := loc("統合コア %d/6　強化LV %d/200　CHARGE %s", "INTEGRATED CORES %d/6  ·  UPGRADE LV %d/200  ·  CHARGE %s") % [run.beast_cores.size(), run.skill_points_bought(), format_number(run.credits)]
+	var build_text := loc("統合コア %d/6　強化LV %d/%d　CHARGE %s", "INTEGRATED CORES %d/6  ·  UPGRADE LV %d/%d  ·  CHARGE %s") % [run.beast_cores.size(), run.skill_points_bought(), run.total_possible_ranks(), format_number(run.credits)]
 	draw_string(DisplayFont, Vector2(62, 632), build_text, HORIZONTAL_ALIGNMENT_LEFT, 780, 14, Palette.AMBER if not run.beast_cores.is_empty() else Palette.MUTED)
-	draw_campaign_button(respec_rect, loc("T  無料リスペック", "T  FREE RESPEC"), Palette.MINT, false)
+	draw_campaign_button(respec_rect, loc("T  スキルツリー", "T  SKILL TREES"), Palette.MINT, false)
 	draw_string(Palette.UI_FONT, Vector2(62, 660), loc("武器・CHARGE・コアは全ステージへ引き継がれ、自動保存される", "WEAPONS, CHARGE AND CORES PERSIST ACROSS EVERY HUNT AND AUTOSAVE"), HORIZONTAL_ALIGNMENT_LEFT, 850, 11, Palette.MUTED)
 
 func draw_campaign_progress(origin: Vector2, accent: Color) -> void:
@@ -1342,7 +1566,7 @@ func draw_campaign_ending(true_end: bool) -> void:
 		[loc("討伐魔獣", "BEASTS"), "%d / 6" % campaign_route.completed_stage_ids.size()],
 		[loc("撃破ボス", "BOSSES"), "%d / 2" % campaign_route.defeated_boss_ids.size()],
 		[loc("最大打撃", "PEAK HIT"), format_number(run.highest_output)],
-		[loc("強化LV", "UPGRADE LEVELS"), "%d / 200" % run.skill_points_bought()],
+		[loc("強化LV", "UPGRADE LEVELS"), "%d / %d" % [run.skill_points_bought(), run.total_possible_ranks()]],
 		[loc("累計CHARGE", "TOTAL CHARGE"), format_number(run.lifetime_charge)],
 	]
 	for index in range(stats.size()):
@@ -1467,22 +1691,26 @@ func draw_reactor_panel() -> void:
 	var charge_color := Palette.AMBER if charge_held else Palette.CYAN
 	var charge_fill := Palette.with_alpha(charge_color, 0.28 if charge_held else 0.19 if hovered else 0.065)
 	draw_machine_plate(charge_rect, charge_fill, Palette.with_alpha(charge_color, 1.0 if hovered else 0.68), 16.0, 3.0 if charge_held else 2.0)
-	var mechanism_rect := Rect2(charge_rect.position + Vector2(5, 7 + (5 if charge_held else 0)), Vector2(88, 94))
+	var mechanism_rect := Rect2(charge_rect.position + Vector2(7, 6 + (3 if charge_held else 0)), Vector2(72, 74))
 	draw_console_region(CONTROL_CHARGE_REGION, mechanism_rect, Color(1.0, 1.0, 1.0, 1.0))
-	draw_texture_rect(charge_control_texture, Rect2(charge_rect.position + Vector2(28, 28 + (4 if charge_held else 0)), Vector2(44, 44)), false, Color.WHITE)
+	draw_texture_rect(charge_control_texture, Rect2(charge_rect.position + Vector2(24, 22 + (3 if charge_held else 0)), Vector2(38, 38)), false, Color.WHITE)
 	for step in range(6):
 		var contact_color := charge_color if step < mini(6, run.manual_streak) else Palette.with_alpha(Palette.MUTED, 0.22)
 		draw_rect(Rect2(charge_rect.position + Vector2(107 + step * 25, 17), Vector2(17, 4)), contact_color)
-	draw_string(DisplayFont, charge_rect.position + Vector2(94, 50), loc("CHARGE攻撃", "CHARGE ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 24, Palette.PAPER)
-	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(94, 79), loc("即攻撃＋CHARGE獲得 / 長押し可", "INSTANT HIT + CHARGE / HOLD OK"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 104, 10, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(58, 650), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 13, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(58, 675), loc("クリック %d  AUTO命中 %d  臨界 %d", "CLICKS %d  AUTO HITS %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 310, 11, Palette.MUTED)
+	draw_string(DisplayFont, charge_rect.position + Vector2(82, 39), loc("PURE CHARGE", "PURE CHARGE") if run.manual_mode == "generate" else loc("CHARGE攻撃", "CHARGE ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 21, Palette.PAPER)
+	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(82, 66), loc("0ダメージ / 発電6倍 / AUTO過給", "0 DAMAGE / 6× GENERATION / AUTO BOOST") if run.manual_mode == "generate" else loc("1入力＝1打撃＋CHARGE", "ONE INPUT = ONE HIT + CHARGE"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 10, Palette.MUTED)
+	var mode_available: bool = run.generation_mode_unlocked()
+	var mode_color := Palette.MINT if mode_available else Palette.MUTED
+	draw_machine_plate(mode_toggle_rect, Palette.with_alpha(mode_color, 0.16 if mode_available else 0.035), Palette.with_alpha(mode_color, 0.78 if mode_available else 0.25), 9.0, 1.0)
+	draw_string(DisplayFont, mode_toggle_rect.position + Vector2(0, 27), loc("G  手動モード切替", "G  SWITCH MANUAL MODE") if mode_available else loc("発電ツリーでPURE CHARGE解禁", "UNLOCK PURE CHARGE IN DYNAMO TREE"), HORIZONTAL_ALIGNMENT_CENTER, mode_toggle_rect.size.x, 12, Palette.PAPER if mode_available else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(58, 664), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 12, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(58, 686), loc("クリック %d  AUTO %d  臨界 %d", "CLICKS %d  AUTO %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 310, 10, Palette.MUTED)
 
 func cheapest_upgrade_cost() -> int:
 	var cheapest := 2147483647
 	for definition in ChargeState.UPGRADE_DEFINITIONS:
 		var id := str(definition.id)
-		if run.upgrade_level(id) < ChargeState.MAX_SKILL_RANK:
+		if run.skill_unlocked(id) and run.upgrade_level(id) < run.skill_max_rank(id):
 			cheapest = mini(cheapest, run.upgrade_cost(id))
 	return 0 if cheapest == 2147483647 else cheapest
 
@@ -1590,7 +1818,7 @@ func draw_direct_attack_combat_panel() -> void:
 	draw_string(DisplayFont, manual_panel.position + Vector2(126, 58), format_number(run.manual_damage), HORIZONTAL_ALIGNMENT_LEFT, 95, 21, Palette.PAPER)
 	draw_string(Palette.UI_FONT, manual_panel.position + Vector2(222, 56), "COMBO", HORIZONTAL_ALIGNMENT_LEFT, 66, 11, Palette.MUTED)
 	draw_string(DisplayFont, manual_panel.position + Vector2(290, 58), "×%.2f" % (1.0 + float(maxi(0, run.manual_streak - 1)) * run.combo_bonus_per_stack), HORIZONTAL_ALIGNMENT_LEFT, 78, 18, Palette.AMBER)
-	draw_string(Palette.UI_FONT, manual_panel.position + Vector2(18, 87), loc("敵または左のCHARGE攻撃をクリック / SPACE・A", "CLICK THE ENEMY OR CHARGE ATTACK / SPACE · A"), HORIZONTAL_ALIGNMENT_LEFT, 344, 10, Palette.MUTED)
+	draw_string(Palette.UI_FONT, manual_panel.position + Vector2(18, 87), loc("クリック / SPACE・A　長押し自動連打なし", "CLICK / SPACE · A  ·  NO HOLD AUTO-CLICK"), HORIZONTAL_ALIGNMENT_LEFT, 344, 10, Palette.MUTED)
 
 	draw_string(DisplayFont, auto_panel.position + Vector2(18, 28), loc("AUTO // 常時稼働", "AUTO // ALWAYS ONLINE"), HORIZONTAL_ALIGNMENT_LEFT, 240, 14, Palette.VIOLET)
 	draw_string(Palette.UI_FONT, auto_panel.position + Vector2(18, 56), "DPS", HORIZONTAL_ALIGNMENT_LEFT, 46, 11, Palette.MUTED)
@@ -1619,14 +1847,12 @@ func draw_direct_attack_combat_panel() -> void:
 	draw_stage_rule_indicator()
 	var status := message if message_time > 0.0 else tutorial_hint()
 	draw_string(Palette.UI_FONT, Vector2(448, 455), status, HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.PAPER)
-	draw_string(DisplayFont, Vector2(438, 482), loc("8系統アップグレード — 全てLV.25・全ステージ引き継ぎ", "EIGHT UPGRADE LINES — LV.25 · PERSIST ACROSS EVERY HUNT"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
-	draw_string(DisplayFont, Vector2(1030, 482), "%d / 200" % run.skill_points_bought(), HORIZONTAL_ALIGNMENT_RIGHT, 184, 11, Palette.AMBER if run.skill_points_bought() > 0 else Palette.MUTED)
+	draw_string(DisplayFont, Vector2(438, 482), loc("5ギア・36ノード — ギアを選んで専用ツリーを開く", "FIVE GEARS · 36 NODES — OPEN A GEAR'S DEDICATED TREE"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(1030, 482), "%d / %d" % [run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_RIGHT, 184, 11, Palette.AMBER if run.skill_points_bought() > 0 else Palette.MUTED)
 	var rack_rect := Rect2(428, 488, 788, 178)
 	draw_machine_plate(rack_rect, Palette.with_alpha(Palette.INK, 0.68), Palette.with_alpha(Palette.CYAN, 0.24), 12.0, 1.0)
 	draw_texture_rect_region(UpgradeRackTexture, Rect2(430, 490, 784, 172), UPGRADE_RACK_CENTER_REGION, Color(0.78, 0.86, 0.95, 0.78))
-	for index in range(upgrade_rects.size()):
-		draw_upgrade(index)
-	draw_skill_tree_links()
+	draw_gear_rack()
 
 func draw_stage_rule_indicator() -> void:
 	var rect := Rect2(452, 424, 748, 20)
@@ -1703,6 +1929,143 @@ func draw_cell(index: int) -> void:
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 82), "%d%%" % int(ratio * 100.0), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 18, Palette.PAPER)
 	draw_string(Palette.UI_FONT, rect.position + Vector2(0, 119), loc("同期", "SYNC") if full else loc("充電", "CHARGE"), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 10, color)
 
+func draw_gear_rack() -> void:
+	for index in range(GearCatalog.GEARS.size()):
+		var gear: Dictionary = GearCatalog.GEARS[index]
+		var rect := gear_rects[index]
+		var color := Color(str(gear.accent))
+		var selected := selected_gear_index == index
+		var hovered := rect.has_point(mouse_position)
+		var level: int = run.gear_level(str(gear.id))
+		var maximum := GearCatalog.max_ranks_for_gear(str(gear.id))
+		draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.92 if selected else 0.78), Palette.with_alpha(color, 1.0 if selected or hovered else 0.40), 9.0, 2.0 if selected or hovered else 1.0)
+		draw_rect(Rect2(rect.position + Vector2(7, 7), Vector2(rect.size.x - 14, 4)), Palette.with_alpha(color, 0.75 if level > 0 else 0.25))
+		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 30), str(index + 1), HORIZONTAL_ALIGNMENT_LEFT, 20, 11, color)
+		draw_string(DisplayFont, rect.position + Vector2(30, 30), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 108, 12, Palette.PAPER)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 52), str(gear.get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 124, 9, Palette.MUTED)
+		var skills := GearCatalog.skills_for_gear(str(gear.id))
+		for node_index in range(skills.size()):
+			var skill: Dictionary = skills[node_index]
+			var node_pos := rect.position + Vector2(22 + int(skill.col) * 44, 72 + int(skill.row) * 15)
+			var node_level: int = run.upgrade_level(str(skill.id))
+			draw_circle(node_pos, 5.0, color if node_level > 0 else Palette.with_alpha(color, 0.23 if run.skill_unlocked(str(skill.id)) else 0.08))
+			if node_level > 0:
+				draw_arc(node_pos, 7.0, 0.0, TAU * float(node_level) / float(maxi(1, int(skill.max_rank))), 12, Palette.AMBER, 2.0)
+		draw_string(DisplayFont, rect.position + Vector2(12, 137), "LV %d / %d" % [level, maximum], HORIZONTAL_ALIGNMENT_LEFT, 124, 11, color if level > 0 else Palette.MUTED)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 154), loc("ツリーを開く", "OPEN TREE"), HORIZONTAL_ALIGNMENT_RIGHT, 124, 9, Palette.PAPER if hovered or selected else Palette.MUTED)
+
+func draw_gear_tree_overlay() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.008, 0.016, 0.038, 0.975))
+	draw_rect(Rect2(28, 92, 1224, 604), Palette.with_alpha(Palette.PANEL, 0.97))
+	for index in range(GearCatalog.GEARS.size()):
+		var gear: Dictionary = GearCatalog.GEARS[index]
+		var tab := tree_tab_rects[index]
+		var color := Color(str(gear.accent))
+		var selected := selected_gear_index == index
+		draw_machine_plate(tab, Palette.with_alpha(color, 0.26 if selected else 0.045), Palette.with_alpha(color, 1.0 if selected else 0.32), 9.0, 2.0 if selected else 1.0)
+		draw_string(Palette.UI_FONT, tab.position + Vector2(12, 21), "%d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, 20, 11, color)
+		draw_string(DisplayFont, tab.position + Vector2(34, 23), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 166, 13, Palette.PAPER if selected else Palette.MUTED)
+		draw_string(Palette.UI_FONT, tab.position + Vector2(34, 42), "LV %d / %d" % [run.gear_level(str(gear.id)), GearCatalog.max_ranks_for_gear(str(gear.id))], HORIZONTAL_ALIGNMENT_LEFT, 166, 9, color)
+	draw_small_button(tree_close_rect, loc("閉じる", "CLOSE"), Palette.CORAL)
+
+	var current_gear: Dictionary = GearCatalog.GEARS[selected_gear_index]
+	var accent := Color(str(current_gear.accent))
+	draw_string(DisplayFont, Vector2(66, 180), gear_name(current_gear), HORIZONTAL_ALIGNMENT_LEFT, 500, 18, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(250, 180), str(current_gear.get("desc_ja" if is_japanese else "desc_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 540, 11, Palette.MUTED)
+	var skills := selected_tree_skills()
+	for definition in skills:
+		var parent_id := str(definition.get("parent", ""))
+		if parent_id.is_empty():
+			continue
+		var parent: Dictionary = GearCatalog.skill(parent_id)
+		var from := tree_node_rect(parent).get_center()
+		var to := tree_node_rect(definition).get_center()
+		var active: bool = run.upgrade_level(parent_id) >= int(definition.get("parent_rank", 1))
+		var elbow := Vector2(from.x, (from.y + to.y) * 0.5)
+		draw_polyline(PackedVector2Array([from, elbow, Vector2(to.x, elbow.y), to]), Palette.with_alpha(Palette.AMBER if active else accent, 0.82 if active else 0.18), 3.0 if active else 1.0, true)
+	for index in range(skills.size()):
+		draw_tree_node(index, skills[index], accent)
+	draw_tree_detail_panel(accent)
+
+func draw_tree_node(index: int, definition: Dictionary, accent: Color) -> void:
+	var rect := tree_node_rect(definition)
+	var id := str(definition.id)
+	var level: int = run.upgrade_level(id)
+	var maximum: int = run.skill_max_rank(id)
+	var unlocked: bool = run.skill_unlocked(id)
+	var affordable: bool = run.can_purchase(id)
+	var selected := controller_upgrade_selected == index
+	var maxed := level >= maximum
+	var border := Palette.AMBER if level > 0 else accent if unlocked else Palette.MUTED
+	draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.96 if selected else 0.86), Palette.with_alpha(border, 1.0 if selected else 0.62 if level > 0 else 0.28), 10.0, 3.0 if selected else 1.0)
+	draw_rect(Rect2(rect.position + Vector2(7, 7), Vector2(5, rect.size.y - 14)), Palette.with_alpha(border, 0.9 if level > 0 or selected else 0.2))
+	var copy := skill_copy(definition)
+	draw_string(DisplayFont, rect.position + Vector2(20, 25), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 184, 12, Palette.PAPER if unlocked else Palette.MUTED)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(20, 47), "LV %d / %d" % [level, maximum], HORIZONTAL_ALIGNMENT_LEFT, 90, 10, border)
+	if maxed:
+		draw_string(DisplayFont, rect.position + Vector2(108, 48), "MAX", HORIZONTAL_ALIGNMENT_RIGHT, 88, 11, Palette.MINT)
+	elif not unlocked:
+		draw_string(DisplayFont, rect.position + Vector2(108, 48), "LOCK", HORIZONTAL_ALIGNMENT_RIGHT, 88, 10, Palette.CORAL)
+	else:
+		draw_string(Palette.UI_FONT, rect.position + Vector2(108, 48), "%d CHARGE" % run.upgrade_cost(id), HORIZONTAL_ALIGNMENT_RIGHT, 88, 10, Palette.AMBER if affordable else Palette.MUTED)
+	var progress := float(level) / float(maxi(1, maximum))
+	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176, 5)), Palette.with_alpha(border, 0.10))
+	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176 * progress, 5)), border)
+
+func draw_tree_detail_panel(accent: Color) -> void:
+	var panel := Rect2(816, 180, 408, 496)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL_2, 0.96), Palette.with_alpha(accent, 0.42), 14.0, 2.0)
+	var definition := selected_skill_definition()
+	if definition.is_empty():
+		return
+	var id := str(definition.id)
+	var copy := skill_copy(definition)
+	draw_string(Palette.UI_FONT, Vector2(842, 214), str(GearCatalog.gear(str(definition.gear)).get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 340, 11, accent)
+	draw_string(DisplayFont, Vector2(842, 248), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 340, 22, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(842, 280), str(copy.desc), HORIZONTAL_ALIGNMENT_LEFT, 340, 13, Palette.MUTED)
+	draw_line(Vector2(842, 300), Vector2(1192, 300), Palette.with_alpha(accent, 0.22), 1.0)
+	draw_string(Palette.UI_FONT, Vector2(842, 328), loc("現在ランク", "CURRENT RANK"), HORIZONTAL_ALIGNMENT_LEFT, 160, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(1010, 330), "%d / %d" % [run.upgrade_level(id), run.skill_max_rank(id)], HORIZONTAL_ALIGNMENT_RIGHT, 182, 18, accent)
+	draw_tree_gear_stats(str(definition.gear), Vector2(842, 354), accent)
+	var lock_reason: String = run.skill_lock_reason(id)
+	if not lock_reason.is_empty():
+		draw_string(Palette.UI_FONT, Vector2(842, 510), skill_lock_text(id), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.CORAL)
+	elif run.upgrade_level(id) >= run.skill_max_rank(id):
+		draw_string(Palette.UI_FONT, Vector2(842, 510), loc("このノードは最大強化済み", "THIS NODE IS FULLY UPGRADED"), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.MINT)
+	else:
+		draw_string(Palette.UI_FONT, Vector2(842, 510), loc("次ランク費用：%d CHARGE" % run.upgrade_cost(id), "NEXT RANK: %d CHARGE" % run.upgrade_cost(id)), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.AMBER if run.can_purchase(id) else Palette.MUTED)
+	var purchasable: bool = run.can_purchase(id)
+	draw_campaign_button(tree_purchase_rect, loc("購入 / 強化", "PURCHASE / UPGRADE") if run.upgrade_level(id) < run.skill_max_rank(id) else "MAX", accent if purchasable else Palette.MUTED, purchasable)
+	if campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
+		draw_campaign_button(tree_respec_rect, loc("無料リスペック", "FREE RESPEC"), Palette.MINT, false)
+	else:
+		draw_string(Palette.UI_FONT, Vector2(918, 648), loc("AUTO砲はツリー表示中も戦闘を継続", "AUTO FIRE CONTINUES WHILE THIS TREE IS OPEN"), HORIZONTAL_ALIGNMENT_CENTER, 286, 10, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, Vector2(816, 690), loc("方向キー：選択　ENTER/A：購入　Q/E：ギア切替　T/ESC：閉じる", "D-PAD: SELECT · ENTER/A: BUY · Q/E: GEAR · T/ESC: CLOSE"), HORIZONTAL_ALIGNMENT_CENTER, 408, 9, Palette.MUTED)
+
+func draw_tree_gear_stats(gear_id: String, origin: Vector2, accent: Color) -> void:
+	var lines: Array[String] = []
+	match gear_id:
+		"striker":
+			lines = [loc("クリック威力  %s" % format_number(run.manual_damage), "CLICK POWER  %s" % format_number(run.manual_damage)), loc("臨界率  %.0f%%" % (run.critical_chance * 100.0), "CRIT CHANCE  %.0f%%" % (run.critical_chance * 100.0)), loc("連打上限  %d" % run.combo_cap, "COMBO CAP  %d" % run.combo_cap)]
+		"dynamo":
+			lines = [loc("手動発電  %.2f" % run.charge_per_click, "MANUAL GEN  %.2f" % run.charge_per_click), loc("AUTO発電  %.2f/弾" % run.auto_charge_per_shot, "AUTO GEN  %.2f/SHOT" % run.auto_charge_per_shot), loc("手動モード  %s" % run.manual_mode.to_upper(), "MANUAL MODE  %s" % run.manual_mode.to_upper())]
+		"autogun":
+			lines = ["AUTO DPS  %s" % format_number(run.estimated_auto_dps()), loc("射撃間隔  %.2f秒" % run.auto_interval, "INTERVAL  %.2fs" % run.auto_interval), loc("砲身変異  %s" % auto_mutation_label(), "WEAPON FORM  %s" % auto_mutation_label())]
+		"drone":
+			lines = [loc("稼働機数  %d" % run.drone_count, "ACTIVE DRONES  %d" % run.drone_count), loc("蓄積標識  %d" % run.target_marks, "TARGET MARKS  %d" % run.target_marks), loc("AUTO過給  +%d%%" % (run.auto_boost_stacks * 10), "AUTO BOOST  +%d%%" % (run.auto_boost_stacks * 10))]
+		"core":
+			lines = [loc("六獣コア  %d/6" % run.beast_cores.size(), "BEAST CORES  %d/6" % run.beast_cores.size()), loc("主獣コア  %d/2" % run.boss_cores.size(), "BOSS CORES  %d/2" % run.boss_cores.size()), loc("共鳴倍率  ×%.2f" % run.core_power, "RESONANCE  ×%.2f" % run.core_power)]
+	for index in range(lines.size()):
+		draw_machine_plate(Rect2(origin + Vector2(0, index * 43), Vector2(350, 34)), Palette.with_alpha(Palette.INK, 0.62), Palette.with_alpha(accent, 0.18), 5.0, 1.0)
+		draw_string(Palette.UI_FONT, origin + Vector2(12, 23 + index * 43), lines[index], HORIZONTAL_ALIGNMENT_LEFT, 326, 11, Palette.PAPER)
+
+func auto_mutation_label() -> String:
+	if run.upgrade_level("gatling_protocol") > 0:
+		return loc("ガトリング", "GATLING")
+	if run.upgrade_level("rail_protocol") > 0:
+		return loc("レール砲", "RAIL")
+	return loc("標準砲", "STANDARD")
+
 func draw_upgrade(index: int) -> void:
 	var rect := upgrade_rects[index]
 	var definition: Dictionary = ChargeState.UPGRADE_DEFINITIONS[index]
@@ -1778,9 +2141,9 @@ func draw_objective_header() -> void:
 			var seal_rect := Rect2(seal_positions[index], 128, 31, 13)
 			var intact := index < remaining_seals
 			draw_machine_plate(seal_rect, Palette.with_alpha(Palette.CORAL if intact else Palette.CYAN, 0.8 if intact else 0.12), Palette.CORAL if intact else Palette.with_alpha(Palette.CYAN, 0.38), 3.0, 1.0)
-		var value_text := "%d%%" % int(round(remaining_ratio * 100.0))
+		var value_text := "%.1f%%" % (remaining_ratio * 100.0)
 		draw_string(Palette.UI_FONT, Vector2(980, 143), value_text, HORIZONTAL_ALIGNMENT_CENTER, 92, 15, Palette.PAPER)
-		draw_string(Palette.UI_FONT, Vector2(980, 157), boss_integrity_label(), HORIZONTAL_ALIGNMENT_CENTER, 92, 7, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(824, 158), "%s / %s HP" % [format_integer(run.boss_hp), format_integer(run.boss_max_hp)], HORIZONTAL_ALIGNMENT_CENTER, 390, 9, Palette.PAPER)
 	else:
 		var ratio: float = clampf(current / maxf(1.0, target), 0.0, 1.0)
 		var bar := Rect2(820, 120, 378, 26)

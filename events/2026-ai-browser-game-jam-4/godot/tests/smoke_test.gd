@@ -8,6 +8,7 @@ const ChargeClickerState = preload("res://games/charge_clicker/charge_state.gd")
 const ChargeClickerSave = preload("res://games/charge_clicker/charge_save.gd")
 const ChargeStageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const ChargeCampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
+const ChargeGearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const Launcher = preload("res://main.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 
@@ -30,7 +31,7 @@ func run_tests() -> void:
 	test_zero_percent_city()
 	test_chargeback()
 	test_capacitor_defense()
-	test_charge_clicker_v4()
+	test_charge_clicker_v5()
 	await process_frame
 	await process_frame
 	if failures.is_empty():
@@ -344,11 +345,13 @@ func improve_test_grid(game: Node) -> void:
 		game.build_mode = game.BuildMode.ARC
 		game.handle_node(4)
 
-func test_charge_clicker_v4() -> void:
-	print("\nPROJECT CHARGE V4 — DIRECT CHARGE CLICKER")
+func test_charge_clicker_v5() -> void:
+	print("\nPROJECT CHARGE V5 — FIVE-GEAR AUTO ENGINE")
 	var state := ChargeClickerState.new()
 	state.rng.seed = 404
-	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v4 starts with AUTO fire online and direct enemy combat")
+	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v5 starts with AUTO fire online and direct enemy combat")
+	check(ChargeGearCatalog.GEARS.size() == 5 and ChargeGearCatalog.SKILLS.size() == 36, "five visible gear trees contain thirty-six distinct nodes")
+	check(state.skill_unlocked("impact_coil") and not state.skill_unlocked("combo_gear"), "tree roots begin available while branch nodes enforce visible prerequisites")
 	var hp_before := state.boss_hp
 	var first_hit := state.manual_attack(0)
 	check(float(first_hit.damage) >= 1.0 and state.boss_hp < hp_before, "every click deals damage immediately")
@@ -370,11 +373,25 @@ func test_charge_clicker_v4() -> void:
 	check(state.purchase_upgrade("impact_coil") and state.manual_damage > old_manual, "IMPACT COIL raises direct click damage")
 	check(state.upgrade_cost("impact_coil") > first_cost, "repeatable upgrade costs scale with each rank")
 	var old_auto := state.estimated_auto_dps()
-	check(state.purchase_upgrade("auto_cannon") and state.purchase_upgrade("rapid_relay") and state.estimated_auto_dps() > old_auto, "AUTO damage and fire rate can both be upgraded")
-	check(state.skill_unlocked("core_resonance"), "all eight upgrade lines are available without punitive prerequisites")
+	check(state.purchase_upgrade("auto_cannon") and state.purchase_upgrade("auto_cannon") and state.purchase_upgrade("rapid_relay") and state.estimated_auto_dps() > old_auto, "AUTO damage and fire rate grow through their own prerequisite tree")
+	check(state.skill_unlocked("core_resonance") and not state.skill_unlocked("impact_memory"), "core-frame root is available while stolen-core branches wait for their matching beast")
 	var credits_before_respec := state.credits
 	var refunded := state.respec_skills()
-	check(refunded > 0 and state.skill_points_bought() == 0 and state.credits > credits_before_respec, "map respec refunds every repeatable upgrade rank")
+	check(refunded > 0 and state.skill_points_bought() == 0 and state.credits > credits_before_respec, "map respec refunds the full invested CHARGE across all five trees")
+
+	state.credits = 1000000
+	for rank in range(2):
+		state.purchase_upgrade("charge_generator")
+	for rank in range(2):
+		state.purchase_upgrade("auto_induction")
+	for rank in range(3):
+		state.purchase_upgrade("compound_interest")
+	check(state.purchase_upgrade("zero_output_generator") and state.toggle_manual_mode(), "DYNAMO capstone unlocks the selectable PURE CHARGE command")
+	var generator_hp := state.boss_hp
+	var generator_hit := state.manual_attack(0)
+	check(float(generator_hit.damage) == 0.0 and state.boss_hp == generator_hp and int(generator_hit.charge) >= 6, "PURE CHARGE deals zero damage while generating substantially more points")
+	check(state.auto_boost_stacks == 1 and state.estimated_auto_dps() > old_auto, "PURE CHARGE clicks overclock the automatic arsenal instead of replacing it")
+	state.toggle_manual_mode()
 
 	state.begin_stage("vaultback", "charge", 1.0, 10000.0, 1)
 	state.grant_charge(50.0)
@@ -387,10 +404,12 @@ func test_charge_clicker_v4() -> void:
 	state.grant_beast_core("impact_guidance")
 	state.grant_beast_core("cascade_relay")
 	state.grant_beast_core("phase_computation")
+	state.purchase_upgrade("core_resonance")
+	state.purchase_upgrade("core_resonance")
 	state.analysis = 100.0
 	var guaranteed := state.manual_attack(-1)
 	check(bool(guaranteed.critical) and state.analysis == 0.0, "PHASE MANTIS core converts analysis into a guaranteed critical hit")
-	check(state.beast_cores.size() == 3 and state.core_power >= 1.0, "defeated beast cores coexist as permanent cross-stage synergies")
+	check(state.beast_cores.size() == 3 and state.skill_unlocked("impact_memory") and state.core_power >= 1.0, "defeated beast cores coexist and unlock their own CORE FRAME branches")
 	state.grant_boss_core("predation_reversal")
 	var feedback_before := state.credits
 	state.manual_attack(1)
@@ -400,7 +419,17 @@ func test_charge_clicker_v4() -> void:
 	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
+	game.open_gear_tree(2)
+	check(game.gear_tree_open and game.selected_tree_skills().size() == 7, "combat UI opens a dedicated, navigable skill tree for the selected gear")
+	check(game.tree_node_rect(game.selected_tree_skills()[0]).size.x >= 44.0 and game.tree_node_rect(game.selected_tree_skills()[0]).size.y >= 44.0, "skill-tree nodes remain touch-sized")
+	game.close_gear_tree()
+	check(game.format_integer(12000000.0) == "12,000,000", "enemy HP formatter exposes exact readable totals")
 	check(game.start_stage_by_index(0) and game.run.current_stage_id == "gearmaw", "hunt-map selection launches the chosen mechanical beast")
+	var manual_before_hold: int = game.run.manual_inputs
+	game.begin_charge()
+	game._process(1.0)
+	game.end_charge()
+	check(game.run.manual_inputs == manual_before_hold + 1, "holding the attack input no longer generates repeated manual clicks")
 	game.run.boss_hp = 1.0
 	game.perform_charge(false, 1)
 	check(game.run.stage_phase == game.ChargeState.StagePhase.CLEAR, "one direct click can finish a weakened beast without a discharge step")
@@ -422,22 +451,22 @@ func test_charge_clicker_v4() -> void:
 	check(route.defeat_current_boss() and route.phase == route.RoutePhase.SINGULARITY, "six beast cores and two boss victories unlock ARCH SINGULARITY")
 	check(route.current_boss_id == "arch_singularity", "true boss uses the finalized ARCH SINGULARITY identity")
 
-	var save_path := "/tmp/project_charge_v4_smoke_test.cfg"
+	var save_path := "/tmp/project_charge_v5_smoke_test.cfg"
 	var save := ChargeClickerSave.new(save_path)
-	check(save.save_bundle(state, route) == OK, "v4 run and hunt route serialize atomically")
+	check(save.save_bundle(state, route) == OK, "v5 five-gear run and hunt route serialize atomically")
 	var restored_state := ChargeClickerState.new()
 	var restored_route := ChargeCampaignRoute.new()
-	check(save.load_bundle_into(restored_state, restored_route), "v4 campaign save restores successfully")
+	check(save.load_bundle_into(restored_state, restored_route), "v5 campaign save restores successfully")
 	check("impact_guidance" in restored_state.beast_cores and restored_state.lifetime_charge == state.lifetime_charge and restored_route.phase == restored_route.RoutePhase.SINGULARITY, "save preserves CHARGE, repeatable upgrades, cores and route position")
 	save.clear()
 
-	var normal_seconds := simulate_project_charge_v4(false)
-	var true_seconds := simulate_project_charge_v4(true)
-	print("PROJECT CHARGE v4 efficient normal route: %.1f seconds" % normal_seconds)
-	print("PROJECT CHARGE v4 efficient true route: %.1f seconds" % true_seconds)
+	var normal_seconds := simulate_project_charge_v5(false)
+	var true_seconds := simulate_project_charge_v5(true)
+	print("PROJECT CHARGE v5 efficient normal route: %.1f seconds" % normal_seconds)
+	print("PROJECT CHARGE v5 efficient true route: %.1f seconds" % true_seconds)
 	check(normal_seconds > 0.0 and normal_seconds < true_seconds, "true route is materially longer than the normal judging route")
 
-func simulate_project_charge_v4(include_true_route: bool) -> float:
+func simulate_project_charge_v5(include_true_route: bool) -> float:
 	var simulated := ChargeClickerState.new()
 	simulated.rng.seed = 144
 	var stages: Array[String] = []
@@ -450,15 +479,15 @@ func simulate_project_charge_v4(include_true_route: bool) -> float:
 		var definition := ChargeStageCatalog.stage(id)
 		simulated.begin_stage(id, str(definition.build_tag), 1.0, ChargeStageCatalog.stage_hp(id, stage_index), stage_index)
 		var encounter_started := simulated.elapsed
-		drive_project_charge_v4(simulated, 24000)
-		print("  v4 sim %s: %.1fs, hp %.0f, upgrades %d, charge %d" % [id, simulated.elapsed - encounter_started, simulated.boss_hp, simulated.skill_points_bought(), simulated.credits])
+		drive_project_charge_v5(simulated, 24000)
+		print("  v5 sim %s: %.1fs, hp %.0f, upgrades %d, charge %d" % [id, simulated.elapsed - encounter_started, simulated.boss_hp, simulated.skill_points_bought(), simulated.credits])
 		simulated.grant_beast_core(str(definition.core_id))
 		if stage_index == 2:
 			var boss := ChargeStageCatalog.boss("grid_leech")
 			simulated.begin_campaign_boss("grid_leech", float(boss.hp), false, false)
 			var boss_started := simulated.elapsed
-			drive_project_charge_v4(simulated, 36000)
-			print("  v4 sim grid_leech: %.1fs, hp %.0f" % [simulated.elapsed - boss_started, simulated.boss_hp])
+			drive_project_charge_v5(simulated, 36000)
+			print("  v5 sim grid_leech: %.1fs, hp %.0f" % [simulated.elapsed - boss_started, simulated.boss_hp])
 			simulated.grant_boss_core(str(boss.core_id))
 			if not include_true_route:
 				return simulated.elapsed
@@ -466,18 +495,20 @@ func simulate_project_charge_v4(include_true_route: bool) -> float:
 		var enhanced := ChargeStageCatalog.boss("thermal_titan")
 		simulated.begin_campaign_boss("thermal_titan", float(enhanced.enhanced_hp), true, false)
 		var enhanced_started := simulated.elapsed
-		drive_project_charge_v4(simulated, 60000)
-		print("  v4 sim thermal_titan+: %.1fs, hp %.0f" % [simulated.elapsed - enhanced_started, simulated.boss_hp])
+		drive_project_charge_v5(simulated, 60000)
+		print("  v5 sim thermal_titan+: %.1fs, hp %.0f" % [simulated.elapsed - enhanced_started, simulated.boss_hp])
 		simulated.grant_boss_core(str(enhanced.core_id))
 		var singularity := ChargeStageCatalog.boss("arch_singularity")
 		simulated.begin_campaign_boss("arch_singularity", float(singularity.hp), false, true)
 		var singularity_started := simulated.elapsed
-		drive_project_charge_v4(simulated, 90000)
-		print("  v4 sim arch_singularity: %.1fs, hp %.0f, phase %d, upgrades %d" % [simulated.elapsed - singularity_started, simulated.boss_hp, simulated.singularity_phase, simulated.skill_points_bought()])
+		drive_project_charge_v5(simulated, 90000)
+		print("  v5 sim arch_singularity: %.1fs, hp %.0f, phase %d, upgrades %d" % [simulated.elapsed - singularity_started, simulated.boss_hp, simulated.singularity_phase, simulated.skill_points_bought()])
 	return simulated.elapsed
 
-func drive_project_charge_v4(simulated, max_steps: int) -> void:
+func drive_project_charge_v5(simulated, max_steps: int) -> void:
 	for step in range(max_steps):
+		if simulated.generation_mode_unlocked():
+			simulated.manual_mode = "attack" if step % 4 == 0 else "generate"
 		simulated.manual_attack(-1)
 		simulated.tick(0.2, false)
 		purchase_affordable_skills(simulated)

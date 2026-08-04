@@ -1,27 +1,20 @@
 class_name ChargePrototypeState
 extends RefCounted
 
-# PROJECT CHARGE v4
-# Every manual input deals damage immediately and produces spendable CHARGE.
-# AUTO fire is online from the first second. Enemy rules only create bonus
-# windows; they never erase progress, drain resources, or stop base damage.
+# PROJECT CHARGE v5 — five-gear build engine.
+# Manual commands generate resources, marks and firing orders while the AUTO
+# arsenal grows into the late-game damage engine. Every node belongs to one
+# visible, navigable gear tree.
+
+const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 
 const BOSS_MAX_HP := 6200.0
-const MAX_SKILL_RANK := 25
+const MAX_SKILL_RANK := 10
 const RESTORE_GOAL := 1.0
 
 enum StagePhase { RESTORE, BOSS, REWARD, CLEAR }
 
-const UPGRADE_DEFINITIONS := [
-	{"id": "impact_coil", "base_cost": 10.0, "growth": 1.54},
-	{"id": "combo_gear", "base_cost": 22.0, "growth": 1.57},
-	{"id": "critical_math", "base_cost": 38.0, "growth": 1.60},
-	{"id": "auto_cannon", "base_cost": 14.0, "growth": 1.54},
-	{"id": "rapid_relay", "base_cost": 28.0, "growth": 1.57},
-	{"id": "drone_bay", "base_cost": 58.0, "growth": 1.61},
-	{"id": "charge_generator", "base_cost": 20.0, "growth": 1.56},
-	{"id": "core_resonance", "base_cost": 52.0, "growth": 1.61},
-]
+const UPGRADE_DEFINITIONS := GearCatalog.SKILLS
 
 var credits := 0
 var lifetime_charge := 0
@@ -40,11 +33,19 @@ var critical_multiplier := 2.0
 var combo_bonus_per_stack := 0.025
 var combo_cap := 10
 var core_power := 1.0
+var manual_mode := "attack"
+var generator_multiplier := 6.0
+var auto_boost_stacks := 0
+var auto_boost_timer := 0.0
+var target_marks := 0
+var auto_burst_counter := 0
+var support_counter := 0
 
 var manual_inputs := 0
 var auto_hits := 0
 var critical_hits := 0
 var purchases := 0
+var invested_charge := 0
 var lifetime_output := 0.0
 var highest_output := 0.0
 var first_purchase_time := -1.0
@@ -126,9 +127,16 @@ func reset() -> void:
 	auto_hits = 0
 	critical_hits = 0
 	purchases = 0
+	invested_charge = 0
 	lifetime_output = 0.0
 	highest_output = 0.0
 	first_purchase_time = -1.0
+	manual_mode = "attack"
+	auto_boost_stacks = 0
+	auto_boost_timer = 0.0
+	target_marks = 0
+	auto_burst_counter = 0
+	support_counter = 0
 	upgrade_levels.clear()
 	for definition in UPGRADE_DEFINITIONS:
 		upgrade_levels[str(definition.id)] = 0
@@ -195,6 +203,11 @@ func reset_encounter() -> void:
 	boss_drains = 0
 	last_damage_multiplier = 1.0
 	last_mechanic_event = ""
+	auto_boost_stacks = 0
+	auto_boost_timer = 0.0
+	target_marks = 0
+	auto_burst_counter = 0
+	support_counter = 0
 
 func refresh_stats() -> void:
 	var impact_level := upgrade_level("impact_coil")
@@ -203,19 +216,25 @@ func refresh_stats() -> void:
 	var drone_level := upgrade_level("drone_bay")
 	var charge_level := upgrade_level("charge_generator")
 	var resonance_level := upgrade_level("core_resonance")
-	manual_damage = pow(1.48, impact_level) * (1.0 + floorf(float(impact_level) / 5.0) * 0.35)
-	auto_damage = 0.75 * pow(1.43, auto_level) * (1.0 + float(drone_level) * 0.08)
-	auto_interval = maxf(0.09, 1.0 / (1.0 + float(rapid_level) * 0.14))
-	drone_count = 1 + int(drone_level / 4)
+	manual_damage = pow(1.36, impact_level) * (1.0 + float(upgrade_level("armor_punch")) * 0.16)
+	auto_damage = 0.9 * pow(1.42, auto_level) * pow(1.18, upgrade_level("heavy_ordnance")) * (1.0 + float(drone_level) * 0.10)
+	auto_interval = maxf(0.10, 0.95 / (1.0 + float(rapid_level) * 0.18))
+	if upgrade_level("gatling_protocol") > 0:
+		auto_interval *= 0.45
+		auto_damage *= 0.72
+	elif upgrade_level("rail_protocol") > 0:
+		auto_interval *= 1.65
+		auto_damage *= 3.2
+	drone_count = 1 + int(upgrade_level("swarm_clockwork") / 2)
 	if "swarm_clock" in beast_cores:
-		drone_count += 1
-	charge_per_click = pow(1.18, charge_level)
-	auto_charge_per_shot = 0.22 * pow(1.12, charge_level)
-	critical_chance = minf(0.58, 0.04 + float(upgrade_level("critical_math")) * 0.025)
-	critical_multiplier = 2.0 + floorf(float(upgrade_level("critical_math")) / 5.0) * 0.25
-	combo_bonus_per_stack = 0.025 + float(upgrade_level("combo_gear")) * 0.006
-	combo_cap = 10 + upgrade_level("combo_gear") * 2
-	core_power = 1.0 + float(resonance_level) * 0.12
+		drone_count += 1 + int(upgrade_level("swarm_memory") / 3)
+	charge_per_click = pow(1.22, charge_level)
+	auto_charge_per_shot = 0.16 * (1.0 + float(upgrade_level("auto_induction")) * 0.25) * (1.0 + float(upgrade_level("charge_drone")) * 0.30)
+	critical_chance = minf(0.62, 0.04 + float(upgrade_level("critical_math")) * 0.04)
+	critical_multiplier = 2.0 + float(upgrade_level("critical_math")) * 0.12
+	combo_bonus_per_stack = 0.025 + float(upgrade_level("combo_gear")) * 0.012
+	combo_cap = 8 + upgrade_level("combo_gear") * 3
+	core_power = 1.0 + float(resonance_level) * 0.10
 
 func upgrade_definition(id: String) -> Dictionary:
 	for definition in UPGRADE_DEFINITIONS:
@@ -229,31 +248,73 @@ func upgrade_level(id: String) -> int:
 func upgrade_cost(id: String) -> int:
 	var definition := upgrade_definition(id)
 	var level := upgrade_level(id)
-	if definition.is_empty() or level >= MAX_SKILL_RANK:
+	if definition.is_empty() or level >= int(definition.get("max_rank", MAX_SKILL_RANK)):
 		return 0
-	return maxi(1, int(round(float(definition.base_cost) * pow(float(definition.growth), level))))
+	var raw_cost := float(definition.base_cost) * pow(float(definition.growth), level)
+	var discount := minf(0.18, float(upgrade_level("purchase_optimizer")) * 0.06)
+	return maxi(1, int(round(raw_cost * (1.0 - discount))))
+
+func skill_max_rank(id: String) -> int:
+	var definition := upgrade_definition(id)
+	return int(definition.get("max_rank", MAX_SKILL_RANK)) if not definition.is_empty() else 0
 
 func skill_unlocked(id: String) -> bool:
-	return not upgrade_definition(id).is_empty()
+	var definition := upgrade_definition(id)
+	if definition.is_empty():
+		return false
+	var parent := str(definition.get("parent", ""))
+	if not parent.is_empty() and upgrade_level(parent) < int(definition.get("parent_rank", 1)):
+		return false
+	var required_core := str(definition.get("requires_core", ""))
+	if not required_core.is_empty() and required_core not in beast_cores:
+		return false
+	if bool(definition.get("requires_boss_core", false)) and boss_cores.is_empty():
+		return false
+	var exclusive := str(definition.get("exclusive", ""))
+	if not exclusive.is_empty() and upgrade_level(exclusive) > 0:
+		return false
+	return true
+
+func skill_lock_reason(id: String) -> String:
+	var definition := upgrade_definition(id)
+	if definition.is_empty():
+		return "missing"
+	var exclusive := str(definition.get("exclusive", ""))
+	if not exclusive.is_empty() and upgrade_level(exclusive) > 0:
+		return "exclusive:%s" % exclusive
+	var required_core := str(definition.get("requires_core", ""))
+	if not required_core.is_empty() and required_core not in beast_cores:
+		return "core:%s" % required_core
+	if bool(definition.get("requires_boss_core", false)) and boss_cores.is_empty():
+		return "boss_core"
+	var parent := str(definition.get("parent", ""))
+	if not parent.is_empty() and upgrade_level(parent) < int(definition.get("parent_rank", 1)):
+		return "parent:%s:%d" % [parent, int(definition.get("parent_rank", 1))]
+	return ""
 
 func can_purchase(id: String) -> bool:
-	return upgrade_level(id) < MAX_SKILL_RANK and credits >= upgrade_cost(id)
+	return skill_unlocked(id) and upgrade_level(id) < skill_max_rank(id) and credits >= upgrade_cost(id)
 
 func purchase_upgrade(id: String) -> bool:
 	if not can_purchase(id):
 		return false
-	credits -= upgrade_cost(id)
+	var paid := upgrade_cost(id)
+	credits -= paid
+	invested_charge += paid
 	upgrade_levels[id] = upgrade_level(id) + 1
 	purchases += 1
 	if first_purchase_time < 0.0:
 		first_purchase_time = elapsed
-	var duration := 5.0 * core_power
+	var duration := (5.0 + float(upgrade_level("furnace_memory")) * 0.8) * core_power
 	if current_stage_id == "pyre_wyrm" or "redheat_conversion" in beast_cores:
 		overdrive_timer = maxf(overdrive_timer, duration)
 		last_mechanic_event = "upgrade_overdrive"
 	if "furnace_sovereign" in boss_cores:
-		overdrive_timer = maxf(overdrive_timer, duration + 3.0)
+		overdrive_timer = maxf(overdrive_timer, duration + 3.0 + float(upgrade_level("boss_matrix")) * 0.6)
 	refresh_stats()
+	if upgrade_level("feedback_loop") > 0:
+		var returned := grant_charge(float(paid) * 0.15)
+		invested_charge = maxi(0, invested_charge - returned)
 	return true
 
 func skill_points_bought() -> int:
@@ -262,17 +323,36 @@ func skill_points_bought() -> int:
 		total += upgrade_level(str(definition.id))
 	return total
 
+func gear_level(gear_id: String) -> int:
+	var total := 0
+	for definition in UPGRADE_DEFINITIONS:
+		if str(definition.gear) == gear_id:
+			total += upgrade_level(str(definition.id))
+	return total
+
+func total_possible_ranks() -> int:
+	return GearCatalog.total_max_ranks()
+
 func respec_skills() -> int:
-	var refunded := 0
+	var refunded := invested_charge
 	for definition in UPGRADE_DEFINITIONS:
 		var id := str(definition.id)
-		var old_level := upgrade_level(id)
-		for rank in range(old_level):
-			refunded += maxi(1, int(round(float(definition.base_cost) * pow(float(definition.growth), rank))))
 		upgrade_levels[id] = 0
 	credits += refunded
+	invested_charge = 0
+	manual_mode = "attack"
 	refresh_stats()
 	return refunded
+
+func generation_mode_unlocked() -> bool:
+	return upgrade_level("zero_output_generator") > 0
+
+func toggle_manual_mode() -> bool:
+	if not generation_mode_unlocked():
+		manual_mode = "attack"
+		return false
+	manual_mode = "generate" if manual_mode == "attack" else "attack"
+	return true
 
 func grant_beast_core(id: String) -> bool:
 	if id.is_empty() or id in beast_cores:
@@ -301,9 +381,14 @@ func synergy_active(_id: String) -> bool:
 func manual_attack(critical_mode: int = -1) -> Dictionary:
 	if stage_phase != StagePhase.BOSS:
 		return {"valid": false, "damage": 0.0, "charge": 0, "critical": false, "boss_defeated": false}
+	last_mechanic_event = ""
 	manual_inputs += 1
 	manual_streak = mini(combo_cap, manual_streak + 1) if combo_timer > 0.0 else 1
 	combo_timer = 0.7
+	var generating := manual_mode == "generate" and generation_mode_unlocked()
+	if generating:
+		auto_boost_stacks = mini(10, auto_boost_stacks + 1)
+		auto_boost_timer = 2.2
 	var forced_analysis := "phase_computation" in beast_cores and analysis >= 100.0
 	var is_critical := critical_mode == 1 or forced_analysis or (critical_mode < 0 and rng.randf() < effective_critical_chance("manual"))
 	if is_critical:
@@ -311,32 +396,54 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 		if forced_analysis:
 			analysis = 0.0
 	else:
-		analysis = minf(100.0, analysis + 6.0 * core_power)
+		analysis = minf(100.0, analysis + (6.0 + float(upgrade_level("phase_memory")) * 1.2) * core_power)
 	var combo_multiplier := 1.0 + float(maxi(0, manual_streak - 1)) * combo_bonus_per_stack
-	var damage := manual_damage * combo_multiplier * (critical_multiplier if is_critical else 1.0)
+	var phase_critical_bonus := 1.0 + float(upgrade_level("phase_memory")) * 0.12 if forced_analysis else 1.0
+	var damage := 0.0 if generating else manual_damage * combo_multiplier * (critical_multiplier if is_critical else 1.0) * phase_critical_bonus
+	if not generating and objective_ratio() >= 0.65:
+		damage *= 1.0 + float(upgrade_level("execution_protocol")) * 0.20
 	var modified := modify_attack("manual", damage, is_critical)
 	damage = float(modified.damage)
 	var shockwave := 0.0
-	if "impact_guidance" in beast_cores and manual_inputs % 10 == 0:
-		shockwave = manual_damage * 4.0 * core_power
+	if not generating and "impact_guidance" in beast_cores and manual_inputs % 10 == 0:
+		shockwave = manual_damage * (4.0 + float(upgrade_level("impact_memory")) * 0.8) * core_power
 		last_mechanic_event = "impact_shockwave"
+	var punch_rank := upgrade_level("armor_punch")
+	if not generating and punch_rank > 0 and manual_inputs % maxi(4, 12 - punch_rank * 2) == 0:
+		shockwave += manual_damage * (1.5 + float(punch_rank) * 0.75)
+		last_mechanic_event = "armor_punch"
 	var echo := 0.0
-	if "cascade_relay" in beast_cores and rng.randf() < minf(0.5, 0.16 * core_power):
-		echo = damage * 0.55 * core_power
+	var relay_memory := upgrade_level("relay_memory")
+	if not generating and "cascade_relay" in beast_cores and rng.randf() < minf(0.72, (0.16 + float(relay_memory) * 0.035) * core_power):
+		echo = damage * (0.55 + float(relay_memory) * 0.10) * core_power
 		last_mechanic_event = "relay_echo"
-	var earned := grant_charge(charge_per_click)
+	var economy_multiplier := 1.0 + minf(1.0, float(credits) / 100.0 * 0.02 * float(upgrade_level("compound_interest")))
+	var charge_amount := charge_per_click * economy_multiplier * (generator_multiplier if generating else 1.0)
+	if upgrade_level("harvest_knuckle") > 0 and manual_inputs % 10 == 0:
+		charge_amount += 10.0 * core_power
+		last_mechanic_event = "harvest"
+	var earned := grant_charge(charge_amount)
 	var applied := deal_damage(damage + shockwave + echo)
+	var commanded_volley := 0.0
+	if is_critical and upgrade_level("twin_trigger") > 0 and stage_phase == StagePhase.BOSS:
+		commanded_volley = deal_damage(auto_damage * float(drone_count) * 2.0)
+		last_mechanic_event = "twin_trigger"
+	var painter_rank := upgrade_level("target_painter")
+	if painter_rank > 0:
+		target_marks = mini(12, target_marks + 1)
 	if "predation_reversal" in boss_cores:
-		earned += grant_charge(applied * 0.0025 * core_power)
+		earned += grant_charge((applied + commanded_volley) * (0.0025 + float(upgrade_level("boss_matrix")) * 0.0005) * core_power)
 	var burst := trigger_singularity_burst("manual")
 	return {
 		"valid": true,
-		"damage": applied + burst,
+		"damage": applied + commanded_volley + burst,
 		"base_damage": damage,
 		"shockwave": shockwave,
 		"echo": echo,
+		"commanded_volley": commanded_volley,
 		"charge": earned,
 		"critical": is_critical,
+		"generating": generating,
 		"mechanic": last_mechanic_event,
 		"boss_defeated": stage_phase == StagePhase.CLEAR,
 	}
@@ -347,23 +454,54 @@ func manual_charge(critical_mode: int = -1) -> Dictionary:
 func auto_attack(critical_mode: int = -1) -> Dictionary:
 	if stage_phase != StagePhase.BOSS:
 		return {"valid": false, "damage": 0.0, "charge": 0, "critical": false, "boss_defeated": false}
+	last_mechanic_event = ""
 	auto_hits += 1
 	var is_critical := critical_mode == 1 or (critical_mode < 0 and rng.randf() < effective_critical_chance("auto") * 0.55)
 	if is_critical:
 		critical_hits += 1
 	else:
-		analysis = minf(100.0, analysis + 1.5 * float(drone_count) * core_power)
+		analysis = minf(100.0, analysis + (1.5 + float(upgrade_level("phase_memory")) * 0.3) * float(drone_count) * core_power)
 	var damage := auto_damage * float(drone_count) * (critical_multiplier if is_critical else 1.0)
+	if auto_boost_timer > 0.0:
+		damage *= 1.0 + float(auto_boost_stacks) * 0.10
+	if target_marks > 0:
+		damage *= 1.0 + float(target_marks) * (0.10 + float(upgrade_level("target_painter")) * 0.02)
+		target_marks = 0
+		last_mechanic_event = "painted_volley"
+	var hunter_rank := upgrade_level("hunter_drone")
+	var hp_ratio := boss_hp / maxf(1.0, boss_max_hp)
+	if hunter_rank > 0 and hp_ratio <= 0.5:
+		damage *= 1.0 + float(hunter_rank) * (0.28 if hp_ratio <= 0.25 else 0.18)
+	if upgrade_level("hive_mind") > 0:
+		damage *= 1.0 + float(maxi(0, drone_count - 1)) * 0.18
+	var burst_rank := upgrade_level("burst_loader")
+	if burst_rank > 0:
+		auto_burst_counter += 1
+		if auto_burst_counter >= maxi(5, 10 - burst_rank):
+			auto_burst_counter = 0
+			damage *= 3.0
+			last_mechanic_event = "auto_burst"
 	var modified := modify_attack("auto", damage, is_critical)
 	damage = float(modified.damage)
 	var echo := 0.0
-	if "cascade_relay" in beast_cores and rng.randf() < minf(0.5, 0.12 * core_power):
-		echo = damage * 0.45 * core_power
+	var chain_rank := upgrade_level("chain_rounds")
+	if chain_rank > 0 and rng.randf() < float(chain_rank) * 0.09:
+		echo += damage * (0.32 + float(chain_rank) * 0.08)
+		last_mechanic_event = "chain_round"
+	var relay_memory := upgrade_level("relay_memory")
+	if "cascade_relay" in beast_cores and rng.randf() < minf(0.72, (0.12 + float(relay_memory) * 0.03) * core_power):
+		echo += damage * (0.45 + float(relay_memory) * 0.09) * core_power
 		last_mechanic_event = "relay_echo"
 	var earned := grant_charge(auto_charge_per_shot * float(drone_count))
+	if upgrade_level("support_fabricator") > 0:
+		support_counter += 1
+		if support_counter >= 20:
+			support_counter = 0
+			earned += grant_charge(12.0 * core_power)
+			last_mechanic_event = "support_fabricated"
 	var applied := deal_damage(damage + echo)
 	if "predation_reversal" in boss_cores:
-		earned += grant_charge(applied * 0.0025 * core_power)
+		earned += grant_charge(applied * (0.0025 + float(upgrade_level("boss_matrix")) * 0.0005) * core_power)
 	var burst := trigger_singularity_burst("auto")
 	return {
 		"valid": true,
@@ -377,9 +515,8 @@ func auto_attack(critical_mode: int = -1) -> Dictionary:
 
 func modify_attack(source: String, damage: float, is_critical: bool) -> Dictionary:
 	var multiplier := 1.0
-	last_mechanic_event = ""
 	if overdrive_timer > 0.0:
-		multiplier *= 1.75
+		multiplier *= 1.75 + float(upgrade_level("furnace_memory")) * 0.05
 		last_mechanic_event = "overdrive"
 	if current_stage_id == "gearmaw" and source == "manual":
 		armor_cracks += 1
@@ -477,7 +614,7 @@ func effective_critical_chance(source: String = "manual") -> float:
 	if "phase_computation" in beast_cores and analysis >= 100.0:
 		return 1.0
 	if source == "auto" and "swarm_clock" in beast_cores:
-		result += 0.03 * core_power
+		result += (0.03 + float(upgrade_level("swarm_memory")) * 0.012) * core_power
 	return clampf(result, 0.0, 0.82)
 
 func grant_charge(amount: float) -> int:
@@ -488,6 +625,7 @@ func grant_charge(amount: float) -> int:
 	if whole <= 0:
 		return 0
 	charge_fraction -= float(whole)
+	var previous_lifetime := lifetime_charge
 	credits += whole
 	lifetime_charge += whole
 	if current_stage_id == "vaultback":
@@ -496,8 +634,12 @@ func grant_charge(amount: float) -> int:
 			vault_charge_meter = fmod(vault_charge_meter, 50.0)
 			shell_open_timer = 6.0
 			last_mechanic_event = "shell_open"
-	if "deep_storage" in beast_cores and lifetime_charge > 0 and lifetime_charge % 100 < whole:
-		var bonus := maxi(1, int(round(20.0 * core_power)))
+	var milestones := int(lifetime_charge / 100) - int(previous_lifetime / 100)
+	if milestones > 0 and (upgrade_level("dividend_coil") > 0 or "deep_storage" in beast_cores):
+		var bonus_per_milestone := float(upgrade_level("dividend_coil")) * 5.0
+		if "deep_storage" in beast_cores:
+			bonus_per_milestone += 20.0 * (1.0 + float(upgrade_level("storage_memory")) * 0.18) * core_power
+		var bonus := maxi(1, int(round(float(milestones) * bonus_per_milestone)))
 		credits += bonus
 		lifetime_charge += bonus
 		whole += bonus
@@ -536,6 +678,9 @@ func tick(delta: float, _manual_held: bool = false) -> Dictionary:
 	if combo_timer <= 0.0:
 		manual_streak = 0
 	source_switch_timer = maxf(0.0, source_switch_timer - delta)
+	auto_boost_timer = maxf(0.0, auto_boost_timer - delta)
+	if auto_boost_timer <= 0.0:
+		auto_boost_stacks = 0
 	shell_open_timer = maxf(0.0, shell_open_timer - delta)
 	overdrive_timer = maxf(0.0, overdrive_timer - delta)
 	furnace_open_timer = maxf(0.0, furnace_open_timer - delta)
@@ -580,11 +725,18 @@ func objective_ratio() -> float:
 	return 1.0 - boss_hp / maxf(1.0, boss_max_hp)
 
 func estimated_manual_dps(clicks_per_second: float = 4.0) -> float:
+	if manual_mode == "generate" and generation_mode_unlocked():
+		return 0.0
 	var combo_average := 1.0 + float(mini(combo_cap, 8)) * combo_bonus_per_stack * 0.55
 	return manual_damage * clicks_per_second * combo_average * (1.0 + critical_chance * (critical_multiplier - 1.0))
 
 func estimated_auto_dps() -> float:
-	return auto_damage * float(drone_count) / maxf(0.01, auto_interval) * (1.0 + critical_chance * 0.55 * (critical_multiplier - 1.0))
+	var result := auto_damage * float(drone_count) / maxf(0.01, auto_interval) * (1.0 + critical_chance * 0.55 * (critical_multiplier - 1.0))
+	if upgrade_level("hive_mind") > 0:
+		result *= 1.0 + float(maxi(0, drone_count - 1)) * 0.18
+	if auto_boost_timer > 0.0:
+		result *= 1.0 + float(auto_boost_stacks) * 0.10
+	return result
 
 func boss_warning_active() -> bool:
 	return current_boss_id == "grid_leech" and siphon_window_timer > 0.0
@@ -602,8 +754,14 @@ func total_capacity() -> float:
 	return 1.0
 
 func charge_ratio() -> float:
-	var next_cost := upgrade_cost("impact_coil")
-	return clampf(float(credits) / maxf(1.0, float(next_cost)), 0.0, 1.0)
+	var next_cost := 0
+	for definition in UPGRADE_DEFINITIONS:
+		var id := str(definition.id)
+		if skill_unlocked(id) and upgrade_level(id) < skill_max_rank(id):
+			var cost := upgrade_cost(id)
+			if next_cost == 0 or cost < next_cost:
+				next_cost = cost
+	return clampf(float(credits) / maxf(1.0, float(next_cost)), 0.0, 1.0) if next_cost > 0 else 1.0
 
 func filled_cells() -> int:
 	return 0
@@ -633,7 +791,7 @@ func select_reward(_id: String) -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 4,
+		"version": 5,
 		"credits": credits,
 		"lifetime_charge": lifetime_charge,
 		"elapsed": elapsed,
@@ -641,6 +799,7 @@ func snapshot() -> Dictionary:
 		"auto_hits": auto_hits,
 		"critical_hits": critical_hits,
 		"purchases": purchases,
+		"invested_charge": invested_charge,
 		"lifetime_output": lifetime_output,
 		"highest_output": highest_output,
 		"first_purchase_time": first_purchase_time,
@@ -659,6 +818,12 @@ func snapshot() -> Dictionary:
 		"singularity_boss": singularity_boss,
 		"encounter_index": encounter_index,
 		"charge_fraction": charge_fraction,
+		"manual_mode": manual_mode,
+		"auto_boost_stacks": auto_boost_stacks,
+		"auto_boost_timer": auto_boost_timer,
+		"target_marks": target_marks,
+		"auto_burst_counter": auto_burst_counter,
+		"support_counter": support_counter,
 		"armor_cracks": armor_cracks,
 		"enemy_armor_layers": enemy_armor_layers,
 		"shell_open_timer": shell_open_timer,
@@ -685,7 +850,7 @@ func snapshot() -> Dictionary:
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
-	if int(data.get("version", 0)) != 4:
+	if int(data.get("version", 0)) != 5:
 		return false
 	reset()
 	credits = maxi(0, int(data.get("credits", 0)))
@@ -695,13 +860,14 @@ func restore_snapshot(data: Dictionary) -> bool:
 	auto_hits = maxi(0, int(data.get("auto_hits", 0)))
 	critical_hits = maxi(0, int(data.get("critical_hits", 0)))
 	purchases = maxi(0, int(data.get("purchases", 0)))
+	invested_charge = maxi(0, int(data.get("invested_charge", 0)))
 	lifetime_output = maxf(0.0, float(data.get("lifetime_output", 0.0)))
 	highest_output = maxf(0.0, float(data.get("highest_output", 0.0)))
 	first_purchase_time = float(data.get("first_purchase_time", -1.0))
 	var saved_levels: Dictionary = data.get("upgrade_levels", {})
 	for definition in UPGRADE_DEFINITIONS:
 		var id := str(definition.id)
-		upgrade_levels[id] = clampi(int(saved_levels.get(id, 0)), 0, MAX_SKILL_RANK)
+		upgrade_levels[id] = clampi(int(saved_levels.get(id, 0)), 0, int(definition.get("max_rank", MAX_SKILL_RANK)))
 	beast_cores.clear()
 	for value in data.get("beast_cores", []):
 		var core := str(value)
@@ -725,6 +891,14 @@ func restore_snapshot(data: Dictionary) -> bool:
 	singularity_boss = bool(data.get("singularity_boss", false))
 	encounter_index = maxi(0, int(data.get("encounter_index", 0)))
 	charge_fraction = clampf(float(data.get("charge_fraction", 0.0)), 0.0, 0.999)
+	manual_mode = str(data.get("manual_mode", "attack"))
+	if manual_mode not in ["attack", "generate"] or (manual_mode == "generate" and not generation_mode_unlocked()):
+		manual_mode = "attack"
+	auto_boost_stacks = clampi(int(data.get("auto_boost_stacks", 0)), 0, 10)
+	auto_boost_timer = maxf(0.0, float(data.get("auto_boost_timer", 0.0)))
+	target_marks = clampi(int(data.get("target_marks", 0)), 0, 12)
+	auto_burst_counter = maxi(0, int(data.get("auto_burst_counter", 0)))
+	support_counter = maxi(0, int(data.get("support_counter", 0)))
 	armor_cracks = clampi(int(data.get("armor_cracks", 0)), 0, 11)
 	enemy_armor_layers = clampi(int(data.get("enemy_armor_layers", 3)), 0, 3)
 	shell_open_timer = maxf(0.0, float(data.get("shell_open_timer", 0.0)))
