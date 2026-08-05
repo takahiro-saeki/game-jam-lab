@@ -102,6 +102,7 @@ const CONTROL_CHARGE_REGION := Rect2(0, 0, 104, 128)
 const CONTROL_DISCHARGE_REGION := Rect2(104, 0, 174, 128)
 const CONTROL_AUTO_REGION := Rect2(278, 0, 106, 128)
 const UPGRADE_RACK_CENTER_REGION := Rect2(76, 4, 232, 120)
+const PLAYTEST_LOG_PATH := "user://project_charge_playtests.jsonl"
 
 var synth: JamSynth
 var run
@@ -145,6 +146,7 @@ var autosave_timer := 0.0
 var reward_selected := 0
 var controller_upgrade_selected := 0
 var selected_gear_index := 0
+var selected_tree_tier := 1
 var gear_tree_open := false
 var controller_axis_latch := Vector2i.ZERO
 var campaign_selected := 0
@@ -161,6 +163,7 @@ var reset_rect := Rect2(34, 22, 126, 42)
 var upgrade_rects: Array[Rect2] = []
 var gear_rects: Array[Rect2] = []
 var tree_tab_rects: Array[Rect2] = []
+var tree_tier_rects: Array[Rect2] = [Rect2(538, 174, 76, 34), Rect2(624, 174, 76, 34), Rect2(710, 174, 76, 34)]
 var tree_close_rect := Rect2(1132, 112, 82, 46)
 var tree_purchase_rect := Rect2(918, 560, 286, 50)
 var tree_respec_rect := Rect2(918, 622, 286, 42)
@@ -367,6 +370,8 @@ func _process(delta: float) -> void:
 		update_effects(delta)
 		queue_redraw()
 		return
+	if campaign_route.phase not in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+		run.advance_session_time(delta)
 	if not campaign_gameplay_active():
 		if autosave_timer <= 0.0:
 			autosave_timer = 5.0
@@ -658,19 +663,53 @@ func complete_campaign_boss() -> bool:
 	screen_flash = 1.0
 	screen_shake = 0.75
 	synth.play_chord([130.81, 196.0, 261.63, 392.0, 523.25], 0.75, -17.0)
+	record_campaign_result_if_needed()
 	save_progress()
+	return true
+
+func campaign_ending_key() -> String:
+	return "true" if campaign_route.phase == CampaignRoute.RoutePhase.TRUE_END else "normal"
+
+func current_playtest_report() -> Dictionary:
+	return run.build_playtest_report(campaign_route.snapshot(), campaign_ending_key())
+
+func campaign_result_json() -> String:
+	return JSON.stringify(current_playtest_report(), "  ")
+
+func record_campaign_result_if_needed() -> bool:
+	if campaign_route.phase not in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+		return false
+	var ending := campaign_ending_key()
+	if run.ending_exported(ending):
+		return true
+	if not persistence_enabled:
+		return false
+	var file: FileAccess
+	if FileAccess.file_exists(PLAYTEST_LOG_PATH):
+		file = FileAccess.open(PLAYTEST_LOG_PATH, FileAccess.READ_WRITE)
+		if file != null:
+			file.seek_end()
+	else:
+		file = FileAccess.open(PLAYTEST_LOG_PATH, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_line(JSON.stringify(current_playtest_report()))
+	file.close()
+	run.mark_ending_exported(ending)
 	return true
 
 func campaign_result_text() -> String:
 	var ending := loc("通常復旧", "NORMAL RESTORATION") if campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END else loc("完全復旧", "TOTAL RESTORATION")
-	return "PROJECT CHARGE — %s\n%s %s | %s %d/6 | %s %d/2\n%s %s | %s %d | %s %d" % [
+	return "PROJECT CHARGE — %s\n%s %s | %s %s | %s %d/6 | %s %d/2\n%s %s | %s %d | %s %d | ID %s" % [
 		ending,
-		loc("時間", "TIME"), format_time(run.elapsed),
+		loc("総時間", "SESSION"), format_time(run.session_elapsed),
+		loc("戦闘", "COMBAT"), format_time(run.elapsed),
 		loc("回路", "CIRCUITS"), campaign_route.completed_stage_ids.size(),
 		loc("ボス", "BOSSES"), campaign_route.defeated_boss_ids.size(),
 		loc("最大打撃", "PEAK HIT"), format_number(run.highest_output),
 		loc("強化LV", "UPGRADE LEVELS"), run.skill_points_bought(),
 		loc("累計CHARGE", "TOTAL CHARGE"), run.lifetime_charge,
+		run.session_id,
 	]
 
 func respec_skill_tree() -> void:
@@ -681,7 +720,7 @@ func respec_skill_tree() -> void:
 	queue_redraw()
 
 func copy_campaign_result() -> void:
-	result_copy_succeeded = set_clipboard_text(campaign_result_text())
+	result_copy_succeeded = set_clipboard_text(campaign_result_json())
 	result_copied_time = 2.0
 	if result_copy_succeeded:
 		synth.confirm()
@@ -945,6 +984,7 @@ func navigate_upgrade(direction: Vector2i) -> void:
 func open_gear_tree(index: int) -> void:
 	selected_gear_index = clampi(index, 0, GearCatalog.GEARS.size() - 1)
 	gear_tree_open = true
+	selected_tree_tier = clampi(selected_tree_tier, 1, 3)
 	controller_upgrade_selected = 0
 	end_charge()
 	synth.play_tone(392.0, 0.08, -24.0, 2)
@@ -959,7 +999,18 @@ func selected_gear_id() -> String:
 	return str(GearCatalog.GEARS[selected_gear_index].id)
 
 func selected_tree_skills() -> Array[Dictionary]:
-	return GearCatalog.skills_for_gear(selected_gear_id())
+	return GearCatalog.skills_for_gear_tier(selected_gear_id(), selected_tree_tier)
+
+func set_tree_tier(tier: int) -> void:
+	selected_tree_tier = clampi(tier, 1, 3)
+	controller_upgrade_selected = 0
+	var label := loc("基礎機構", "FOUNDATION") if selected_tree_tier == 1 else loc("主獣オーバークロック", "BOSS OVERCLOCK") if selected_tree_tier == 2 else loc("六核特異改造", "SIX-CORE SINGULARITY")
+	show_message("TIER %s // %s" % [roman_tier(selected_tree_tier), label], 1.2)
+	synth.click()
+	queue_redraw()
+
+func roman_tier(tier: int) -> String:
+	return "I" if tier == 1 else "II" if tier == 2 else "III"
 
 func selected_skill_definition() -> Dictionary:
 	var skills := selected_tree_skills()
@@ -969,7 +1020,13 @@ func selected_skill_definition() -> Dictionary:
 	return skills[controller_upgrade_selected]
 
 func tree_node_rect(definition: Dictionary) -> Rect2:
-	return Rect2(66 + int(definition.col) * 246, 190 + int(definition.row) * 104, 216, 76)
+	return Rect2(66 + int(definition.col) * 246, 220 + int(definition.row) * 94, 216, 70)
+
+func tree_tier_at(point: Vector2) -> int:
+	for index in range(tree_tier_rects.size()):
+		if tree_tier_rects[index].has_point(point):
+			return index + 1
+	return 0
 
 func tree_tab_at(point: Vector2) -> int:
 	for index in range(tree_tab_rects.size()):
@@ -1038,6 +1095,10 @@ func handle_gear_tree_input(event: InputEvent) -> void:
 			open_gear_tree(wrapi(selected_gear_index - 1, 0, GearCatalog.GEARS.size()))
 		elif event.keycode == KEY_E:
 			open_gear_tree(wrapi(selected_gear_index + 1, 0, GearCatalog.GEARS.size()))
+		elif event.keycode == KEY_Z:
+			set_tree_tier(wrapi(selected_tree_tier - 2, 0, 3) + 1)
+		elif event.keycode == KEY_X:
+			set_tree_tier(selected_tree_tier % 3 + 1)
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
 			open_gear_tree(int(event.keycode - KEY_1))
 	elif event is InputEventJoypadButton and event.pressed:
@@ -1062,7 +1123,7 @@ func handle_gear_tree_input(event: InputEvent) -> void:
 				elif event.button_index == controller_button("combat_action"):
 					toggle_generation_mode()
 				elif event.button_index == controller_button("language"):
-					toggle_language()
+					set_tree_tier(selected_tree_tier % 3 + 1)
 	elif event is InputEventJoypadMotion:
 		var direction := controller_motion_direction(event)
 		if direction != Vector2i.ZERO:
@@ -1077,6 +1138,10 @@ func handle_gear_tree_point(point: Vector2) -> void:
 		return
 	if tree_respec_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
 		respec_skill_tree()
+		return
+	var tier := tree_tier_at(point)
+	if tier > 0:
+		set_tree_tier(tier)
 		return
 	var tab_index := tree_tab_at(point)
 	if tab_index >= 0:
@@ -1380,6 +1445,10 @@ func skill_lock_text(id: String) -> String:
 		return loc("別の変異を選択済み：", "OTHER MUTATION ALREADY CHOSEN: ") + skill_title_for_id(reason.trim_prefix("exclusive:"))
 	if reason == "boss_core":
 		return loc("通常ボスの機械核を回収すると解禁", "RECOVER A NORMAL BOSS CORE TO UNLOCK")
+	if reason == "tier:2":
+		return loc("通常ボス撃破後にTIER II解禁", "TIER II UNLOCKS AFTER THE NORMAL BOSS")
+	if reason == "tier:3":
+		return loc("六体の機械魔獣撃破後にTIER III解禁", "TIER III UNLOCKS AFTER ALL SIX BEASTS")
 	return loc("このノードはまだロックされています", "THIS NODE IS STILL LOCKED")
 
 func add_floating(position: Vector2, text: String, color: Color, size: int) -> void:
@@ -1626,12 +1695,12 @@ func draw_campaign_ending(true_end: bool) -> void:
 	var panel := Rect2(264, 218, 752, 300)
 	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.94), Palette.with_alpha(accent, 0.5), 18.0, 2.0)
 	var stats := [
-		[loc("総プレイ時間", "TOTAL TIME"), format_time(run.elapsed)],
+		[loc("総プレイ時間", "TOTAL TIME"), format_time(run.session_elapsed)],
+		[loc("戦闘時間", "COMBAT TIME"), format_time(run.elapsed)],
 		[loc("討伐魔獣", "BEASTS"), "%d / 6" % campaign_route.completed_stage_ids.size()],
 		[loc("撃破ボス", "BOSSES"), "%d / 2" % campaign_route.defeated_boss_ids.size()],
 		[loc("最大打撃", "PEAK HIT"), format_number(run.highest_output)],
 		[loc("強化LV", "UPGRADE LEVELS"), "%d / %d" % [run.skill_points_bought(), run.total_possible_ranks()]],
-		[loc("累計CHARGE", "TOTAL CHARGE"), format_number(run.lifetime_charge)],
 	]
 	for index in range(stats.size()):
 		var row := index % 3
@@ -1640,11 +1709,11 @@ func draw_campaign_ending(true_end: bool) -> void:
 		var y := panel.position.y + 62 + row * 72
 		draw_string(Palette.UI_FONT, Vector2(x, y), str(stats[index][0]), HORIZONTAL_ALIGNMENT_LEFT, 230, 12, Palette.MUTED)
 		draw_string(DisplayFont, Vector2(x, y + 27), str(stats[index][1]), HORIZONTAL_ALIGNMENT_LEFT, 250, 20, Palette.PAPER)
-	var copy_label := loc("C  結果をコピー", "C  COPY RESULT")
+	var copy_label := loc("C  計測JSONをコピー", "C  COPY PLAYTEST JSON")
 	if result_copied_time > 0.0:
 		copy_label = loc("コピー済み", "COPIED") if result_copy_succeeded else loc("コピーできません", "COPY FAILED")
 	draw_campaign_button(campaign_copy_rect, copy_label, Palette.MINT if result_copy_succeeded else Palette.CORAL, false)
-	draw_string(Palette.UI_FONT, Vector2(0, 544), loc("制作：Godot + Codex　ピクセルアート：PixelLab", "BUILT WITH GODOT + CODEX · PIXEL ART WITH PIXELLAB"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 10, Palette.with_alpha(Palette.MUTED, 0.8))
+	draw_string(Palette.UI_FONT, Vector2(0, 544), loc("プレイ記録をローカル保存済み　制作：Godot + Codex　PixelLab", "PLAYTEST LOG SAVED LOCALLY · GODOT + CODEX · PIXELLAB"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 10, Palette.with_alpha(Palette.MUTED, 0.8))
 	draw_campaign_button(campaign_primary_rect, loc("新しいキャンペーン", "NEW CAMPAIGN") if true_end else loc("真ルートへ続く", "CONTINUE TRUE ROUTE"), accent, true)
 	draw_campaign_button(campaign_secondary_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
 
@@ -1670,8 +1739,8 @@ func draw_header() -> void:
 	draw_texture_rect(energy_shard_texture, Rect2(SHARD_SOCKET_CENTER - Vector2(18, 18), Vector2(36, 36)), false)
 	draw_string(Palette.UI_FONT, Vector2(606, 25), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 94, 10, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(606, 56), format_number(run.credits), HORIZONTAL_ALIGNMENT_CENTER, 94, 22, Palette.AMBER)
-	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("経過", "ELAPSED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(752, 62), format_time(run.elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("総時間", "SESSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(752, 62), format_time(run.session_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
 	draw_small_button(reset_rect, loc("R  もう一度", "R  CONFIRM") if reset_confirm_time > 0.0 else loc("R  初期化", "R  RESET"), Palette.CORAL)
 	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
 	draw_small_button(menu_rect, loc("ゲーム選択", "GAME LAB"), Palette.CYAN)
@@ -1759,8 +1828,10 @@ func draw_reactor_panel() -> void:
 	var mode_color := Palette.MINT if mode_available else Palette.MUTED
 	draw_machine_plate(mode_toggle_rect, Palette.with_alpha(mode_color, 0.16 if mode_available else 0.035), Palette.with_alpha(mode_color, 0.78 if mode_available else 0.25), 9.0, 1.0)
 	draw_string(DisplayFont, mode_toggle_rect.position + Vector2(0, 27), loc("G  手動モード切替", "G  SWITCH MANUAL MODE") if mode_available else loc("発電ツリーでPURE CHARGE解禁", "UNLOCK PURE CHARGE IN DYNAMO TREE"), HORIZONTAL_ALIGNMENT_CENTER, mode_toggle_rect.size.x, 12, Palette.PAPER if mode_available else Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(58, 664), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 12, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(58, 686), loc("クリック %d  AUTO %d  臨界 %d", "CLICKS %d  AUTO %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 310, 10, Palette.MUTED)
+	var footer := Rect2(54, 649, 312, 31)
+	draw_machine_plate(footer, Palette.with_alpha(Palette.INK, 0.72), Palette.with_alpha(Palette.CYAN, 0.18), 5.0, 1.0)
+	draw_string(Palette.UI_FONT, Vector2(62, 662), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 296, 9, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 676), loc("クリック %d  AUTO %d  臨界 %d", "CLICKS %d  AUTO %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 296, 8, Palette.MUTED)
 
 func draw_legacy_reactor_visual() -> void:
 	draw_texture_rect(reactor_texture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
@@ -1952,11 +2023,14 @@ func draw_direct_attack_combat_panel() -> void:
 	draw_stage_rule_indicator()
 	var status := message if message_time > 0.0 else tutorial_hint()
 	draw_string(Palette.UI_FONT, Vector2(448, 455), status, HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.PAPER)
-	draw_string(DisplayFont, Vector2(438, 482), loc("5ギア・36ノード — ギアを選んで専用ツリーを開く", "FIVE GEARS · 36 NODES — OPEN A GEAR'S DEDICATED TREE"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(438, 482), loc("5ギア・66ノード — ギアを選んで専用ツリーを開く", "FIVE GEARS · 66 NODES — OPEN A GEAR'S DEDICATED TREE"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
 	draw_string(DisplayFont, Vector2(1030, 482), "%d / %d" % [run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_RIGHT, 184, 11, Palette.AMBER if run.skill_points_bought() > 0 else Palette.MUTED)
 	var rack_rect := Rect2(428, 488, 788, 178)
-	draw_machine_plate(rack_rect, Palette.with_alpha(Palette.INK, 0.68), Palette.with_alpha(Palette.CYAN, 0.24), 12.0, 1.0)
-	draw_texture_rect_region(UpgradeRackTexture, Rect2(430, 490, 784, 172), UPGRADE_RACK_CENTER_REGION, Color(0.78, 0.86, 0.95, 0.78))
+	draw_machine_plate(rack_rect, Palette.with_alpha(Palette.INK, 0.91), Palette.with_alpha(Palette.CYAN, 0.28), 12.0, 1.0)
+	for rail in range(6):
+		var rail_x := rack_rect.position.x + 18.0 + rail * 126.0
+		draw_line(Vector2(rail_x, rack_rect.position.y + 8), Vector2(rail_x + 92, rack_rect.position.y + 8), Palette.with_alpha(Palette.CYAN, 0.11), 2.0)
+		draw_circle(Vector2(rail_x, rack_rect.end.y - 9), 2.0, Palette.with_alpha(Palette.CYAN, 0.20))
 	draw_gear_rack()
 
 func draw_stage_rule_indicator() -> void:
@@ -2050,14 +2124,17 @@ func draw_gear_rack() -> void:
 		draw_string(Palette.UI_FONT, rect.position + Vector2(120, 25), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_RIGHT, 18, 9, color)
 		draw_string(DisplayFont, rect.position + Vector2(54, 31), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 68, 11, Palette.PAPER)
 		draw_string(Palette.UI_FONT, rect.position + Vector2(54, 52), str(gear.get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 82, 8, Palette.MUTED)
-		var skills := GearCatalog.skills_for_gear(str(gear.id))
-		for node_index in range(skills.size()):
-			var skill: Dictionary = skills[node_index]
-			var node_pos := rect.position + Vector2(22 + int(skill.col) * 44, 72 + int(skill.row) * 15)
-			var node_level: int = run.upgrade_level(str(skill.id))
-			draw_circle(node_pos, 5.0, color if node_level > 0 else Palette.with_alpha(color, 0.23 if run.skill_unlocked(str(skill.id)) else 0.08))
-			if node_level > 0:
-				draw_arc(node_pos, 7.0, 0.0, TAU * float(node_level) / float(maxi(1, int(skill.max_rank))), 12, Palette.AMBER, 2.0)
+		for tier in range(1, 4):
+			var tier_level := 0
+			for skill in GearCatalog.skills_for_gear_tier(str(gear.id), tier):
+				tier_level += run.upgrade_level(str(skill.id))
+			var tier_max := GearCatalog.max_ranks_for_gear_tier(str(gear.id), tier)
+			var tier_ratio := float(tier_level) / float(maxi(1, tier_max))
+			var tier_y := rect.position.y + 76 + (tier - 1) * 17
+			var tier_unlocked: bool = tier <= run.technology_tier()
+			draw_string(Palette.UI_FONT, Vector2(rect.position.x + 12, tier_y + 8), "T%s" % roman_tier(tier), HORIZONTAL_ALIGNMENT_LEFT, 20, 7, color if tier_unlocked else Palette.MUTED)
+			draw_rect(Rect2(rect.position.x + 34, tier_y + 2, 96, 6), Palette.with_alpha(color, 0.10 if tier_unlocked else 0.035))
+			draw_rect(Rect2(rect.position.x + 34, tier_y + 2, 96 * tier_ratio, 6), Palette.AMBER if tier_level >= tier_max else color)
 		draw_string(DisplayFont, rect.position + Vector2(12, 137), "LV %d / %d" % [level, maximum], HORIZONTAL_ALIGNMENT_LEFT, 124, 11, color if level > 0 else Palette.MUTED)
 		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 154), loc("ツリーを開く", "OPEN TREE"), HORIZONTAL_ALIGNMENT_RIGHT, 124, 9, Palette.PAPER if hovered or selected else Palette.MUTED)
 
@@ -2079,8 +2156,18 @@ func draw_gear_tree_overlay() -> void:
 
 	var current_gear: Dictionary = GearCatalog.GEARS[selected_gear_index]
 	var accent := Color(str(current_gear.accent))
-	draw_string(DisplayFont, Vector2(66, 180), gear_name(current_gear), HORIZONTAL_ALIGNMENT_LEFT, 500, 18, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(250, 180), str(current_gear.get("desc_ja" if is_japanese else "desc_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 540, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(66, 198), gear_name(current_gear), HORIZONTAL_ALIGNMENT_LEFT, 176, 18, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(250, 196), str(current_gear.get("desc_ja" if is_japanese else "desc_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 272, 10, Palette.MUTED)
+	for tier_index in range(3):
+		var tier := tier_index + 1
+		var tier_rect := tree_tier_rects[tier_index]
+		var tier_selected := selected_tree_tier == tier
+		var tier_unlocked: bool = tier <= run.technology_tier()
+		var tier_color := accent if tier_unlocked else Palette.MUTED
+		draw_machine_plate(tier_rect, Palette.with_alpha(tier_color, 0.24 if tier_selected else 0.045), Palette.with_alpha(tier_color, 1.0 if tier_selected else 0.30), 6.0, 2.0 if tier_selected else 1.0)
+		draw_string(DisplayFont, tier_rect.position + Vector2(0, 22), "TIER %s" % roman_tier(tier), HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 10, Palette.PAPER if tier_selected else tier_color)
+		if not tier_unlocked:
+			draw_string(Palette.UI_FONT, tier_rect.position + Vector2(0, 31), "LOCK", HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 6, Palette.CORAL)
 	var skills := selected_tree_skills()
 	for definition in skills:
 		var parent_id := str(definition.get("parent", ""))
@@ -2151,7 +2238,7 @@ func draw_tree_detail_panel(accent: Color) -> void:
 		draw_campaign_button(tree_respec_rect, loc("無料リスペック", "FREE RESPEC"), Palette.MINT, false)
 	else:
 		draw_string(Palette.UI_FONT, Vector2(918, 648), loc("AUTO砲はツリー表示中も戦闘を継続", "AUTO FIRE CONTINUES WHILE THIS TREE IS OPEN"), HORIZONTAL_ALIGNMENT_CENTER, 286, 10, Palette.VIOLET)
-	draw_string(Palette.UI_FONT, Vector2(816, 690), loc("方向キー：選択　ENTER/A：購入　Q/E：ギア切替　T/ESC：閉じる", "D-PAD: SELECT · ENTER/A: BUY · Q/E: GEAR · T/ESC: CLOSE"), HORIZONTAL_ALIGNMENT_CENTER, 408, 9, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(816, 690), loc("方向キー：選択　ENTER/A：購入　Q/E：ギア　Z/X・Y：TIER", "D-PAD: SELECT · ENTER/A: BUY · Q/E: GEAR · Z/X OR Y: TIER"), HORIZONTAL_ALIGNMENT_CENTER, 408, 9, Palette.MUTED)
 
 func draw_tree_gear_stats(gear_id: String, origin: Vector2, accent: Color) -> void:
 	var lines: Array[String] = []

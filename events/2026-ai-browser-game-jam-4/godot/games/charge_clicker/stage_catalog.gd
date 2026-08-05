@@ -129,7 +129,7 @@ const BOSSES := [
 		"core_effect_ja": "攻撃出力の一部をCHARGEへ還元する捕食回路",
 		"core_effect_en": "Feeds a portion of attack output back into CHARGE",
 		"hp": 160000.0,
-		"enhanced_hp": 6000000.0,
+		"enhanced_hp": 28000000.0,
 		"accent": "4deeea",
 	},
 	{
@@ -145,7 +145,7 @@ const BOSSES := [
 		"core_effect_ja": "能力購入によるオーバードライブを延長する",
 		"core_effect_en": "Extends every upgrade-triggered overdrive",
 		"hp": 170000.0,
-		"enhanced_hp": 6500000.0,
+		"enhanced_hp": 30000000.0,
 		"accent": "ff5c5c",
 	},
 ]
@@ -157,11 +157,11 @@ const TRUE_BOSS := {
 	"counter_tag": "all six cores",
 	"rule_ja": "六獣共鳴、攻撃系統転換、特異点バーストの三相を突破する",
 	"rule_en": "Break six resonances, shifting attack directives, and singularity bursts",
-	"hp": 30000000.0,
+	"hp": 600000000.0,
 	"accent": "f5f0db",
 }
 
-const ENCOUNTER_SCALING := [1.0, 1.62, 2.55, 5.2, 8.1, 12.0]
+const ENCOUNTER_SCALING := [1.0, 1.62, 2.55, 35.0, 180.0, 1000.0]
 
 static func stage(id: String) -> Dictionary:
 	for definition in STAGES:

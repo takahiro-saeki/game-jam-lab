@@ -58,6 +58,48 @@ const SKILLS := [
 	{"id":"swarm_memory","gear":"core","col":1,"row":2,"max_rank":5,"base_cost":122.0,"growth":1.70,"parent":"core_resonance","parent_rank":3,"requires_core":"swarm_clock","name_ja":"群制記憶","name_en":"SWARM MEMORY","desc_ja":"群制核のドローンとAUTO臨界を増幅","desc_en":"Amplify SWARM core drones and AUTO criticals"},
 	{"id":"phase_memory","gear":"core","col":2,"row":2,"max_rank":5,"base_cost":128.0,"growth":1.70,"parent":"core_resonance","parent_rank":3,"requires_core":"phase_computation","name_ja":"位相記憶","name_en":"PHASE MEMORY","desc_ja":"解析速度と確定臨界威力を増幅","desc_en":"Accelerate analysis and empowered guaranteed crits"},
 	{"id":"boss_matrix","gear":"core","col":1,"row":3,"max_rank":5,"base_cost":360.0,"growth":1.78,"parent":"core_resonance","parent_rank":5,"requires_boss_core":true,"name_ja":"主獣演算盤","name_en":"BOSS MATRIX","desc_ja":"通常ボスから奪った核効果を増幅","desc_en":"Amplify effects stolen from normal bosses"},
+
+	# TIER II — unlocked after the first normal boss.
+	{"id":"servo_overdrive","gear":"striker","tier":2,"col":1,"row":0,"max_rank":5,"base_cost":1800.0,"growth":1.86,"parent":"","parent_rank":0,"name_ja":"撃鉄サーボ過給","name_en":"STRIKER SERVO","desc_ja":"クリック威力を毎LV 28%増幅","desc_en":"Multiply click power by 1.28 per rank"},
+	{"id":"command_link","gear":"striker","tier":2,"col":0,"row":1,"max_rank":3,"base_cost":6200.0,"growth":2.05,"parent":"servo_overdrive","parent_rank":2,"name_ja":"指令連結機","name_en":"COMMAND LINK","desc_ja":"手動指令をAUTO主砲の恒久火力へ接続","desc_en":"Convert manual command mastery into AUTO power"},
+	{"id":"kinetic_recovery","gear":"striker","tier":2,"col":2,"row":1,"max_rank":3,"base_cost":6800.0,"growth":2.05,"parent":"servo_overdrive","parent_rank":2,"name_ja":"運動回生拳","name_en":"KINETIC RECOVERY","desc_ja":"クリック時のCHARGE回収量を増幅","desc_en":"Recover more CHARGE from every manual command"},
+
+	{"id":"deep_capacitor","gear":"dynamo","tier":2,"col":1,"row":0,"max_rank":5,"base_cost":2100.0,"growth":1.86,"parent":"","parent_rank":0,"name_ja":"深層蓄電槽","name_en":"DEEP CAPACITOR","desc_ja":"全発電量を毎LV 35%増幅","desc_en":"Multiply all generation by 1.35 per rank"},
+	{"id":"war_dividend","gear":"dynamo","tier":2,"col":0,"row":1,"max_rank":3,"base_cost":7000.0,"growth":2.05,"parent":"deep_capacitor","parent_rank":2,"name_ja":"戦闘配当器","name_en":"WAR DIVIDEND","desc_ja":"AUTO命中による発電を追加増幅","desc_en":"Increase CHARGE dividends from AUTO hits"},
+	{"id":"cost_compressor","gear":"dynamo","tier":2,"col":2,"row":1,"max_rank":3,"base_cost":7600.0,"growth":2.05,"parent":"deep_capacitor","parent_rank":2,"name_ja":"費用圧縮炉","name_en":"COST COMPRESSOR","desc_ja":"全スキル費用を毎LV 5%圧縮","desc_en":"Reduce every skill cost by 5% per rank"},
+
+	{"id":"twin_barrel","gear":"autogun","tier":2,"col":1,"row":0,"max_rank":5,"base_cost":2300.0,"growth":1.86,"parent":"","parent_rank":0,"name_ja":"双連砲身","name_en":"TWIN BARREL","desc_ja":"AUTO威力を毎LV 32%増幅","desc_en":"Multiply AUTO power by 1.32 per rank"},
+	{"id":"phase_tracker","gear":"autogun","tier":2,"col":0,"row":1,"max_rank":3,"base_cost":7600.0,"growth":2.05,"parent":"twin_barrel","parent_rank":2,"name_ja":"位相追尾器","name_en":"PHASE TRACKER","desc_ja":"AUTO臨界率と主獣への追尾威力を上昇","desc_en":"Raise AUTO critical rate and boss tracking power"},
+	{"id":"storm_loader","gear":"autogun","tier":2,"col":2,"row":1,"max_rank":3,"base_cost":8200.0,"growth":2.05,"parent":"twin_barrel","parent_rank":2,"name_ja":"雷装填機","name_en":"STORM LOADER","desc_ja":"斉射間隔を短縮し、斉射威力を増幅","desc_en":"Trigger stronger burst volleys more often"},
+
+	{"id":"replication_foundry","gear":"drone","tier":2,"col":1,"row":0,"max_rank":5,"base_cost":2500.0,"growth":1.86,"parent":"","parent_rank":0,"name_ja":"子機複製工廠","name_en":"REPLICATION FOUNDRY","desc_ja":"毎LVドローンを1機追加","desc_en":"Fabricate one additional drone per rank"},
+	{"id":"synchronized_swarm","gear":"drone","tier":2,"col":0,"row":1,"max_rank":3,"base_cost":8200.0,"growth":2.05,"parent":"replication_foundry","parent_rank":2,"name_ja":"群体同期回路","name_en":"SYNCHRONIZED SWARM","desc_ja":"機数に応じたAUTO相乗倍率を増幅","desc_en":"Increase the damage synergy of every active drone"},
+	{"id":"harvester_drones","gear":"drone","tier":2,"col":2,"row":1,"max_rank":3,"base_cost":8800.0,"growth":2.05,"parent":"replication_foundry","parent_rank":2,"name_ja":"採集子機群","name_en":"HARVESTER DRONES","desc_ja":"ドローンごとのAUTO発電量を増幅","desc_en":"Increase AUTO generation per active drone"},
+
+	{"id":"dual_core_link","gear":"core","tier":2,"col":1,"row":0,"max_rank":5,"base_cost":2800.0,"growth":1.86,"parent":"","parent_rank":0,"name_ja":"二核連結架台","name_en":"DUAL-CORE LINK","desc_ja":"回収核の共鳴倍率を毎LV増幅","desc_en":"Increase the resonance of all recovered cores"},
+	{"id":"boss_core_forge","gear":"core","tier":2,"col":0,"row":1,"max_rank":3,"base_cost":9000.0,"growth":2.05,"parent":"dual_core_link","parent_rank":2,"requires_boss_core":true,"name_ja":"主獣核鍛造炉","name_en":"BOSS-CORE FORGE","desc_ja":"所有する主獣核ごとに全出力を増幅","desc_en":"Increase all output for every recovered boss core"},
+	{"id":"resonance_economy","gear":"core","tier":2,"col":2,"row":1,"max_rank":3,"base_cost":9600.0,"growth":2.05,"parent":"dual_core_link","parent_rank":2,"name_ja":"共鳴経済圏","name_en":"RESONANCE ECONOMY","desc_ja":"所有する機械核ごとに発電量を増幅","desc_en":"Increase generation for every recovered mechanical core"},
+
+	# TIER III — unlocked after all six beast cores are recovered.
+	{"id":"abyss_breaker","gear":"striker","tier":3,"col":1,"row":0,"max_rank":5,"base_cost":42000.0,"growth":2.0,"parent":"","parent_rank":0,"name_ja":"深淵破砕機","name_en":"ABYSS BREAKER","desc_ja":"真ルートのクリック威力を毎LV 25%増幅","desc_en":"Multiply late-route click power by 1.25 per rank"},
+	{"id":"omega_trigger","gear":"striker","tier":3,"col":0,"row":1,"max_rank":3,"base_cost":190000.0,"growth":2.2,"parent":"abyss_breaker","parent_rank":2,"name_ja":"終端撃鉄","name_en":"OMEGA TRIGGER","desc_ja":"手動臨界のAUTO追撃を大幅増幅","desc_en":"Greatly amplify AUTO volleys commanded by manual crits"},
+	{"id":"worldsplitter","gear":"striker","tier":3,"col":2,"row":1,"max_rank":1,"base_cost":1800000.0,"growth":1.0,"parent":"abyss_breaker","parent_rank":5,"name_ja":"地核割り","name_en":"WORLDSPLITTER","desc_ja":"25打ごとに最大HP比例の破砕波","desc_en":"Every 25th hit deals a max-HP fracture wave"},
+
+	{"id":"event_bank","gear":"dynamo","tier":3,"col":1,"row":0,"max_rank":5,"base_cost":46000.0,"growth":2.0,"parent":"","parent_rank":0,"name_ja":"事象蓄積庫","name_en":"EVENT BANK","desc_ja":"未使用CHARGEを全出力倍率へ変換","desc_en":"Convert banked CHARGE into a global output multiplier"},
+	{"id":"infinite_dynamo","gear":"dynamo","tier":3,"col":0,"row":1,"max_rank":3,"base_cost":210000.0,"growth":2.2,"parent":"event_bank","parent_rank":2,"name_ja":"無限発電心臓","name_en":"INFINITE DYNAMO","desc_ja":"全発電量を爆発的に増幅","desc_en":"Exponentially increase every source of generation"},
+	{"id":"perpetual_engine","gear":"dynamo","tier":3,"col":2,"row":1,"max_rank":1,"base_cost":2000000.0,"growth":1.0,"parent":"event_bank","parent_rank":5,"name_ja":"永久機関","name_en":"PERPETUAL ENGINE","desc_ja":"能力購入費の追加25%を即時還流","desc_en":"Immediately refund an additional 25% of skill costs"},
+
+	{"id":"singularity_cannon","gear":"autogun","tier":3,"col":1,"row":0,"max_rank":5,"base_cost":50000.0,"growth":2.0,"parent":"","parent_rank":0,"name_ja":"特異点砲","name_en":"SINGULARITY CANNON","desc_ja":"AUTO威力を毎LV 22%増幅","desc_en":"Multiply AUTO power by 1.22 per rank"},
+	{"id":"chrono_relay","gear":"autogun","tier":3,"col":0,"row":1,"max_rank":3,"base_cost":230000.0,"growth":2.2,"parent":"singularity_cannon","parent_rank":2,"name_ja":"時空継電器","name_en":"CHRONO RELAY","desc_ja":"AUTO射撃間隔を毎LV 12%短縮","desc_en":"Shorten AUTO fire interval by 12% per rank"},
+	{"id":"annihilation_round","gear":"autogun","tier":3,"col":2,"row":1,"max_rank":1,"base_cost":2200000.0,"growth":1.0,"parent":"singularity_cannon","parent_rank":5,"name_ja":"消滅弾頭","name_en":"ANNIHILATION ROUND","desc_ja":"AUTO臨界弾の威力を4倍へ変異","desc_en":"Transform AUTO critical shots into 4× annihilation rounds"},
+
+	{"id":"legion_protocol","gear":"drone","tier":3,"col":1,"row":0,"max_rank":5,"base_cost":54000.0,"growth":2.0,"parent":"","parent_rank":0,"name_ja":"軍団制御規約","name_en":"LEGION PROTOCOL","desc_ja":"群体AUTO威力を毎LV 15%増幅","desc_en":"Multiply swarm AUTO power by 1.15 per rank"},
+	{"id":"horizon_mark","gear":"drone","tier":3,"col":0,"row":1,"max_rank":3,"base_cost":250000.0,"growth":2.2,"parent":"legion_protocol","parent_rank":2,"name_ja":"地平線標識","name_en":"HORIZON MARK","desc_ja":"手動標識による次回AUTO倍率を増幅","desc_en":"Increase the next AUTO multiplier from manual marks"},
+	{"id":"world_hive","gear":"drone","tier":3,"col":2,"row":1,"max_rank":1,"base_cost":2400000.0,"growth":1.0,"parent":"legion_protocol","parent_rank":5,"name_ja":"世界群体","name_en":"WORLD HIVE","desc_ja":"12AUTOごとに最大HP比例の群体斉射","desc_en":"Every twelve AUTO hits launches a max-HP swarm volley"},
+
+	{"id":"six_core_crown","gear":"core","tier":3,"col":1,"row":0,"max_rank":5,"base_cost":58000.0,"growth":2.0,"parent":"","parent_rank":0,"name_ja":"六核王冠","name_en":"SIX-CORE CROWN","desc_ja":"六獣核とランクに応じて全出力を増幅","desc_en":"Multiply all output through the six recovered beast cores"},
+	{"id":"singularity_decoder","gear":"core","tier":3,"col":0,"row":1,"max_rank":3,"base_cost":270000.0,"growth":2.2,"parent":"six_core_crown","parent_rank":2,"name_ja":"特異点解読器","name_en":"SINGULARITY DECODER","desc_ja":"真ボスへの威力と封印解析速度を増幅","desc_en":"Increase true-boss damage and resonance decoding speed"},
+	{"id":"world_engine_key","gear":"core","tier":3,"col":2,"row":1,"max_rank":1,"base_cost":2600000.0,"growth":1.0,"parent":"six_core_crown","parent_rank":5,"name_ja":"地核機神鍵","name_en":"WORLD-ENGINE KEY","desc_ja":"真ボスへの全出力を最終増幅","desc_en":"Apply a final global multiplier against the true boss"},
 ]
 
 static func gear(id: String) -> Dictionary:
@@ -79,10 +121,24 @@ static func skills_for_gear(gear_id: String) -> Array[Dictionary]:
 			result.append(definition)
 	return result
 
+static func skills_for_gear_tier(gear_id: String, tier: int) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for definition in SKILLS:
+		if str(definition.gear) == gear_id and int(definition.get("tier", 1)) == tier:
+			result.append(definition)
+	return result
+
 static func max_ranks_for_gear(gear_id: String) -> int:
 	var total := 0
 	for definition in SKILLS:
 		if str(definition.gear) == gear_id:
+			total += int(definition.max_rank)
+	return total
+
+static func max_ranks_for_gear_tier(gear_id: String, tier: int) -> int:
+	var total := 0
+	for definition in SKILLS:
+		if str(definition.gear) == gear_id and int(definition.get("tier", 1)) == tier:
 			total += int(definition.max_rank)
 	return total
 

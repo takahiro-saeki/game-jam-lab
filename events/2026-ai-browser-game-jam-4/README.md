@@ -12,7 +12,7 @@
 1. **ZERO PERCENT CITY** — a compact battery-powered metroidvania.
 2. **CHARGEBACK** — a financial deck-building roguelike where your credit limit is your life.
 3. **CAPACITOR DEFENSE** — a circuit-routing tower defense driven by visible energy packets.
-4. **PROJECT CHARGE** — a mechanical-beast hunting clicker where every input attacks or generates power, while five visible machines expand through 36 branching skills and permanent stolen-core synergies.
+4. **PROJECT CHARGE** — a mechanical-beast hunting clicker where every input attacks or generates power, while five visible machines expand through 66 branching skills and permanent stolen-core synergies.
 
 The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE has been rebuilt around six visible mechanical-beast battles: any three hunts lead to a chosen normal boss and ending, while the remaining beasts, enhanced boss, and ARCH SINGULARITY form its optional true route.
 
@@ -21,13 +21,15 @@ The four concepts share one web build and launcher so they can be compared under
 The selected candidate is an active mechanical-beast clicker where every attack produces its own upgrade currency. A compact normal ending can continue into an expanded true route with the same build.
 
 - [Original active-clicker concept](docs/CHARGE_CLICKER_GDD.md)
-- [Current v5 five-gear specification](docs/PROJECT_CHARGE_V5_GDD.md)
+- [Previous v5 five-gear specification](docs/PROJECT_CHARGE_V5_GDD.md)
+- [Current v6 tiered-overclock specification](docs/PROJECT_CHARGE_V6_GDD.md)
 - [Previous v4 direct-CHARGE specification](docs/PROJECT_CHARGE_V4_GDD.md)
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
 - [Current playtest guide](docs/PROJECT_CHARGE_PLAYTEST.md)
 - [PixelLab style and prompt brief](docs/PIXELLAB_STYLE_BRIEF.md)
 - [v5 protagonist, gear, and region selections](docs/V5_PIXEL_ASSET_REVIEW.md)
 - [UI Identity / anti-AI pass](docs/UI_IDENTITY_PASS.md)
+- [Suno BGM production brief](docs/SUNO_MUSIC_BRIEF.md)
 
 ## Controls
 
@@ -73,17 +75,19 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 - Press the large **CHARGE ATTACK** button, `Space`, `Enter` / `X`, right-click, or the configured gamepad action. One input always produces exactly one manual command; holding a key never creates hidden auto-clicks.
 - The AUTO cannon fires from the beginning and remains online while manual attacks continue; no activation purchase or toggle is required.
 - Heat, cooling, meltdown, stored cells, and mandatory DISCHARGE have been removed. Enemy mechanics provide bonus windows and never erase progress.
-- Spend CHARGE across five visible machines: Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame. Each card has a human-selected PixelLab emblem and opens its own branching skill tree; together they contain 36 nodes and 157 ranks.
+- Spend CHARGE across five visible machines: Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame. Each card has a human-selected PixelLab emblem and opens its own branching skill tree; together they contain 66 nodes and 257 ranks across three technology tiers.
 - Forge Pilgrim is visible as the player character during every fight, with separate idle, pile-driver recoil, and PURE CHARGE feedback. Scrap Mine, Geothermal Core, and Biocircuit Crystal backgrounds switch automatically with the selected enemy.
 - The Dynamo tree eventually unlocks **PURE CHARGE**. In this manual mode a click deals zero damage but generates six times the CHARGE and briefly supercharges AUTO fire, creating a deliberate economy-versus-damage choice.
 - The Autogun tree splits into mutually exclusive Gatling and Rail mutations. Core Frame nodes require the corresponding defeated-beast core, so hunt order changes which builds become available.
 - Open a tree by clicking one of the five gear cards, pressing `1`–`5` / `T`, or gamepad `Menu`. Navigate nodes with the D-pad, switch gear with `Q` / `E` or shoulder buttons, and purchase with `Enter` / gamepad `A`.
+- TIER II unlocks after the first normal boss; TIER III unlocks after all six beast cores. Switch the visible tier with `Z` / `X` or the mapped language/active button while the tree is open.
 - Respec all five trees for free from the hunt map. Exact current and maximum enemy HP are always shown beside the percentage gauge.
 - Each beast changes the optimal rhythm through positive targets: timed armor breaks, CHARGE milestones, upgrade overdrive, manual/AUTO chains, drone marking, and analysis-guaranteed criticals.
 - Every defeated beast grants a named core automatically. Its rule becomes a permanent player ability for later battles.
 - GRID LEECH opens a short eight-click shatter window. THERMAL TITAN exposes its furnace after twenty clicks. The true boss rotates through three bonus-driven trials based on the full build.
 - Progress, CHARGE, upgrade ranks, acquired cores, enemy HP, and the current hunt save automatically and resume after closing the browser.
 - Use the arrow keys, D-pad, or left stick on maps and the skill tree. Ending results can be copied with `C` or the configured active-ability button.
+- The header tracks total session time. Normal and true endings expose a detailed JSON report and append it locally, while the deterministic benchmark runner records comparable automated clear times.
 - To erase the full campaign and start over, press `R` twice within the three-second confirmation window.
 
 ## Local development
@@ -98,6 +102,13 @@ Run the gameplay smoke tests:
 ```bash
 godot --headless --path events/2026-ai-browser-game-jam-4/godot \
   -s res://tests/smoke_test.gd
+```
+
+Regenerate the deterministic PROJECT CHARGE timing report:
+
+```bash
+godot --headless --path events/2026-ai-browser-game-jam-4/godot \
+  -s res://tests/project_charge_benchmark.gd
 ```
 
 Export a local browser build:
@@ -120,4 +131,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v5 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 36 nodes and 157 ranks, PURE CHARGE generation mode, six automatically integrated beast cores, two boss cores, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual UI/results, atomic v5 saves, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic five-click-per-second simulations with immediate purchases complete the normal route in about 6.5 minutes and the full route in about 15.5 minutes; first-time human targets remain 18–25 and 45–70 minutes. Eighty PixelLab candidates remain recorded, with human-reviewed protagonist, gear, region, UI, and enemy selections integrated for playtesting. The next visual pass will refine Forge Pilgrim into a slimmer silhouette and make the Twin-Rail Autogun more stylish without changing their gameplay roles.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v6 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 66 nodes and 257 ranks across three progression tiers, PURE CHARGE generation mode, six automatically integrated beast cores, two boss cores, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual UI/results, atomic saves, playtest telemetry, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the normal/full routes in about 6.4/10.7 minutes at five inputs per second and 14.6/21.1 minutes at two inputs per second; first-time human targets remain 18–25 and 45–70 minutes. PixelLab candidates, prompts, human reviews, and selected integrations remain recorded locally; a three-candidate slimmer protagonist refinement batch is available for review without replacing the current approved character.

@@ -346,11 +346,18 @@ func improve_test_grid(game: Node) -> void:
 		game.handle_node(4)
 
 func test_charge_clicker_v5() -> void:
-	print("\nPROJECT CHARGE V5 — FIVE-GEAR AUTO ENGINE")
+	print("\nPROJECT CHARGE V6 — TIERED FIVE-GEAR AUTO ENGINE")
 	var state := ChargeClickerState.new()
 	state.rng.seed = 404
-	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v5 starts with AUTO fire online and direct enemy combat")
-	check(ChargeGearCatalog.GEARS.size() == 5 and ChargeGearCatalog.SKILLS.size() == 36, "five visible gear trees contain thirty-six distinct nodes")
+	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v6 starts with AUTO fire online and direct enemy combat")
+	check(ChargeGearCatalog.GEARS.size() == 5 and ChargeGearCatalog.SKILLS.size() == 66, "five visible gear trees contain sixty-six distinct nodes across three tiers")
+	check(state.technology_tier() == 1 and not state.skill_unlocked("servo_overdrive") and state.skill_lock_reason("servo_overdrive") == "tier:2", "Tier II remains visibly locked before the normal boss")
+	var tier_state := ChargeClickerState.new()
+	tier_state.grant_boss_core("predation_reversal")
+	check(tier_state.technology_tier() == 2 and tier_state.skill_unlocked("servo_overdrive") and not tier_state.skill_unlocked("abyss_breaker"), "a normal boss core unlocks Tier II without prematurely opening Tier III")
+	for core_id in ["impact_guidance", "deep_storage", "redheat_conversion", "cascade_relay", "swarm_clock", "phase_computation"]:
+		tier_state.grant_beast_core(core_id)
+	check(tier_state.technology_tier() == 3 and tier_state.skill_unlocked("abyss_breaker"), "all six beast cores unlock the true-route Tier III")
 	check(state.skill_unlocked("impact_coil") and not state.skill_unlocked("combo_gear"), "tree roots begin available while branch nodes enforce visible prerequisites")
 	var hp_before := state.boss_hp
 	var first_hit := state.manual_attack(0)
@@ -453,17 +460,27 @@ func test_charge_clicker_v5() -> void:
 
 	var save_path := "/tmp/project_charge_v5_smoke_test.cfg"
 	var save := ChargeClickerSave.new(save_path)
-	check(save.save_bundle(state, route) == OK, "v5 five-gear run and hunt route serialize atomically")
+	check(save.save_bundle(state, route) == OK, "v6 tiered run and hunt route serialize atomically")
 	var restored_state := ChargeClickerState.new()
 	var restored_route := ChargeCampaignRoute.new()
-	check(save.load_bundle_into(restored_state, restored_route), "v5 campaign save restores successfully")
+	check(save.load_bundle_into(restored_state, restored_route), "v6 campaign save restores successfully")
 	check("impact_guidance" in restored_state.beast_cores and restored_state.lifetime_charge == state.lifetime_charge and restored_route.phase == restored_route.RoutePhase.SINGULARITY, "save preserves CHARGE, repeatable upgrades, cores and route position")
+	var telemetry := ChargeClickerState.new()
+	telemetry.set_playtest_mode("benchmark")
+	telemetry.begin_stage("gearmaw", "manual", 1.0, 1.0, 0)
+	telemetry.boss_hp = 1.0
+	telemetry.advance_session_time(0.25)
+	telemetry.tick(0.25, false)
+	telemetry.manual_attack(1)
+	var telemetry_report := telemetry.build_playtest_report(route.snapshot(), "test")
+	check(telemetry.encounter_history.size() == 1 and float(telemetry.encounter_history[0].duration_seconds) > 0.0, "playtest telemetry records per-encounter clear time and counters")
+	check(str(telemetry_report.mode) == "benchmark" and telemetry_report.encounters.size() == 1 and str(telemetry_report.build_id) == telemetry.BUILD_ID, "playtest report distinguishes benchmark runs and exports structured history")
 	save.clear()
 
 	var normal_seconds := simulate_project_charge_v5(false)
 	var true_seconds := simulate_project_charge_v5(true)
-	print("PROJECT CHARGE v5 efficient normal route: %.1f seconds" % normal_seconds)
-	print("PROJECT CHARGE v5 efficient true route: %.1f seconds" % true_seconds)
+	print("PROJECT CHARGE v6 efficient normal route: %.1f seconds" % normal_seconds)
+	print("PROJECT CHARGE v6 efficient true route: %.1f seconds" % true_seconds)
 	check(normal_seconds > 0.0 and normal_seconds < true_seconds, "true route is materially longer than the normal judging route")
 
 func simulate_project_charge_v5(include_true_route: bool) -> float:
@@ -480,14 +497,14 @@ func simulate_project_charge_v5(include_true_route: bool) -> float:
 		simulated.begin_stage(id, str(definition.build_tag), 1.0, ChargeStageCatalog.stage_hp(id, stage_index), stage_index)
 		var encounter_started := simulated.elapsed
 		drive_project_charge_v5(simulated, 24000)
-		print("  v5 sim %s: %.1fs, hp %.0f, upgrades %d, charge %d" % [id, simulated.elapsed - encounter_started, simulated.boss_hp, simulated.skill_points_bought(), simulated.credits])
+		print("  v6 sim %s: %.1fs, maxHP %.0f, upgrades %d, autoDPS %.0f, charge %d" % [id, simulated.elapsed - encounter_started, simulated.boss_max_hp, simulated.skill_points_bought(), simulated.estimated_auto_dps(), simulated.credits])
 		simulated.grant_beast_core(str(definition.core_id))
 		if stage_index == 2:
 			var boss := ChargeStageCatalog.boss("grid_leech")
 			simulated.begin_campaign_boss("grid_leech", float(boss.hp), false, false)
 			var boss_started := simulated.elapsed
 			drive_project_charge_v5(simulated, 36000)
-			print("  v5 sim grid_leech: %.1fs, hp %.0f" % [simulated.elapsed - boss_started, simulated.boss_hp])
+			print("  v6 sim grid_leech: %.1fs, maxHP %.0f, autoDPS %.0f" % [simulated.elapsed - boss_started, simulated.boss_max_hp, simulated.estimated_auto_dps()])
 			simulated.grant_boss_core(str(boss.core_id))
 			if not include_true_route:
 				return simulated.elapsed
@@ -496,13 +513,13 @@ func simulate_project_charge_v5(include_true_route: bool) -> float:
 		simulated.begin_campaign_boss("thermal_titan", float(enhanced.enhanced_hp), true, false)
 		var enhanced_started := simulated.elapsed
 		drive_project_charge_v5(simulated, 60000)
-		print("  v5 sim thermal_titan+: %.1fs, hp %.0f" % [simulated.elapsed - enhanced_started, simulated.boss_hp])
+		print("  v6 sim thermal_titan+: %.1fs, maxHP %.0f, autoDPS %.0f" % [simulated.elapsed - enhanced_started, simulated.boss_max_hp, simulated.estimated_auto_dps()])
 		simulated.grant_boss_core(str(enhanced.core_id))
 		var singularity := ChargeStageCatalog.boss("arch_singularity")
 		simulated.begin_campaign_boss("arch_singularity", float(singularity.hp), false, true)
 		var singularity_started := simulated.elapsed
 		drive_project_charge_v5(simulated, 90000)
-		print("  v5 sim arch_singularity: %.1fs, hp %.0f, phase %d, upgrades %d" % [simulated.elapsed - singularity_started, simulated.boss_hp, simulated.singularity_phase, simulated.skill_points_bought()])
+		print("  v6 sim arch_singularity: %.1fs, hp %.0f, phase %d, upgrades %d, click %.0f, autoDPS %.0f, global %.2f, drones %d, interval %.3f, core %.2f, charge %d" % [simulated.elapsed - singularity_started, simulated.boss_hp, simulated.singularity_phase, simulated.skill_points_bought(), simulated.manual_damage, simulated.estimated_auto_dps(), simulated.global_output_multiplier(), simulated.drone_count, simulated.auto_interval, simulated.core_power, simulated.credits])
 	return simulated.elapsed
 
 func drive_project_charge_v5(simulated, max_steps: int) -> void:
@@ -510,6 +527,7 @@ func drive_project_charge_v5(simulated, max_steps: int) -> void:
 		if simulated.generation_mode_unlocked():
 			simulated.manual_mode = "attack" if step % 4 == 0 else "generate"
 		simulated.manual_attack(-1)
+		simulated.advance_session_time(0.2)
 		simulated.tick(0.2, false)
 		purchase_affordable_skills(simulated)
 		if simulated.stage_phase == simulated.StagePhase.CLEAR:
