@@ -65,6 +65,30 @@ const AutoControlTextures := {
 	"auto-open-relay-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-open-relay-a.png"),
 	"auto-stopped-rotor-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-stopped-rotor-a.png"),
 }
+const ProtagonistTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/protagonist/protagonist-forge-pilgrim-a.png")
+const GearTextures := {
+	"striker": preload("res://assets/charge_clicker/pixellab/source/gear/gear-striker-piston-a.png"),
+	"dynamo": preload("res://assets/charge_clicker/pixellab/source/gear/gear-dynamo-flywheel-a.png"),
+	"autogun": preload("res://assets/charge_clicker/pixellab/source/gear/gear-autogun-rail-a.png"),
+	"drone": preload("res://assets/charge_clicker/pixellab/source/gear/gear-drone-crown-a.png"),
+	"core": preload("res://assets/charge_clicker/pixellab/source/gear/gear-core-cradle-a.png"),
+}
+const RegionBackgrounds := {
+	"scrap": preload("res://assets/charge_clicker/pixellab/source/environment/bg-scrap-ossuary-a.png"),
+	"geothermal": preload("res://assets/charge_clicker/pixellab/source/environment/bg-geo-pressure-foundry-a.png"),
+	"biocrystal": preload("res://assets/charge_clicker/pixellab/source/environment/bg-biocrystal-observatory-a.png"),
+}
+const EncounterRegions := {
+	"gearmaw": "scrap",
+	"vaultback": "scrap",
+	"grid_leech": "scrap",
+	"pyre_wyrm": "geothermal",
+	"thermal_titan": "geothermal",
+	"relay_hydra": "biocrystal",
+	"swarm_matriarch": "biocrystal",
+	"phase_mantis": "biocrystal",
+	"arch_singularity": "biocrystal",
+}
 const UpgradeRackTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/upgrade-rack-switchboard-a.png")
 const ControlConsoleKitTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/control-kit-switchboard-a.png")
 const WraithGaugeTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/wraith-gauge-switchboard-a.png")
@@ -95,6 +119,7 @@ var charge_control_texture: Texture2D = ChargeControlTextures["charge-piston-a"]
 var discharge_control_texture: Texture2D = DischargeControlTextures["discharge-wave-a"]
 var auto_control_texture: Texture2D = AutoControlTextures["auto-stopped-rotor-a"]
 var art_preview_enabled := false
+var art_preview_encounter := ""
 var campaign_preview_screen := ""
 
 var animation_time := 0.0
@@ -114,6 +139,7 @@ var particles: Array[Dictionary] = []
 var floating_texts: Array[Dictionary] = []
 var resource_packets: Array[Dictionary] = []
 var shard_pulse := 0.0
+var protagonist_action_pulse := 0.0
 var auto_effect_timer := 0.0
 var autosave_timer := 0.0
 var reward_selected := 0
@@ -192,6 +218,7 @@ func apply_web_art_preview() -> void:
 		return
 	var values := parse_query_string(str(window.location.search))
 	campaign_preview_screen = str(values.get("campaign_preview", ""))
+	art_preview_encounter = str(values.get("encounter", ""))
 	if str(values.get("art_preview", "")) != "1" and campaign_preview_screen.is_empty():
 		return
 	art_preview_enabled = true
@@ -255,10 +282,15 @@ func configure_campaign_preview() -> void:
 			campaign_selected = 0
 
 func configure_art_preview_state() -> void:
-	run.stage_phase = ChargeState.StagePhase.BOSS
-	run.current_stage_id = "gearmaw"
-	run.current_boss_id = "gearmaw"
-	run.boss_max_hp = ChargeState.BOSS_MAX_HP
+	var preview_id := art_preview_encounter if not art_preview_encounter.is_empty() else "gearmaw"
+	var stage_definition := StageCatalog.stage(preview_id)
+	var boss_definition := StageCatalog.boss(preview_id)
+	if not stage_definition.is_empty():
+		run.begin_stage(preview_id, str(stage_definition.build_tag), 1.0, StageCatalog.stage_hp(preview_id, 0), 0)
+	elif not boss_definition.is_empty():
+		run.begin_campaign_boss(preview_id, float(boss_definition.get("hp", ChargeState.BOSS_MAX_HP)), false, preview_id == "arch_singularity")
+	else:
+		run.begin_stage("gearmaw", "manual", 1.0, ChargeState.BOSS_MAX_HP, 0)
 	run.boss_hp = run.boss_max_hp * 0.62
 	run.credits = 128
 	run.lifetime_charge = 356
@@ -322,6 +354,8 @@ func _process(delta: float) -> void:
 		discharge_wave = maxf(0.0, discharge_wave - delta * 1.4)
 	if shard_pulse > 0.0:
 		shard_pulse = maxf(0.0, shard_pulse - delta * 1.7)
+	if protagonist_action_pulse > 0.0:
+		protagonist_action_pulse = maxf(0.0, protagonist_action_pulse - delta * 5.2)
 	if message_time > 0.0:
 		message_time -= delta
 	if result_copied_time > 0.0:
@@ -1073,6 +1107,7 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 	if run.stage_phase in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]:
 		return {"valid": false, "critical": false, "damage": 0.0, "charge": 0, "boss_defeated": false}
 	var result: Dictionary = run.manual_attack(critical_mode)
+	protagonist_action_pulse = 1.0
 	var generating := bool(result.get("generating", false))
 	var attack_origin := charge_rect.get_center()
 	var target := Vector2(1038, 248)
@@ -1442,10 +1477,11 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.with_alpha(flash_color, screen_flash * 0.18))
 
 func draw_background() -> void:
-	# Phase 2 provisional PixelLab selections. The 320x180 backdrop scales to
-	# 1280x720 by an exact 4x, preserving the native pixel clusters.
-	draw_texture_rect(generator_background, Rect2(Vector2.ZERO, VIEW), false, Color(0.72, 0.82, 0.94, 0.26))
-	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.015, 0.03, 0.07, 0.48))
+	# Every approved 320x180 region backdrop scales to 1280x720 at an exact 4x.
+	# The legacy art-preview query still owns its selected generator background.
+	var background := current_region_background()
+	draw_texture_rect(background, Rect2(Vector2.ZERO, VIEW), false, Color(0.78, 0.86, 0.98, 0.58))
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.015, 0.03, 0.07, 0.42))
 	for x in range(-120, 1440, 80):
 		draw_line(Vector2(x, 0), Vector2(x - 260, 720), Palette.with_alpha(Palette.BLUE, 0.045), 1.0)
 	for y in range(100, 720, 72):
@@ -1454,6 +1490,34 @@ func draw_background() -> void:
 		var point := Vector2(fmod(index * 193.0, 1280.0), fmod(index * 109.0, 720.0))
 		var pulse := 0.14 + sin(animation_time * 1.8 + index) * 0.08
 		draw_circle(point, 1.2, Palette.with_alpha(Palette.CYAN, pulse))
+
+func current_region_key() -> String:
+	if art_preview_enabled and art_preview_encounter.is_empty():
+		return "preview"
+	var encounter_id := str(run.current_boss_id)
+	if encounter_id.is_empty() or not EncounterRegions.has(encounter_id):
+		encounter_id = str(run.current_stage_id)
+	if EncounterRegions.has(encounter_id):
+		return str(EncounterRegions[encounter_id])
+	if campaign_route != null and campaign_route.phase in [CampaignRoute.RoutePhase.TRUE_MAP, CampaignRoute.RoutePhase.SINGULARITY]:
+		return "biocrystal"
+	return "scrap"
+
+func current_region_background() -> Texture2D:
+	if current_region_key() == "preview":
+		return generator_background
+	return RegionBackgrounds.get(current_region_key(), RegionBackgrounds["scrap"])
+
+func current_region_label() -> String:
+	match current_region_key():
+		"geothermal":
+			return loc("地熱炉心層", "GEOTHERMAL CORE")
+		"biocrystal":
+			return loc("生体回路・結晶深層", "BIOCIRCUIT CRYSTAL DEPTHS")
+		"preview":
+			return loc("素材比較室", "ART REVIEW CHAMBER")
+		_:
+			return loc("廃棄坑道", "SCRAP MINE")
 
 func draw_campaign_screen() -> void:
 	draw_rect(Rect2(24, 96, 1232, 604), Color(0.018, 0.035, 0.075, 0.93))
@@ -1624,8 +1688,8 @@ func campaign_header_context() -> String:
 	if not run.current_stage_id.is_empty():
 		var definition := current_stage_definition()
 		if not definition.is_empty():
-			return stage_name(definition)
-	return encounter_name()
+			return stage_name(definition) + " // " + current_region_label()
+	return encounter_name() + " // " + current_region_label()
 
 func draw_small_button(rect: Rect2, text: String, accent: Color) -> void:
 	var hovered := rect.has_point(mouse_position)
@@ -1664,19 +1728,11 @@ func draw_reactor_panel() -> void:
 	var panel := Rect2(32, 106, 360, 582)
 	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(Palette.CYAN, 0.4), 18.0, 2.0)
 	draw_line(Vector2(48, 151), Vector2(376, 151), Palette.with_alpha(Palette.CYAN, 0.18), 1.0)
-	draw_string(DisplayFont, Vector2(58, 140), loc("CHARGE攻撃機関", "CHARGE ATTACK ENGINE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
-	draw_texture_rect(reactor_texture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
-	var pulse: float = 1.0 + sin(animation_time * (2.0 + run.charge_ratio() * 4.0)) * (0.015 + run.charge_ratio() * 0.025)
-	var radius: float = 100.0 * pulse
-	for ring in range(4):
-		draw_arc(REACTOR_CENTER, radius + ring * 9.0, -PI * 0.75 + animation_time * (0.24 + ring * 0.05) * (-1.0 if ring % 2 else 1.0), PI * 1.1 + animation_time * (0.24 + ring * 0.05) * (-1.0 if ring % 2 else 1.0), 48, Palette.with_alpha(Palette.CYAN, 0.42 - ring * 0.07), 2.0)
-	var reactor_color: Color = Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.CYAN
-	draw_circle(REACTOR_CENTER, 78.0, Palette.with_alpha(reactor_color, 0.12 + run.charge_ratio() * 0.18))
-	draw_arc(REACTOR_CENTER, 80.0, -PI * 0.5, -PI * 0.5 + TAU * run.charge_ratio(), 64, reactor_color, 8.0)
-	draw_circle(REACTOR_CENTER, 51.0, Palette.with_alpha(Palette.INK, 0.96))
-	draw_circle(REACTOR_CENTER, 43.0 + sin(animation_time * 4.0) * 2.0, Palette.with_alpha(reactor_color, 0.16 + run.charge_ratio() * 0.32))
-	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, -7), format_number(run.credits), HORIZONTAL_ALIGNMENT_CENTER, 156, 23, Palette.PAPER)
-	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, 23), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 156, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(58, 140), loc("深層討伐機・炉巡礼機", "ABYSS HUNTER · FORGE PILGRIM"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Palette.MUTED)
+	if art_preview_enabled and art_preview_encounter.is_empty():
+		draw_legacy_reactor_visual()
+	else:
+		draw_protagonist_hunter()
 
 	var manual_stat := Rect2(58, 398, 144, 70)
 	var auto_stat := Rect2(216, 398, 144, 70)
@@ -1705,6 +1761,55 @@ func draw_reactor_panel() -> void:
 	draw_string(DisplayFont, mode_toggle_rect.position + Vector2(0, 27), loc("G  手動モード切替", "G  SWITCH MANUAL MODE") if mode_available else loc("発電ツリーでPURE CHARGE解禁", "UNLOCK PURE CHARGE IN DYNAMO TREE"), HORIZONTAL_ALIGNMENT_CENTER, mode_toggle_rect.size.x, 12, Palette.PAPER if mode_available else Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(58, 664), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 310, 12, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(58, 686), loc("クリック %d  AUTO %d  臨界 %d", "CLICKS %d  AUTO %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 310, 10, Palette.MUTED)
+
+func draw_legacy_reactor_visual() -> void:
+	draw_texture_rect(reactor_texture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
+	var pulse: float = 1.0 + sin(animation_time * (2.0 + run.charge_ratio() * 4.0)) * (0.015 + run.charge_ratio() * 0.025)
+	var radius: float = 100.0 * pulse
+	for ring in range(4):
+		draw_arc(REACTOR_CENTER, radius + ring * 9.0, -PI * 0.75 + animation_time * (0.24 + ring * 0.05) * (-1.0 if ring % 2 else 1.0), PI * 1.1 + animation_time * (0.24 + ring * 0.05) * (-1.0 if ring % 2 else 1.0), 48, Palette.with_alpha(Palette.CYAN, 0.42 - ring * 0.07), 2.0)
+	var reactor_color: Color = Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.CYAN
+	draw_circle(REACTOR_CENTER, 78.0, Palette.with_alpha(reactor_color, 0.12 + run.charge_ratio() * 0.18))
+	draw_arc(REACTOR_CENTER, 80.0, -PI * 0.5, -PI * 0.5 + TAU * run.charge_ratio(), 64, reactor_color, 8.0)
+	draw_circle(REACTOR_CENTER, 51.0, Palette.with_alpha(Palette.INK, 0.96))
+	draw_circle(REACTOR_CENTER, 43.0 + sin(animation_time * 4.0) * 2.0, Palette.with_alpha(reactor_color, 0.16 + run.charge_ratio() * 0.32))
+	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, -7), format_number(run.credits), HORIZONTAL_ALIGNMENT_CENTER, 156, 23, Palette.PAPER)
+	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, 23), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 156, 11, Palette.MUTED)
+
+func draw_protagonist_hunter() -> void:
+	var generating: bool = run.manual_mode == "generate"
+	var active_color := Palette.MINT if generating else Palette.AMBER if protagonist_action_pulse > 0.05 else Palette.CYAN
+	var center := Vector2(212, 265 + sin(animation_time * 1.8) * 2.0)
+	if generating:
+		center.y -= protagonist_action_pulse * 4.0
+	else:
+		center.x += protagonist_action_pulse * 15.0
+	for ring in range(4):
+		var ring_radius := 82.0 + ring * 12.0 + (1.0 - protagonist_action_pulse) * (8.0 if protagonist_action_pulse > 0.0 else 0.0)
+		var ring_alpha := 0.34 - ring * 0.055
+		if generating:
+			ring_alpha += 0.08 + sin(animation_time * 4.0 + ring) * 0.04
+		draw_arc(center + Vector2(0, 5), ring_radius, -PI * 0.72 + animation_time * (0.14 + ring * 0.035) * (-1.0 if ring % 2 else 1.0), PI * 1.08 + animation_time * (0.14 + ring * 0.035) * (-1.0 if ring % 2 else 1.0), 44, Palette.with_alpha(active_color, ring_alpha), 2.0)
+	if protagonist_action_pulse > 0.18 and not generating:
+		for trail in range(3):
+			var trail_offset := Vector2(-10.0 - trail * 8.0, 2.0)
+			draw_texture_rect(ProtagonistTexture, Rect2(center - Vector2(104, 104) + trail_offset, Vector2(208, 208)), false, Palette.with_alpha(Palette.CYAN, 0.10 - trail * 0.025))
+	if generating:
+		for spark in range(6):
+			var angle := animation_time * 1.2 + TAU * float(spark) / 6.0
+			var spark_pos := center + Vector2.from_angle(angle) * (76.0 + sin(animation_time * 3.0 + spark) * 8.0)
+			draw_circle(spark_pos, 3.0, Palette.with_alpha(Palette.MINT, 0.72))
+	draw_texture_rect(ProtagonistTexture, Rect2(center - Vector2(104, 104), Vector2(208, 208)), false, Color(1.0, 1.0, 1.0, 0.98))
+	var state_label := loc("待機", "STANDBY")
+	if generating:
+		state_label = "PURE CHARGE"
+	elif protagonist_action_pulse > 0.05:
+		state_label = loc("撃鉄打撃", "PILE-DRIVER STRIKE")
+	var status_plate := Rect2(74, 354, 276, 34)
+	draw_machine_plate(status_plate, Palette.with_alpha(Palette.INK, 0.88), Palette.with_alpha(active_color, 0.54), 6.0, 1.0)
+	draw_string(Palette.UI_FONT, status_plate.position + Vector2(10, 14), state_label, HORIZONTAL_ALIGNMENT_LEFT, 112, 10, active_color)
+	draw_string(DisplayFont, status_plate.position + Vector2(116, 24), format_number(run.credits), HORIZONTAL_ALIGNMENT_RIGHT, 112, 19, Palette.PAPER)
+	draw_string(Palette.UI_FONT, status_plate.position + Vector2(234, 22), "CHARGE", HORIZONTAL_ALIGNMENT_LEFT, 36, 8, Palette.MUTED)
 
 func cheapest_upgrade_cost() -> int:
 	var cheapest := 2147483647
@@ -1938,11 +2043,13 @@ func draw_gear_rack() -> void:
 		var hovered := rect.has_point(mouse_position)
 		var level: int = run.gear_level(str(gear.id))
 		var maximum := GearCatalog.max_ranks_for_gear(str(gear.id))
+		var gear_texture: Texture2D = GearTextures.get(str(gear.id))
 		draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.92 if selected else 0.78), Palette.with_alpha(color, 1.0 if selected or hovered else 0.40), 9.0, 2.0 if selected or hovered else 1.0)
 		draw_rect(Rect2(rect.position + Vector2(7, 7), Vector2(rect.size.x - 14, 4)), Palette.with_alpha(color, 0.75 if level > 0 else 0.25))
-		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 30), str(index + 1), HORIZONTAL_ALIGNMENT_LEFT, 20, 11, color)
-		draw_string(DisplayFont, rect.position + Vector2(30, 30), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 108, 12, Palette.PAPER)
-		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 52), str(gear.get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 124, 9, Palette.MUTED)
+		draw_texture_rect(gear_texture, Rect2(rect.position + Vector2(9, 16), Vector2(44, 44)), false, Color(1.0, 1.0, 1.0, 0.98 if level > 0 or selected else 0.68))
+		draw_string(Palette.UI_FONT, rect.position + Vector2(120, 25), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_RIGHT, 18, 9, color)
+		draw_string(DisplayFont, rect.position + Vector2(54, 31), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 68, 11, Palette.PAPER)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(54, 52), str(gear.get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 82, 8, Palette.MUTED)
 		var skills := GearCatalog.skills_for_gear(str(gear.id))
 		for node_index in range(skills.size()):
 			var skill: Dictionary = skills[node_index]
@@ -1962,10 +2069,12 @@ func draw_gear_tree_overlay() -> void:
 		var tab := tree_tab_rects[index]
 		var color := Color(str(gear.accent))
 		var selected := selected_gear_index == index
+		var gear_texture: Texture2D = GearTextures.get(str(gear.id))
 		draw_machine_plate(tab, Palette.with_alpha(color, 0.26 if selected else 0.045), Palette.with_alpha(color, 1.0 if selected else 0.32), 9.0, 2.0 if selected else 1.0)
-		draw_string(Palette.UI_FONT, tab.position + Vector2(12, 21), "%d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, 20, 11, color)
-		draw_string(DisplayFont, tab.position + Vector2(34, 23), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 166, 13, Palette.PAPER if selected else Palette.MUTED)
-		draw_string(Palette.UI_FONT, tab.position + Vector2(34, 42), "LV %d / %d" % [run.gear_level(str(gear.id)), GearCatalog.max_ranks_for_gear(str(gear.id))], HORIZONTAL_ALIGNMENT_LEFT, 166, 9, color)
+		draw_texture_rect(gear_texture, Rect2(tab.position + Vector2(9, 8), Vector2(38, 38)), false, Color(1.0, 1.0, 1.0, 1.0 if selected else 0.62))
+		draw_string(Palette.UI_FONT, tab.position + Vector2(179, 18), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_RIGHT, 14, 8, color)
+		draw_string(DisplayFont, tab.position + Vector2(50, 23), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 126, 12, Palette.PAPER if selected else Palette.MUTED)
+		draw_string(Palette.UI_FONT, tab.position + Vector2(50, 42), "LV %d / %d" % [run.gear_level(str(gear.id)), GearCatalog.max_ranks_for_gear(str(gear.id))], HORIZONTAL_ALIGNMENT_LEFT, 126, 9, color)
 	draw_small_button(tree_close_rect, loc("閉じる", "CLOSE"), Palette.CORAL)
 
 	var current_gear: Dictionary = GearCatalog.GEARS[selected_gear_index]
@@ -2020,8 +2129,10 @@ func draw_tree_detail_panel(accent: Color) -> void:
 		return
 	var id := str(definition.id)
 	var copy := skill_copy(definition)
+	var gear_texture: Texture2D = GearTextures.get(str(definition.gear))
+	draw_texture_rect(gear_texture, Rect2(1114, 194, 78, 78), false, Color(1.0, 1.0, 1.0, 0.88))
 	draw_string(Palette.UI_FONT, Vector2(842, 214), str(GearCatalog.gear(str(definition.gear)).get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 340, 11, accent)
-	draw_string(DisplayFont, Vector2(842, 248), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 340, 22, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(842, 248), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 262, 22, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(842, 280), str(copy.desc), HORIZONTAL_ALIGNMENT_LEFT, 340, 13, Palette.MUTED)
 	draw_line(Vector2(842, 300), Vector2(1192, 300), Palette.with_alpha(accent, 0.22), 1.0)
 	draw_string(Palette.UI_FONT, Vector2(842, 328), loc("現在ランク", "CURRENT RANK"), HORIZONTAL_ALIGNMENT_LEFT, 160, 11, Palette.MUTED)

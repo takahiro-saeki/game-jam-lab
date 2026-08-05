@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-04T13:55:16.686Z",
+  "updatedAt": "2026-08-05T01:11:57.926Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -16,7 +16,7 @@
       "chargeControl": "charge-piston-a",
       "dischargeControl": "discharge-wave-a",
       "autoControl": "auto-stopped-rotor-a",
-      "note": "人間レビューを反映してGodotへ統合済み。操作盤・敵ゲージ・資源装置は採用評価、ラックのみ重工業Aを交換可能な暫定採用としています。",
+      "note": "人間レビューを反映してGodotへ統合済み。v5自律砲座は同率評価のうち具体的な改善メモがある双軌型を実装本命とし、主人公は細身化を次回差分へ残した仮組みです。",
       "upgradeRack": "upgrade-rack-switchboard-a",
       "controlKit": "control-kit-switchboard-a",
       "wraithGauge": "wraith-gauge-switchboard-a",
@@ -24,12 +24,12 @@
       "v5Protagonist": "protagonist-forge-pilgrim-a",
       "v5GearStriker": "gear-striker-piston-a",
       "v5GearDynamo": "gear-dynamo-flywheel-a",
-      "v5GearAutogun": "gear-autogun-rotor-a",
-      "v5GearDrone": "gear-drone-dock-a",
-      "v5GearCore": "gear-core-spine-a",
+      "v5GearAutogun": "gear-autogun-rail-a",
+      "v5GearDrone": "gear-drone-crown-a",
+      "v5GearCore": "gear-core-cradle-a",
       "v5BackgroundScrap": "bg-scrap-ossuary-a",
-      "v5BackgroundGeothermal": "bg-geo-coolant-cathedral-a",
-      "v5BackgroundBiocrystal": "bg-biocrystal-root-grotto-a"
+      "v5BackgroundGeothermal": "bg-geo-pressure-foundry-a",
+      "v5BackgroundBiocrystal": "bg-biocrystal-observatory-a"
     },
     "palette": [
       "#09111F",
@@ -2604,10 +2604,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "approved",
+            "rating": 4,
+            "note": "もう少し人間っぽい細くてスタイリッシュな感じが良かった",
+            "reviewedAt": "2026-08-05T00:37:39.318Z"
           }
         },
         {
@@ -2744,10 +2744,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "approved",
+            "rating": 5,
+            "note": "これが一番良い",
+            "reviewedAt": "2026-08-05T00:35:12.737Z"
           }
         },
         {
@@ -2884,10 +2884,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T00:35:21.444Z"
           }
         },
         {
@@ -3024,10 +3024,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 3,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T00:35:49.618Z"
           }
         },
         {
@@ -3067,10 +3067,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "approved",
+            "rating": 4,
+            "note": "これがもう少し銃の形がスタイリッシュだったら完璧だった",
+            "reviewedAt": "2026-08-05T01:11:41.367Z"
           }
         },
         {
@@ -3110,10 +3110,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T00:35:54.126Z"
           }
         }
       ]
@@ -3250,10 +3250,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
+            "status": "approved",
             "rating": null,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T01:11:57.926Z"
           }
         }
       ]
@@ -3304,10 +3304,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 4,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T00:36:36.384Z"
           }
         },
         {
@@ -3530,10 +3530,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T00:36:45.984Z"
           }
         }
       ]
@@ -3670,10 +3670,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T00:36:59.852Z"
           }
         }
       ]
@@ -3810,10 +3810,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T01:11:51.588Z"
           }
         }
       ]

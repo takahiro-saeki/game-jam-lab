@@ -26,6 +26,7 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
 - [Current playtest guide](docs/PROJECT_CHARGE_PLAYTEST.md)
 - [PixelLab style and prompt brief](docs/PIXELLAB_STYLE_BRIEF.md)
+- [v5 protagonist, gear, and region selections](docs/V5_PIXEL_ASSET_REVIEW.md)
 - [UI Identity / anti-AI pass](docs/UI_IDENTITY_PASS.md)
 
 ## Controls
@@ -72,7 +73,8 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 - Press the large **CHARGE ATTACK** button, `Space`, `Enter` / `X`, right-click, or the configured gamepad action. One input always produces exactly one manual command; holding a key never creates hidden auto-clicks.
 - The AUTO cannon fires from the beginning and remains online while manual attacks continue; no activation purchase or toggle is required.
 - Heat, cooling, meltdown, stored cells, and mandatory DISCHARGE have been removed. Enemy mechanics provide bonus windows and never erase progress.
-- Spend CHARGE across five visible machines: Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame. Each card opens its own branching skill tree; together they contain 36 nodes and 157 ranks.
+- Spend CHARGE across five visible machines: Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame. Each card has a human-selected PixelLab emblem and opens its own branching skill tree; together they contain 36 nodes and 157 ranks.
+- Forge Pilgrim is visible as the player character during every fight, with separate idle, pile-driver recoil, and PURE CHARGE feedback. Scrap Mine, Geothermal Core, and Biocircuit Crystal backgrounds switch automatically with the selected enemy.
 - The Dynamo tree eventually unlocks **PURE CHARGE**. In this manual mode a click deals zero damage but generates six times the CHARGE and briefly supercharges AUTO fire, creating a deliberate economy-versus-damage choice.
 - The Autogun tree splits into mutually exclusive Gatling and Rail mutations. Core Frame nodes require the corresponding defeated-beast core, so hunt order changes which builds become available.
 - Open a tree by clicking one of the five gear cards, pressing `1`–`5` / `T`, or gamepad `Menu`. Navigate nodes with the D-pad, switch gear with `Q` / `E` or shoulder buttons, and purchase with `Enter` / gamepad `A`.
@@ -118,4 +120,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v5 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 36 nodes and 157 ranks, PURE CHARGE generation mode, six automatically integrated beast cores, two boss cores, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual UI/results, atomic v5 saves, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic five-click-per-second simulations with immediate purchases complete the normal route in about 6.5 minutes and the full route in about 15.5 minutes; first-time human targets remain 18–25 and 45–70 minutes. Fifty-three PixelLab candidates remain recorded, including the integrated art for all nine enemies. The next milestone is hands-on v5 tree readability and build-diversity review.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v5 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 36 nodes and 157 ranks, PURE CHARGE generation mode, six automatically integrated beast cores, two boss cores, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual UI/results, atomic v5 saves, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic five-click-per-second simulations with immediate purchases complete the normal route in about 6.5 minutes and the full route in about 15.5 minutes; first-time human targets remain 18–25 and 45–70 minutes. Eighty PixelLab candidates remain recorded, with human-reviewed protagonist, gear, region, UI, and enemy selections integrated for playtesting. The next visual pass will refine Forge Pilgrim into a slimmer silhouette and make the Twin-Rail Autogun more stylish without changing their gameplay roles.

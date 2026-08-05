@@ -1,6 +1,6 @@
 # PROJECT CHARGE — PixelLab Style Brief
 
-> Status: 80 candidates generated; eight gameplay selections integrated; 27 v5 protagonist / gear / environment candidates await human approval
+> Status: 80 candidates generated; human-reviewed v5 protagonist, five-gear, and three-region selections integrated for playtesting
 > Scope: Phase 2 style validation and first production-detail batch
 > Rule: compare every candidate in the actual Godot HUD before final approval
 
@@ -193,6 +193,8 @@ Twenty-seven additional candidates were generated after the five dedicated gear 
 - Three 96×96 transparent emblems for each of Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame.
 - Three 320×180 environments for each of Scrap Mine, Geothermal Core, and Biocircuit Crystal depths.
 
-All 27 files passed PNG, dimension, and transparency validation. Codex's provisional selections are Forge Pilgrim, Piston Gauntlet, Flywheel Heart, Rotor Cannon, Tri-Dock Hive, Memory Spine, Machine Ossuary, Coolant Cathedral, and Cable Root Grotto. These remain proposals only: no v5 candidate is copied to `approved/` or integrated into gameplay until the human review is saved in the local art board.
+All 27 files passed PNG, dimension, and transparency validation. Human review selected Forge Pilgrim, Piston Gauntlet, Flywheel Heart, Crown Command Hive, Relic Core Cradle, Machine Ossuary, Pressure Foundry, and Flooded Phase Observatory. All three Autogun candidates were marked approved; the game uses Twin-Rail because it tied for the highest human rating and received the clearest refinement note. These nine selections are integrated directly from their untouched `source/` files so in-game scale and readability can be judged before any manual cleanup or move to `approved/`.
 
-The protagonist and gear prompts intentionally leave text, numerical ranks, lighting state, and animation to Godot. Background prompts reserve a calm dark center and concentrate detail near the edges so enemy silhouettes and exact HP remain readable. Full prompts, generation timestamps, API usage, scores, and concerns are stored in the review manifest.
+Forge Pilgrim is intentionally a first integration rather than a locked final character. The human note asks for a slimmer, more human, more stylish silhouette; the current battle placement validates screen ownership and action feedback while the next protagonist pass addresses that silhouette direction.
+
+The protagonist and gear prompts intentionally leave text, numerical ranks, lighting state, and animation to Godot. Godot now supplies idle bob, pile-driver recoil, PURE CHARGE orbit effects, gear-tree icon placement, and encounter-to-region switching. Background prompts reserve a calm dark center and concentrate detail near the edges so enemy silhouettes and exact HP remain readable. Full prompts, generation timestamps, API usage, scores, concerns, and human decisions are stored in the review manifest.
