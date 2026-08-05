@@ -426,6 +426,19 @@ func test_charge_clicker_v5() -> void:
 	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
+	check(game.BGMStreams.size() == 5 and game.desired_bgm_key() == "map", "five mastered tracks cover the initial map and tree context")
+	var music_test_phases := {
+		game.CampaignRoute.RoutePhase.STAGE: "hunt",
+		game.CampaignRoute.RoutePhase.BOSS: "boss",
+		game.CampaignRoute.RoutePhase.SINGULARITY: "singularity",
+		game.CampaignRoute.RoutePhase.TRUE_END: "ending",
+	}
+	var music_routes_match := true
+	for phase in music_test_phases:
+		game.campaign_route.phase = phase
+		music_routes_match = music_routes_match and game.desired_bgm_key() == str(music_test_phases[phase])
+	game.campaign_route.phase = game.CampaignRoute.RoutePhase.MAP
+	check(music_routes_match, "campaign phases select hunt, boss, true-boss and ending music deterministically")
 	game.open_gear_tree(2)
 	check(game.gear_tree_open and game.selected_tree_skills().size() == 7, "combat UI opens a dedicated, navigable skill tree for the selected gear")
 	check(game.tree_node_rect(game.selected_tree_skills()[0]).size.x >= 44.0 and game.tree_node_rect(game.selected_tree_skills()[0]).size.y >= 44.0, "skill-tree nodes remain touch-sized")

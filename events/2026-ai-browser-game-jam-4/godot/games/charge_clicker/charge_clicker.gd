@@ -12,6 +12,13 @@ const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
 const CampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
+const BGMStreams := {
+	"map": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
+	"hunt": preload("res://assets/audio/project_charge/piston_hunt_loop.ogg"),
+	"boss": preload("res://assets/audio/project_charge/forge_of_breakpoints.ogg"),
+	"singularity": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
+	"ending": preload("res://assets/audio/project_charge/core_of_dawn.ogg"),
+}
 const ReactorTextures := {
 	"reactor-turbine-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-turbine-a.png"),
 	"reactor-containment-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-containment-a.png"),
@@ -65,7 +72,7 @@ const AutoControlTextures := {
 	"auto-open-relay-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-open-relay-a.png"),
 	"auto-stopped-rotor-a": preload("res://assets/charge_clicker/pixellab/source/control/auto-stopped-rotor-a.png"),
 }
-const ProtagonistTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/protagonist/protagonist-forge-pilgrim-a.png")
+const ProtagonistTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/protagonist/protagonist-volt-nomad-v6-a.png")
 const GearTextures := {
 	"striker": preload("res://assets/charge_clicker/pixellab/source/gear/gear-striker-piston-a.png"),
 	"dynamo": preload("res://assets/charge_clicker/pixellab/source/gear/gear-dynamo-flywheel-a.png"),
@@ -95,6 +102,10 @@ const WraithGaugeTexture: Texture2D = preload("res://assets/charge_clicker/pixel
 const ShardAccumulatorTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/shard-accumulator-corrupted-b.png")
 
 const VIEW := Vector2(1280, 720)
+const AUDIO_SETTINGS_PATH := "user://project_charge_audio.cfg"
+const BGM_VOLUME_DB := -10.0
+const BGM_SILENT_DB := -60.0
+const BGM_CROSSFADE_SECONDS := 0.85
 const REACTOR_CENTER := Vector2(212, 286)
 const SHARD_ACCUMULATOR_RECT := Rect2(524, 5, 196, 78)
 const SHARD_SOCKET_CENTER := Vector2(575, 44)
@@ -105,6 +116,11 @@ const UPGRADE_RACK_CENTER_REGION := Rect2(76, 4, 232, 120)
 const PLAYTEST_LOG_PATH := "user://project_charge_playtests.jsonl"
 
 var synth: JamSynth
+var bgm_players: Array[AudioStreamPlayer] = []
+var bgm_active_index := -1
+var bgm_key := ""
+var bgm_crossfade: Tween
+var music_enabled := true
 var run
 var save_manager
 var campaign_route
@@ -159,6 +175,7 @@ var auto_rect := Rect2(980, 340, 220, 76)
 var enemy_click_rect := Rect2(860, 160, 352, 242)
 var menu_rect := Rect2(1102, 22, 138, 42)
 var language_rect := Rect2(932, 22, 152, 42)
+var music_rect := Rect2(858, 22, 62, 42)
 var reset_rect := Rect2(34, 22, 126, 42)
 var upgrade_rects: Array[Rect2] = []
 var gear_rects: Array[Rect2] = []
@@ -206,7 +223,101 @@ func _ready() -> void:
 		show_message(loc("保存したキャンペーンを再開", "CAMPAIGN RESUMED"), 3.0)
 	else:
 		show_message(loc("討伐地図から最初の機械魔獣を選択", "SELECT YOUR FIRST MECHANICAL BEAST"), 5.0)
+	setup_music()
+	refresh_music()
 	queue_redraw()
+
+func setup_music() -> void:
+	var settings := ConfigFile.new()
+	if settings.load(AUDIO_SETTINGS_PATH) == OK:
+		music_enabled = bool(settings.get_value("audio", "music_enabled", true))
+	if DisplayServer.get_name() == "headless":
+		return
+	for index in range(2):
+		var player := AudioStreamPlayer.new()
+		player.name = "BGM%d" % (index + 1)
+		player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+		player.volume_db = BGM_SILENT_DB
+		add_child(player)
+		bgm_players.append(player)
+
+func desired_bgm_key() -> String:
+	if campaign_route == null:
+		return "map"
+	match campaign_route.phase:
+		CampaignRoute.RoutePhase.STAGE:
+			return "hunt"
+		CampaignRoute.RoutePhase.BOSS, CampaignRoute.RoutePhase.ENHANCED_BOSS:
+			return "boss"
+		CampaignRoute.RoutePhase.SINGULARITY:
+			return "singularity"
+		CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END:
+			return "ending"
+		_:
+			return "map"
+
+func refresh_music(force := false) -> void:
+	var next_key := desired_bgm_key()
+	if next_key == bgm_key and not force:
+		return
+	bgm_key = next_key
+	if bgm_players.is_empty() or not music_enabled:
+		return
+	var next_stream := BGMStreams.get(next_key) as AudioStreamOggVorbis
+	if next_stream == null:
+		return
+	next_stream.loop = true
+	if bgm_crossfade != null and bgm_crossfade.is_valid():
+		bgm_crossfade.kill()
+	var previous_index := bgm_active_index
+	var next_index := 0 if previous_index != 0 else 1
+	var next_player := bgm_players[next_index]
+	next_player.stop()
+	next_player.stream = next_stream
+	next_player.volume_db = BGM_SILENT_DB
+	next_player.play()
+	bgm_active_index = next_index
+	bgm_crossfade = create_tween().set_parallel(true)
+	bgm_crossfade.tween_property(next_player, "volume_db", BGM_VOLUME_DB, BGM_CROSSFADE_SECONDS)
+	if previous_index >= 0:
+		var previous_player := bgm_players[previous_index]
+		bgm_crossfade.tween_property(previous_player, "volume_db", BGM_SILENT_DB, BGM_CROSSFADE_SECONDS)
+		bgm_crossfade.finished.connect(func() -> void:
+			if is_instance_valid(previous_player) and previous_player != bgm_players[bgm_active_index]:
+				previous_player.stop()
+		)
+
+func toggle_music() -> void:
+	music_enabled = not music_enabled
+	var settings := ConfigFile.new()
+	settings.set_value("audio", "music_enabled", music_enabled)
+	settings.save(AUDIO_SETTINGS_PATH)
+	if bgm_crossfade != null and bgm_crossfade.is_valid():
+		bgm_crossfade.kill()
+	if music_enabled:
+		bgm_key = ""
+		refresh_music()
+		show_message(loc("BGM：オン", "MUSIC: ON"), 1.2)
+	else:
+		for player in bgm_players:
+			player.stop()
+			player.volume_db = BGM_SILENT_DB
+		bgm_active_index = -1
+		show_message(loc("BGM：オフ", "MUSIC: OFF"), 1.2)
+	synth.click()
+	queue_redraw()
+
+func handle_music_toggle_input(event: InputEvent) -> bool:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
+		toggle_music()
+		return true
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and music_rect.has_point(event.position):
+		toggle_music()
+		return true
+	if event is InputEventScreenTouch and event.pressed and music_rect.has_point(event.position):
+		toggle_music()
+		return true
+	return false
 
 func migrate_vertical_slice_save() -> void:
 	# v4 intentionally uses a separate save file. Keeping this no-op makes old
@@ -349,6 +460,7 @@ func request_reset() -> bool:
 
 func _process(delta: float) -> void:
 	animation_time += delta
+	refresh_music()
 	if screen_shake > 0.0:
 		screen_shake = maxf(0.0, screen_shake - delta)
 	if screen_flash > 0.0:
@@ -416,6 +528,8 @@ func campaign_screen_visible() -> bool:
 	return campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY] and run.stage_phase == ChargeState.StagePhase.CLEAR
 
 func _unhandled_input(event: InputEvent) -> void:
+	if handle_music_toggle_input(event):
+		return
 	if gear_tree_open:
 		handle_gear_tree_input(event)
 		return
@@ -1713,7 +1827,7 @@ func draw_campaign_ending(true_end: bool) -> void:
 	if result_copied_time > 0.0:
 		copy_label = loc("コピー済み", "COPIED") if result_copy_succeeded else loc("コピーできません", "COPY FAILED")
 	draw_campaign_button(campaign_copy_rect, copy_label, Palette.MINT if result_copy_succeeded else Palette.CORAL, false)
-	draw_string(Palette.UI_FONT, Vector2(0, 544), loc("プレイ記録をローカル保存済み　制作：Godot + Codex　PixelLab", "PLAYTEST LOG SAVED LOCALLY · GODOT + CODEX · PIXELLAB"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 10, Palette.with_alpha(Palette.MUTED, 0.8))
+	draw_string(Palette.UI_FONT, Vector2(0, 544), loc("プレイ記録をローカル保存済み　制作：Godot + Codex　PixelLab + Suno", "PLAYTEST LOG SAVED LOCALLY · GODOT + CODEX · PIXELLAB + SUNO"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 10, Palette.with_alpha(Palette.MUTED, 0.8))
 	draw_campaign_button(campaign_primary_rect, loc("新しいキャンペーン", "NEW CAMPAIGN") if true_end else loc("真ルートへ続く", "CONTINUE TRUE ROUTE"), accent, true)
 	draw_campaign_button(campaign_secondary_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
 
@@ -1742,6 +1856,7 @@ func draw_header() -> void:
 	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("総時間", "SESSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(752, 62), format_time(run.session_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
 	draw_small_button(reset_rect, loc("R  もう一度", "R  CONFIRM") if reset_confirm_time > 0.0 else loc("R  初期化", "R  RESET"), Palette.CORAL)
+	draw_small_button(music_rect, "M BGM" if music_enabled else "M OFF", Palette.MINT if music_enabled else Palette.CORAL)
 	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
 	draw_small_button(menu_rect, loc("ゲーム選択", "GAME LAB"), Palette.CYAN)
 

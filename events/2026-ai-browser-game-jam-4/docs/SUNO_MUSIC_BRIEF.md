@@ -1,5 +1,19 @@
 # PROJECT CHARGE — Suno BGM制作ブリーフ
 
+## 採用・実装結果（2026-08-05）
+
+全5用途の採用案をユーザーが試聴して確定し、SunoのWAV原音からGodot/Web用Ogg Vorbisへ変換した。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーまたはヘッダーの `M BGM` でオン・オフでき、設定は端末へ保存される。
+
+| 用途 | 採用曲 | 案 | Suno原曲 | ゲーム用ファイル | 長さ |
+|---|---|---:|---|---|---:|
+| 地図・ツリー・ボス選択 | Subterranean Hunt | B | [38e390e5](https://suno.com/song/38e390e5-211a-42c6-bba1-9d0bae8d8c4a) | `subterranean_hunt.ogg` | 2:18 |
+| 六体の通常戦 | Piston Hunt Loop | A | [e8a9630a](https://suno.com/song/e8a9630a-0232-4f61-a5cb-965fa47adb97) | `piston_hunt_loop.ogg` | 2:54 |
+| 通常・強化ボス | Forge of Breakpoints | B | [939de7cd](https://suno.com/song/939de7cd-8c5b-45cf-bd1c-083f2e424ffb) | `forge_of_breakpoints.ogg` | 2:19 |
+| 真ボス | Arch Singularity | A | [79144c1c](https://suno.com/song/79144c1c-bc79-4873-a200-01cbe32b80e0) | `arch_singularity.ogg` | 2:11 |
+| 通常・真エンディング | Core of Dawn | A | [d196ebaf](https://suno.com/song/d196ebaf-3d80-4a38-8881-b3b0fba76023) | `core_of_dawn.ogg` | 2:20 |
+
+原音は48 kHz / 16-bit / stereo WAV。波形のダイナミクスを変える再圧縮型ノーマライズは避け、曲ごとの固定ゲインで約 -18 LUFSへ統一してからVorbis quality 5へ変換した。変換後は -18.0〜-18.1 LUFS、合計約12.3 MiB。元WAVはリポジトリへ含めず、各Oggのメタデータにタイトル、作者名 `NeoN Lament`、Suno song IDを保存している。
+
 ## 共通方針
 
 - すべて **Instrumental / ボーカルなし**。
@@ -62,4 +76,4 @@
 4. 通常ボスを2案
 5. エンディングを1〜2案
 
-受領後は、曲ごとに「採用区間」「ループ位置」「通常/ボス間のクロスフェード」「BGM音量」「真ボス三相の切替点」をGodot側で調整する。
+初回実装では各曲の全区間をループし、場面間をクロスフェードする。真ボス三相は同一の組曲を継続して流し、プレイテストで相転移と曲展開が大きくずれる場合のみ、専用ループ点または相別ステムへ発展させる。

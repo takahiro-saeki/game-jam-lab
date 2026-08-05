@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-05T02:44:33.934Z",
+  "updatedAt": "2026-08-05T05:57:33.381Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -3956,10 +3956,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
+            "status": "approved",
             "rating": null,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-05T05:57:33.381Z"
           }
         }
       ]

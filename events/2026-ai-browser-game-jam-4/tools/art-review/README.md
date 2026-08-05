@@ -13,7 +13,7 @@ npm start
 
 バッチIDをURLで直接開けます。v5追加素材の確認は `http://127.0.0.1:6670/?batch=v5-protagonist` から始め、上部のバッチ選択で5ギアと3背景を順番に切り替えます。
 
-v6の細身主人公再提案は `http://127.0.0.1:6670/?batch=v6-protagonist-refine` で3案を比較できます。現採用品は置き換えず、ユーザーレビュー後に採用案の待機・攻撃・PURE CHARGE差分へ進みます。
+v6の細身主人公再提案は `http://127.0.0.1:6670/?batch=v6-protagonist-refine` で3案を比較できます。ユーザーレビューで `Volt Nomad` が採用され、Godotの現主人公へ統合済みです。未採用2案も比較履歴として残しています。
 
 27案の暫定本命と確認順は [`docs/V5_PIXEL_ASSET_REVIEW.md`](../../docs/V5_PIXEL_ASSET_REVIEW.md) にまとめています。
 

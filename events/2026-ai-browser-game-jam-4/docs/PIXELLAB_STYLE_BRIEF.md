@@ -1,6 +1,6 @@
 # PROJECT CHARGE — PixelLab Style Brief
 
-> Status: 80 candidates generated; human-reviewed v5 protagonist, five-gear, and three-region selections integrated for playtesting
+> Status: 83 candidates generated; human-selected v6 Volt Nomad protagonist plus v5 five-gear and three-region selections integrated for playtesting
 > Scope: Phase 2 style validation and first production-detail batch
 > Rule: compare every candidate in the actual Godot HUD before final approval
 
@@ -195,6 +195,10 @@ Twenty-seven additional candidates were generated after the five dedicated gear 
 
 All 27 files passed PNG, dimension, and transparency validation. Human review selected Forge Pilgrim, Piston Gauntlet, Flywheel Heart, Crown Command Hive, Relic Core Cradle, Machine Ossuary, Pressure Foundry, and Flooded Phase Observatory. All three Autogun candidates were marked approved; the game uses Twin-Rail because it tied for the highest human rating and received the clearest refinement note. These nine selections are integrated directly from their untouched `source/` files so in-game scale and readability can be judged before any manual cleanup or move to `approved/`.
 
-Forge Pilgrim is intentionally a first integration rather than a locked final character. The human note asks for a slimmer, more human, more stylish silhouette; the current battle placement validates screen ownership and action feedback while the next protagonist pass addresses that silhouette direction.
+Forge Pilgrim served as the first integration and validated the protagonist's screen ownership and action feedback. Its human-review note requested a slimmer, more human, more stylish silhouette; the v6 pass below resolves that request with Volt Nomad.
 
 The protagonist and gear prompts intentionally leave text, numerical ranks, lighting state, and animation to Godot. Godot now supplies idle bob, pile-driver recoil, PURE CHARGE orbit effects, gear-tree icon placement, and encounter-to-region switching. Background prompts reserve a calm dark center and concentrate detail near the edges so enemy silhouettes and exact HP remain readable. Full prompts, generation timestamps, API usage, scores, concerns, and human decisions are stored in the review manifest.
+
+## 11. v6 protagonist refinement — August 5, 2026
+
+Three slimmer 192×192 transparent protagonist candidates were generated after the first in-game review. Human review approved `protagonist-volt-nomad-v6-a.png`, a lean fully mechanical wanderer with a readable impact bracer and chest core. It replaces Forge Pilgrim in Godot while retaining the existing procedural idle, strike-recoil, and PURE CHARGE feedback. Arc Runner and Relic Duelist remain untouched alternates in the review manifest.
