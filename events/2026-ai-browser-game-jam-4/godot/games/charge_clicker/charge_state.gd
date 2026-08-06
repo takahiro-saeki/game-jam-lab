@@ -326,10 +326,18 @@ func refresh_stats() -> void:
 	manual_damage = pow(1.36, impact_level) * (1.0 + float(upgrade_level("armor_punch")) * 0.16) * pow(1.28, upgrade_level("servo_overdrive")) * pow(1.25, upgrade_level("abyss_breaker"))
 	auto_damage = 0.9 * pow(1.42, auto_level) * pow(1.18, upgrade_level("heavy_ordnance")) * (1.0 + float(drone_level) * 0.10) * pow(1.18, upgrade_level("command_link")) * pow(1.32, upgrade_level("twin_barrel")) * pow(1.22, upgrade_level("singularity_cannon"))
 	auto_interval = maxf(0.06, 0.95 / (1.0 + float(rapid_level) * 0.18) * pow(0.88, upgrade_level("chrono_relay")))
-	if upgrade_level("gatling_protocol") > 0:
+	var gatling_active := upgrade_level("gatling_protocol") > 0
+	var rail_active := upgrade_level("rail_protocol") > 0
+	if gatling_active and rail_active:
+		# Both completed branches fuse into a late Tier-I payoff instead of leaving
+		# one permanently missing rank. The values are the deliberate product of
+		# both mutations: fast enough to read as gatling, heavy enough to read as rail.
+		auto_interval *= 0.7425
+		auto_damage *= 2.304
+	elif gatling_active:
 		auto_interval *= 0.45
 		auto_damage *= 0.72
-	elif upgrade_level("rail_protocol") > 0:
+	elif rail_active:
 		auto_interval *= 1.65
 		auto_damage *= 3.2
 	drone_count = 1 + int(upgrade_level("swarm_clockwork") / 2) + upgrade_level("replication_foundry")

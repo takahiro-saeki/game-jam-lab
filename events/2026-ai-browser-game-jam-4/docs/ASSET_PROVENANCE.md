@@ -34,6 +34,8 @@ The first eight provisional machinery selections are rendered in the game for an
 
 Five original instrumental tracks were generated in the user's Suno account under the creator name `NeoN Lament` on August 5, 2026, then selected by the user after A/B listening. Exact source URLs and song IDs are recorded in [`SUNO_MUSIC_BRIEF.md`](SUNO_MUSIC_BRIEF.md) and embedded in the Ogg metadata.
 
+On August 6, 2026, twelve additional instrumental candidates were generated as A/B pairs for the six encounters that did not yet have an exclusive track: VAULTBACK, PYRE WYRM, RELAY HYDRA, SWARM MATRIARCH, PHASE MANTIS, and GRID LEECH. These candidates remain unmodified in Suno and are not shipped until the user selects one version per encounter. Their exact prompts, URLs, and IDs are recorded in [`SUNO_MUSIC_BRIEF.md`](SUNO_MUSIC_BRIEF.md).
+
 - Untouched masters: 48 kHz / 16-bit / stereo WAV downloads retained outside the repository by the user.
 - Shipped derivatives: `godot/assets/audio/project_charge/*.ogg`.
 - Processing: fixed per-track gain to approximately -18 LUFS, Ogg Vorbis quality 5, no stems, remixing, or generated vocals.

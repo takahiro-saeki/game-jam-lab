@@ -422,10 +422,30 @@ func test_charge_clicker_v5() -> void:
 	state.manual_attack(1)
 	check(state.credits > feedback_before, "PREDATION REVERSAL converts a share of outgoing damage back into CHARGE")
 
+	var hybrid_state := ChargeClickerState.new()
+	hybrid_state.credits = 10000
+	hybrid_state.upgrade_levels["burst_loader"] = 3
+	hybrid_state.upgrade_levels["chain_rounds"] = 3
+	var bought_gatling := hybrid_state.purchase_upgrade("gatling_protocol")
+	var bought_rail := hybrid_state.purchase_upgrade("rail_protocol")
+	check(bought_gatling and bought_rail and hybrid_state.skill_points_bought() == 8, "gatling and rail branches can both complete in one campaign")
+	check(is_equal_approx(hybrid_state.auto_interval, 0.95 * 0.7425) and is_equal_approx(hybrid_state.auto_damage, 0.9 * 2.304), "dual weapon mutations fuse into the deliberate HYBRID profile")
+	check(hybrid_state.total_possible_ranks() == 257, "all 257 displayed upgrade ranks are now attainable")
+
 	var game := ChargeClickerGame.new()
 	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
+	check(game.title_screen_open and game.title_button_rects.size() == 5, "PROJECT CHARGE opens on a complete dedicated title screen")
+	game.open_audio_settings()
+	check(game.settings_open and game.settings_row_rects.size() == 5 and AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0, "settings expose saved audio and visual-comfort controls on separate buses")
+	game.close_audio_settings()
+	game.open_credits(true)
+	check(game.credits_open and game.desired_bgm_key() == "ending", "title and endings can open the full scrolling credits roll")
+	game.close_credits()
+	game.title_screen_open = false
+	game.queue_encounter_intro("gearmaw")
+	check(game.comms_time > 0.0 and not game.comms_text_ja.is_empty() and game.comms_queue.size() == 1, "each hunt can stage a non-blocking bilingual character exchange")
 	check(game.BGMStreams.size() == 5 and game.desired_bgm_key() == "map", "five mastered tracks cover the initial map and tree context")
 	var music_test_phases := {
 		game.CampaignRoute.RoutePhase.STAGE: "hunt",

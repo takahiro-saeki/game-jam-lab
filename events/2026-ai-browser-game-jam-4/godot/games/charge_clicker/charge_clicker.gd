@@ -6,6 +6,7 @@ signal language_changed(is_japanese: bool)
 const Palette = preload("res://shared/palette.gd")
 const Synth = preload("res://shared/synth.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
+const AudioSettings = preload("res://shared/project_charge_audio_settings.gd")
 const ChargeState = preload("res://games/charge_clicker/charge_state.gd")
 const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
@@ -18,6 +19,19 @@ const BGMStreams := {
 	"boss": preload("res://assets/audio/project_charge/forge_of_breakpoints.ogg"),
 	"singularity": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
 	"ending": preload("res://assets/audio/project_charge/core_of_dawn.ogg"),
+}
+# Each encounter resolves through this table. Missing dedicated masters keep a
+# safe fallback until their selected Suno exports are integrated.
+const EncounterBGMKeys := {
+	"gearmaw": "hunt",
+	"vaultback": "hunt",
+	"pyre_wyrm": "hunt",
+	"relay_hydra": "hunt",
+	"swarm_matriarch": "hunt",
+	"phase_mantis": "hunt",
+	"grid_leech": "boss",
+	"thermal_titan": "boss",
+	"arch_singularity": "singularity",
 }
 const ReactorTextures := {
 	"reactor-turbine-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-turbine-a.png"),
@@ -102,7 +116,6 @@ const WraithGaugeTexture: Texture2D = preload("res://assets/charge_clicker/pixel
 const ShardAccumulatorTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/shard-accumulator-corrupted-b.png")
 
 const VIEW := Vector2(1280, 720)
-const AUDIO_SETTINGS_PATH := "user://project_charge_audio.cfg"
 const BGM_VOLUME_DB := -10.0
 const BGM_SILENT_DB := -60.0
 const BGM_CROSSFADE_SECONDS := 0.85
@@ -116,11 +129,13 @@ const UPGRADE_RACK_CENTER_REGION := Rect2(76, 4, 232, 120)
 const PLAYTEST_LOG_PATH := "user://project_charge_playtests.jsonl"
 
 var synth: JamSynth
+var audio_settings
 var bgm_players: Array[AudioStreamPlayer] = []
 var bgm_active_index := -1
 var bgm_key := ""
 var bgm_crossfade: Tween
 var music_enabled := true
+var music_volume_before_mute := 0.72
 var run
 var save_manager
 var campaign_route
@@ -167,6 +182,21 @@ var gear_tree_open := false
 var controller_axis_latch := Vector2i.ZERO
 var campaign_selected := 0
 var campaign_hovered := -1
+var title_screen_open := true
+var title_has_saved_campaign := false
+var title_selected := 0
+var title_new_confirm_time := 0.0
+var settings_open := false
+var settings_selected := 0
+var credits_open := false
+var credits_return_to_title := false
+var credits_scroll := 0.0
+var comms_queue: Array[Dictionary] = []
+var comms_speaker_ja := ""
+var comms_speaker_en := ""
+var comms_text_ja := ""
+var comms_text_en := ""
+var comms_time := 0.0
 
 var charge_rect := Rect2(70, 502, 284, 88)
 var mode_toggle_rect := Rect2(70, 598, 284, 44)
@@ -175,7 +205,7 @@ var auto_rect := Rect2(980, 340, 220, 76)
 var enemy_click_rect := Rect2(860, 160, 352, 242)
 var menu_rect := Rect2(1102, 22, 138, 42)
 var language_rect := Rect2(932, 22, 152, 42)
-var music_rect := Rect2(858, 22, 62, 42)
+var settings_rect := Rect2(846, 22, 74, 42)
 var reset_rect := Rect2(34, 22, 126, 42)
 var upgrade_rects: Array[Rect2] = []
 var gear_rects: Array[Rect2] = []
@@ -193,9 +223,32 @@ var campaign_primary_rect := Rect2(450, 558, 380, 58)
 var campaign_secondary_rect := Rect2(450, 632, 380, 48)
 var campaign_copy_rect := Rect2(800, 232, 186, 38)
 var respec_rect := Rect2(1012, 616, 190, 42)
+var title_button_rects: Array[Rect2] = [
+	Rect2(726, 304, 410, 62),
+	Rect2(726, 380, 410, 54),
+	Rect2(726, 448, 128, 48),
+	Rect2(867, 448, 128, 48),
+	Rect2(1008, 448, 128, 48),
+]
+var settings_row_rects: Array[Rect2] = [
+	Rect2(356, 202, 568, 52),
+	Rect2(356, 274, 568, 52),
+	Rect2(356, 346, 568, 52),
+	Rect2(356, 438, 568, 52),
+	Rect2(356, 510, 568, 52),
+]
+var settings_close_rect := Rect2(704, 610, 220, 48)
+var settings_reset_rect := Rect2(356, 610, 220, 48)
+var campaign_credits_rect := Rect2(326, 632, 292, 48)
+var campaign_ending_return_rect := Rect2(662, 632, 292, 48)
+var credits_close_rect := Rect2(1032, 642, 190, 46)
 
 func _ready() -> void:
 	apply_web_art_preview()
+	audio_settings = AudioSettings.new()
+	audio_settings.load_settings()
+	music_enabled = audio_settings.music_volume > 0.001
+	music_volume_before_mute = maxf(0.72, audio_settings.music_volume)
 	synth = Synth.new()
 	add_child(synth)
 	run = ChargeState.new()
@@ -208,6 +261,8 @@ func _ready() -> void:
 		for column in range(3):
 			stage_map_rects.append(Rect2(62 + column * 404, 180 + row * 208, 348, 176))
 	var resumed: bool = persistence_enabled and save_manager.load_bundle_into(run, campaign_route)
+	title_has_saved_campaign = resumed
+	title_screen_open = not art_preview_enabled
 	if art_preview_enabled:
 		if campaign_preview_screen.is_empty():
 			campaign_route.reset()
@@ -228,27 +283,29 @@ func _ready() -> void:
 	queue_redraw()
 
 func setup_music() -> void:
-	var settings := ConfigFile.new()
-	if settings.load(AUDIO_SETTINGS_PATH) == OK:
-		music_enabled = bool(settings.get_value("audio", "music_enabled", true))
 	if DisplayServer.get_name() == "headless":
 		return
 	for index in range(2):
 		var player := AudioStreamPlayer.new()
 		player.name = "BGM%d" % (index + 1)
+		player.bus = AudioSettings.BUS_MUSIC
 		player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 		player.volume_db = BGM_SILENT_DB
 		add_child(player)
 		bgm_players.append(player)
 
 func desired_bgm_key() -> String:
+	if credits_open:
+		return "ending"
+	if title_screen_open:
+		return "map"
 	if campaign_route == null:
 		return "map"
 	match campaign_route.phase:
 		CampaignRoute.RoutePhase.STAGE:
-			return "hunt"
+			return str(EncounterBGMKeys.get(run.current_stage_id, "hunt"))
 		CampaignRoute.RoutePhase.BOSS, CampaignRoute.RoutePhase.ENHANCED_BOSS:
-			return "boss"
+			return str(EncounterBGMKeys.get(run.current_boss_id, "boss")) if run.current_boss_id in ["grid_leech", "thermal_titan"] else "boss"
 		CampaignRoute.RoutePhase.SINGULARITY:
 			return "singularity"
 		CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END:
@@ -288,10 +345,15 @@ func refresh_music(force := false) -> void:
 		)
 
 func toggle_music() -> void:
-	music_enabled = not music_enabled
-	var settings := ConfigFile.new()
-	settings.set_value("audio", "music_enabled", music_enabled)
-	settings.save(AUDIO_SETTINGS_PATH)
+	if audio_settings == null:
+		return
+	if audio_settings.music_volume > 0.001:
+		music_volume_before_mute = audio_settings.music_volume
+		audio_settings.music_volume = 0.0
+	else:
+		audio_settings.music_volume = maxf(0.1, music_volume_before_mute)
+	audio_settings.save_settings()
+	music_enabled = audio_settings.music_volume > 0.001
 	if bgm_crossfade != null and bgm_crossfade.is_valid():
 		bgm_crossfade.kill()
 	if music_enabled:
@@ -309,12 +371,6 @@ func toggle_music() -> void:
 
 func handle_music_toggle_input(event: InputEvent) -> bool:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
-		toggle_music()
-		return true
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and music_rect.has_point(event.position):
-		toggle_music()
-		return true
-	if event is InputEventScreenTouch and event.pressed and music_rect.has_point(event.position):
 		toggle_music()
 		return true
 	return false
@@ -448,6 +504,26 @@ func reset_run() -> void:
 	synth.play_chord([220.0, 329.63, 440.0], 0.22, -24.0)
 	queue_redraw()
 
+func enter_campaign_from_title() -> void:
+	title_screen_open = false
+	title_new_confirm_time = 0.0
+	show_message(loc("討伐を再開", "HUNT RESUMED") if title_has_saved_campaign else loc("最初の機械魔獣を選択", "SELECT YOUR FIRST MECHANICAL BEAST"), 2.0)
+	synth.confirm()
+	queue_redraw()
+
+func request_new_campaign_from_title() -> void:
+	if title_has_saved_campaign and title_new_confirm_time <= 0.0:
+		title_new_confirm_time = 3.0
+		show_message(loc("保存データを消去します。もう一度選択して確定", "ERASE THE SAVED HUNT? SELECT AGAIN TO CONFIRM"), 3.0)
+		synth.error()
+		queue_redraw()
+		return
+	reset_run()
+	title_has_saved_campaign = false
+	title_screen_open = false
+	title_new_confirm_time = 0.0
+	queue_redraw()
+
 func request_reset() -> bool:
 	if reset_confirm_time > 0.0:
 		reset_run()
@@ -477,6 +553,17 @@ func _process(delta: float) -> void:
 		result_copied_time -= delta
 	if reset_confirm_time > 0.0:
 		reset_confirm_time -= delta
+	if title_new_confirm_time > 0.0:
+		title_new_confirm_time -= delta
+	update_comms(delta)
+	if credits_open:
+		credits_scroll = minf(60.0, credits_scroll + delta)
+		queue_redraw()
+		return
+	if title_screen_open or settings_open:
+		update_effects(delta)
+		queue_redraw()
+		return
 	autosave_timer -= delta
 	if art_preview_enabled:
 		update_effects(delta)
@@ -499,6 +586,7 @@ func _process(delta: float) -> void:
 			auto_effect_timer = 0.10
 			spawn_sparks(Vector2(1030, 248), Palette.VIOLET, 3, 75.0)
 			add_floating(Vector2(1030, 230), "-%s" % format_number(float(tick_result.auto_damage)), Palette.VIOLET, 13)
+			synth.auto_shot()
 	if bool(tick_result.opportunity_opened):
 		show_message(loc("吸収核が開いた — 3.5秒以内に8クリック！", "SIPHON OPEN — LAND EIGHT CLICKS IN 3.5 SECONDS!"), 2.0)
 		synth.play_tone(659.25, 0.16, -19.0, 2)
@@ -528,6 +616,21 @@ func campaign_screen_visible() -> bool:
 	return campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY] and run.stage_phase == ChargeState.StagePhase.CLEAR
 
 func _unhandled_input(event: InputEvent) -> void:
+	# PROJECT CHARGE owns its input while mounted in the shared launcher. Without
+	# consuming it here, a click/confirm that closes the game can also activate a
+	# launcher card in the same frame.
+	get_viewport().set_input_as_handled()
+	if credits_open:
+		handle_credits_input(event)
+		return
+	if settings_open:
+		handle_audio_settings_input(event)
+		return
+	if title_screen_open:
+		handle_title_input(event)
+		return
+	if handle_settings_open_input(event):
+		return
 	if handle_music_toggle_input(event):
 		return
 	if gear_tree_open:
@@ -571,6 +674,253 @@ func _unhandled_input(event: InputEvent) -> void:
 		if direction != Vector2i.ZERO:
 			navigate_upgrade(direction)
 
+func handle_settings_open_input(event: InputEvent) -> bool:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F1:
+		open_audio_settings()
+		return true
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and settings_rect.has_point(event.position):
+		open_audio_settings()
+		return true
+	if event is InputEventScreenTouch and event.pressed and settings_rect.has_point(event.position):
+		open_audio_settings()
+		return true
+	return false
+
+func handle_title_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		mouse_position = event.position
+		for index in range(title_button_rects.size()):
+			if title_button_rects[index].has_point(event.position):
+				title_selected = index
+				break
+		queue_redraw()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if language_rect.has_point(event.position):
+			toggle_language()
+			return
+		for index in range(title_button_rects.size()):
+			if title_button_rects[index].has_point(event.position):
+				title_selected = index
+				activate_title_selection()
+				return
+	elif event is InputEventScreenTouch and event.pressed:
+		if language_rect.has_point(event.position):
+			toggle_language()
+			return
+		for index in range(title_button_rects.size()):
+			if title_button_rects[index].has_point(event.position):
+				title_selected = index
+				activate_title_selection()
+				return
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_L:
+			toggle_language()
+		elif event.keycode == KEY_ESCAPE:
+			return_to_menu.emit()
+		elif event.keycode == KEY_M:
+			toggle_music()
+		elif event.keycode in [KEY_UP, KEY_W]:
+			title_selected = wrapi(title_selected - 1, 0, title_button_rects.size())
+			synth.click()
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			title_selected = wrapi(title_selected + 1, 0, title_button_rects.size())
+			synth.click()
+		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
+			activate_title_selection()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("back"):
+			return_to_menu.emit()
+		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
+			title_selected = wrapi(title_selected - 1, 0, title_button_rects.size())
+			synth.click()
+		elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
+			title_selected = wrapi(title_selected + 1, 0, title_button_rects.size())
+			synth.click()
+		elif event.button_index == controller_button("primary"):
+			activate_title_selection()
+		elif event.button_index == controller_button("language"):
+			toggle_language()
+	elif event is InputEventJoypadMotion:
+		var direction := controller_motion_direction(event)
+		if direction != Vector2i.ZERO:
+			var step := direction.y if direction.y != 0 else direction.x
+			title_selected = wrapi(title_selected + step, 0, title_button_rects.size())
+			synth.click()
+	queue_redraw()
+
+func activate_title_selection() -> void:
+	match title_selected:
+		0:
+			if title_has_saved_campaign:
+				enter_campaign_from_title()
+			else:
+				request_new_campaign_from_title()
+		1:
+			request_new_campaign_from_title()
+		2:
+			open_audio_settings()
+		3:
+			open_credits(true)
+		4:
+			return_to_menu.emit()
+
+func open_credits(from_title: bool) -> void:
+	credits_open = true
+	credits_return_to_title = from_title
+	credits_scroll = 0.0
+	settings_open = false
+	end_charge()
+	bgm_key = ""
+	refresh_music()
+	synth.confirm()
+	queue_redraw()
+
+func close_credits() -> void:
+	credits_open = false
+	credits_scroll = 0.0
+	bgm_key = ""
+	refresh_music()
+	synth.click()
+	queue_redraw()
+
+func handle_credits_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if credits_close_rect.has_point(event.position):
+			close_credits()
+	elif event is InputEventScreenTouch and event.pressed:
+		if credits_close_rect.has_point(event.position):
+			close_credits()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_ESCAPE, KEY_ENTER, KEY_SPACE]:
+			close_credits()
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			credits_scroll = minf(60.0, credits_scroll + 4.0)
+		elif event.keycode in [KEY_UP, KEY_W]:
+			credits_scroll = maxf(0.0, credits_scroll - 4.0)
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index in [controller_button("back"), controller_button("primary")]:
+			close_credits()
+
+func open_audio_settings() -> void:
+	settings_open = true
+	settings_selected = clampi(settings_selected, 0, settings_row_rects.size() - 1)
+	end_charge()
+	synth.click()
+	queue_redraw()
+
+func close_audio_settings() -> void:
+	settings_open = false
+	synth.click()
+	queue_redraw()
+
+func handle_audio_settings_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		mouse_position = event.position
+		for index in range(settings_row_rects.size()):
+			if settings_row_rects[index].has_point(event.position):
+				settings_selected = index
+				break
+		queue_redraw()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		handle_audio_settings_point(event.position)
+	elif event is InputEventScreenTouch and event.pressed:
+		handle_audio_settings_point(event.position)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_ESCAPE, KEY_F1]:
+			close_audio_settings()
+		elif event.keycode in [KEY_UP, KEY_W]:
+			settings_selected = wrapi(settings_selected - 1, 0, settings_row_rects.size())
+			synth.click()
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			settings_selected = wrapi(settings_selected + 1, 0, settings_row_rects.size())
+			synth.click()
+		elif event.keycode in [KEY_LEFT, KEY_A]:
+			adjust_audio_setting(settings_selected, -1)
+		elif event.keycode in [KEY_RIGHT, KEY_D]:
+			adjust_audio_setting(settings_selected, 1)
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("back"):
+			close_audio_settings()
+		elif event.button_index == JOY_BUTTON_DPAD_UP:
+			settings_selected = wrapi(settings_selected - 1, 0, settings_row_rects.size())
+			synth.click()
+		elif event.button_index == JOY_BUTTON_DPAD_DOWN:
+			settings_selected = wrapi(settings_selected + 1, 0, settings_row_rects.size())
+			synth.click()
+		elif event.button_index == JOY_BUTTON_DPAD_LEFT:
+			adjust_audio_setting(settings_selected, -1)
+		elif event.button_index == JOY_BUTTON_DPAD_RIGHT:
+			adjust_audio_setting(settings_selected, 1)
+	elif event is InputEventJoypadMotion:
+		var direction := controller_motion_direction(event)
+		if direction.y != 0:
+			settings_selected = wrapi(settings_selected + direction.y, 0, settings_row_rects.size())
+			synth.click()
+		elif direction.x != 0:
+			adjust_audio_setting(settings_selected, direction.x)
+	queue_redraw()
+
+func handle_audio_settings_point(point: Vector2) -> void:
+	if settings_close_rect.has_point(point):
+		close_audio_settings()
+		return
+	if settings_reset_rect.has_point(point):
+		audio_settings.reset_defaults()
+		music_enabled = true
+		music_volume_before_mute = audio_settings.music_volume
+		bgm_key = ""
+		refresh_music()
+		synth.confirm()
+		queue_redraw()
+		return
+	for index in range(settings_row_rects.size()):
+		var row := settings_row_rects[index]
+		if row.has_point(point):
+			settings_selected = index
+			var slider_left := row.position.x + 230.0
+			var ratio := clampf((point.x - slider_left) / 280.0, 0.0, 1.0)
+			set_audio_setting(index, ratio)
+			return
+
+func adjust_audio_setting(index: int, direction: int) -> void:
+	var values := audio_setting_values()
+	if index < 0 or index >= values.size():
+		return
+	var step := 0.1 if index < 3 else 0.25
+	set_audio_setting(index, clampf(float(values[index]) + float(direction) * step, 0.0, 1.0))
+
+func set_audio_setting(index: int, value: float) -> void:
+	match index:
+		0:
+			audio_settings.master_volume = value
+		1:
+			audio_settings.music_volume = value
+			if value > 0.001:
+				music_volume_before_mute = value
+		2:
+			audio_settings.sfx_volume = value
+		3:
+			audio_settings.screen_shake_intensity = value
+		4:
+			audio_settings.flash_intensity = value
+	var was_enabled := music_enabled
+	audio_settings.save_settings()
+	music_enabled = audio_settings.music_volume > 0.001
+	if music_enabled and (not was_enabled or bgm_active_index < 0):
+		bgm_key = ""
+		refresh_music()
+	synth.click()
+	queue_redraw()
+
+func audio_setting_values() -> Array[float]:
+	return [
+		audio_settings.master_volume,
+		audio_settings.music_volume,
+		audio_settings.sfx_volume,
+		audio_settings.screen_shake_intensity,
+		audio_settings.flash_intensity,
+	]
+
 func handle_campaign_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		mouse_position = event.position
@@ -588,6 +938,8 @@ func handle_campaign_input(event: InputEvent) -> void:
 			toggle_language()
 		elif event.keycode == KEY_C and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
 			copy_campaign_result()
+		elif event.keycode == KEY_E and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+			open_credits(false)
 		elif event.keycode == KEY_R:
 			request_reset()
 		elif event.keycode == KEY_T and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
@@ -617,6 +969,8 @@ func handle_campaign_input(event: InputEvent) -> void:
 			_:
 				if event.button_index == controller_button("primary"):
 					activate_campaign_selection()
+				elif event.button_index == controller_button("secondary") and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+					open_credits(false)
 				elif event.button_index == controller_button("combat_action") and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
 					copy_campaign_result()
 				elif event.button_index == controller_button("language"):
@@ -634,7 +988,13 @@ func handle_campaign_point(point: Vector2) -> void:
 	if menu_rect.has_point(point):
 		return_to_menu.emit()
 		return
-	if campaign_secondary_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END, CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY]:
+	if campaign_ending_return_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+		return_to_menu.emit()
+		return
+	if campaign_credits_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+		open_credits(false)
+		return
+	if campaign_secondary_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY]:
 		return_to_menu.emit()
 		return
 	if language_rect.has_point(point):
@@ -723,6 +1083,7 @@ func start_stage_by_index(index: int) -> bool:
 	run.begin_stage(id, str(definition.build_tag), 1.0, hp, encounter_order)
 	reward_selected = 0
 	show_message(loc("討伐開始：", "HUNT STARTED: ") + stage_name(definition), 2.2)
+	queue_encounter_intro(id)
 	synth.play_chord([164.81, 246.94, 329.63], 0.28, -22.0)
 	save_progress()
 	return true
@@ -747,9 +1108,10 @@ func launch_current_campaign_boss() -> bool:
 		hp = float(definition.get("enhanced_hp", hp * 1.65))
 	run.begin_campaign_boss(str(definition.id), hp, enhanced, singularity)
 	show_message(loc("深層主獣との戦闘開始", "ABYSSAL BOSS ENGAGED"), 2.4)
+	queue_encounter_intro(str(definition.id))
 	screen_flash = 0.8
 	screen_shake = 0.35
-	synth.play_chord([110.0, 146.83, 220.0], 0.55, -19.0)
+	synth.boss_engage()
 	save_progress()
 	return true
 
@@ -871,6 +1233,8 @@ func handle_key(event: InputEventKey) -> void:
 	if not event.pressed:
 		return
 	match event.keycode:
+		KEY_ESCAPE:
+			return_to_menu.emit()
 		KEY_ENTER, KEY_X:
 			perform_charge()
 		KEY_A:
@@ -1054,7 +1418,7 @@ func show_boss_warning() -> void:
 	else:
 		show_message(loc("警告：2秒後、最大充電セルを吸収", "WARNING: DRAINING YOUR FULLEST CELL IN 2 SECONDS"), 2.0)
 	spawn_sparks(Vector2(815, 130), Palette.CORAL, 16, 170.0)
-	synth.play_tone(146.83, 0.28, -17.0, 1)
+	synth.warning()
 
 func show_boss_drain(cell_index: int, drained: float, healed: float) -> void:
 	screen_shake = 0.38
@@ -1302,8 +1666,7 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 		spawn_resource_flow(attack_origin if generating else target, SHARD_SOCKET_CENTER, Palette.MINT if generating else Palette.CYAN, 3 if generating else 2)
 		shard_pulse = 0.55
 	if play_sound:
-		var pitch := (420.0 if generating else 190.0) + float(mini(16, run.manual_streak)) * 12.0
-		synth.play_tone(pitch * (1.5 if bool(result.critical) else 1.0), 0.045, -23.0, 3)
+		synth.charge_attack(bool(result.critical), generating)
 	if bool(result.critical):
 		add_floating(target + Vector2(0, -62), loc("クリティカル", "CRITICAL"), Palette.AMBER, 18)
 		screen_shake = maxf(screen_shake, 0.18)
@@ -1356,7 +1719,7 @@ func handle_enemy_defeated() -> void:
 		complete_campaign_boss()
 	screen_flash = 1.0
 	screen_shake = 0.7
-	synth.play_chord([196.0, 293.66, 392.0, 587.33], 0.6, -19.0)
+	synth.enemy_defeat()
 	save_progress()
 
 func try_purchase(index: int, play_sound: bool = true) -> bool:
@@ -1386,7 +1749,9 @@ func try_purchase_skill(id: String, effect_position: Vector2 = SHARD_SOCKET_CENT
 	spawn_resource_flow(SHARD_SOCKET_CENTER, effect_position, color, 5)
 	shard_pulse = 0.75
 	if play_sound:
-		synth.confirm()
+		var tier := int(definition.get("tier", 1))
+		var capstone: bool = int(definition.get("max_rank", 1)) == 1 and run.upgrade_level(id) >= run.skill_max_rank(id)
+		synth.purchase(tier, capstone)
 	save_progress()
 	return true
 
@@ -1432,6 +1797,78 @@ func show_meltdown(lost: float) -> void:
 func show_message(text: String, duration: float) -> void:
 	message = text
 	message_time = duration
+
+func queue_comms(speaker_ja: String, speaker_en: String, text_ja: String, text_en: String, duration := 3.2) -> void:
+	comms_queue.append({
+		"speaker_ja": speaker_ja,
+		"speaker_en": speaker_en,
+		"text_ja": text_ja,
+		"text_en": text_en,
+		"duration": duration,
+	})
+	if comms_time <= 0.0:
+		advance_comms()
+
+func advance_comms() -> void:
+	if comms_queue.is_empty():
+		comms_speaker_ja = ""
+		comms_speaker_en = ""
+		comms_text_ja = ""
+		comms_text_en = ""
+		comms_time = 0.0
+		return
+	var entry: Dictionary = comms_queue.pop_front()
+	comms_speaker_ja = str(entry.get("speaker_ja", ""))
+	comms_speaker_en = str(entry.get("speaker_en", ""))
+	comms_text_ja = str(entry.get("text_ja", ""))
+	comms_text_en = str(entry.get("text_en", ""))
+	comms_time = float(entry.get("duration", 3.2))
+
+func update_comms(delta: float) -> void:
+	if comms_time <= 0.0 or message_time > 0.0:
+		return
+	comms_time -= delta
+	if comms_time <= 0.0:
+		advance_comms()
+
+func clear_comms() -> void:
+	comms_queue.clear()
+	comms_time = 0.0
+	advance_comms()
+
+func queue_encounter_intro(encounter_id: String) -> void:
+	clear_comms()
+	var support_ja := "支援演算 C6"
+	var support_en := "C6 SUPPORT"
+	match encounter_id:
+		"gearmaw":
+			queue_comms(support_ja, support_en, "装甲周期を捕捉。十二打目に亀裂が同期します。", "ARMOR CYCLE ACQUIRED. THE TWELFTH HIT WILL SYNCHRONIZE THE FRACTURE.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "なら十一回は予告だ。最後の一打だけ見ていろ。", "THEN ELEVEN HITS ARE THE WARNING. WATCH THE LAST ONE.")
+		"vaultback":
+			queue_comms(support_ja, support_en, "蓄電甲殻を確認。CHARGEを与えるほど開殻へ近づきます。", "CAPACITOR SHELL CONFIRMED. EVERY CHARGE EVENT FORCES IT CLOSER TO OPENING.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "溜め込む癖まで同じか。返してもらう。", "IT HOARDS POWER JUST LIKE WE DO. I'LL TAKE IT BACK.")
+		"pyre_wyrm":
+			queue_comms(support_ja, support_en, "購入信号が炉心へ干渉。強化直後が最大出力です。", "PURCHASE SIGNALS INTERFERE WITH ITS FURNACE. OUTPUT PEAKS AFTER EVERY UPGRADE.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "完成を待つな。組み替えながら狩る。", "DON'T WAIT FOR A PERFECT BUILD. WE HUNT WHILE EVOLVING.")
+		"relay_hydra":
+			queue_comms(support_ja, support_en, "三頭の継電順序を解析。手動とAUTOを交互接続してください。", "THREE RELAY HEADS DECODED. ALTERNATE MANUAL AND AUTO CONTACT.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "こちらの二つの心拍で、向こうの三つを乱す。", "OUR TWO HEARTBEATS WILL BREAK ITS THREE.")
+		"swarm_matriarch":
+			queue_comms(support_ja, support_en, "子機群が母機を遮蔽。手動標識をAUTOへ引き渡します。", "THE BROOD IS SCREENING ITS MATRIARCH. PASS MANUAL MARKS TO AUTO FIRE.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "一機ずつ数えるな。群れごと落とす。", "DON'T COUNT THEM ONE BY ONE. DROP THE WHOLE SWARM.")
+		"phase_mantis":
+			queue_comms(support_ja, support_en, "位相ずれを観測。失敗した打撃も解析値へ変換されます。", "PHASE DISPLACEMENT OBSERVED. EVEN FAILED CRITICALS BECOME ANALYSIS.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "外したんじゃない。次を当てるために測った。", "THAT WASN'T A MISS. IT WAS MEASUREMENT FOR THE NEXT HIT.")
+		"grid_leech":
+			queue_comms(support_ja, support_en, "吸収核の開放は三・五秒。八入力で反転できます。", "THE SIPHON OPENS FOR 3.5 SECONDS. EIGHT INPUTS WILL REVERSE IT.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "喰う側と喰われる側を入れ替えよう。", "LET'S SWITCH WHICH ONE OF US IS FEEDING.")
+		"thermal_titan":
+			queue_comms(support_ja, support_en, "二十入力で炉心露出。熱源そのものを撃ち抜けます。", "TWENTY INPUTS EXPOSE THE FURNACE. THEN WE CAN STRIKE THE HEAT SOURCE ITSELF.")
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "炉を壊すんじゃない。その火を次の核にする。", "WE'RE NOT EXTINGUISHING THAT FIRE. WE'RE MAKING IT OUR NEXT CORE.")
+		"arch_singularity":
+			queue_comms(support_ja, support_en, "全六核、共鳴開始。地核機神がこちらを認識しました。", "ALL SIX CORES ENTERING RESONANCE. THE WORLD ENGINE HAS RECOGNIZED US.", 3.8)
+			queue_comms("アーク・シンギュラリティ", "ARCH SINGULARITY", "回収個体。おまえの進化は、私の欠損に過ぎない。", "RECOVERY UNIT. YOUR EVOLUTION IS MERELY MY MISSING COMPONENTS.", 4.0)
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "なら返却する。弾速で受け取れ。", "THEN I'LL RETURN THEM. RECEIVE THEM AT MUZZLE VELOCITY.", 3.5)
 
 func toggle_language() -> void:
 	is_japanese = not is_japanese
@@ -1639,9 +2076,17 @@ func tutorial_hint() -> String:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color("060b16"))
 	draw_background()
+	if credits_open:
+		draw_credits_roll()
+		return
+	if title_screen_open:
+		draw_title_screen()
+		if settings_open:
+			draw_audio_settings_overlay()
+		return
 	var shake_offset := Vector2.ZERO
 	if screen_shake > 0.0:
-		shake_offset = Vector2(sin(animation_time * 73.0), cos(animation_time * 91.0)) * screen_shake * 9.0
+		shake_offset = Vector2(sin(animation_time * 73.0), cos(animation_time * 91.0)) * screen_shake * 9.0 * audio_settings.screen_shake_intensity
 	draw_set_transform(shake_offset)
 	draw_header()
 	if campaign_screen_visible():
@@ -1657,7 +2102,114 @@ func _draw() -> void:
 		draw_completion_overlay()
 	if screen_flash > 0.0:
 		var flash_color := Palette.CORAL if run.meltdowns > 0 and run.heat <= 35.0 and message_time > 1.0 else Palette.CYAN
-		draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.with_alpha(flash_color, screen_flash * 0.18))
+		draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.with_alpha(flash_color, screen_flash * 0.18 * audio_settings.flash_intensity))
+	if settings_open:
+		draw_audio_settings_overlay()
+
+func draw_title_screen() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.01, 0.022, 0.05, 0.46))
+	for index in range(7):
+		var radius := 76.0 + index * 27.0
+		var direction := -1.0 if index % 2 else 1.0
+		draw_arc(Vector2(310, 366), radius, -PI * 0.7 + animation_time * 0.09 * direction, PI * 1.25 + animation_time * 0.09 * direction, 64, Palette.with_alpha(Palette.CYAN if index % 2 == 0 else Palette.VIOLET, 0.24 - index * 0.022), 3.0)
+	draw_texture_rect(ProtagonistTexture, Rect2(88, 166, 444, 444), false, Color(0.98, 1.0, 1.0, 1.0))
+	draw_rect(Rect2(0, 0, 1280, 6), Palette.AMBER)
+	draw_string(DisplayFont, Vector2(702, 104), "PROJECT", HORIZONTAL_ALIGNMENT_LEFT, 470, 24, Palette.CYAN)
+	draw_string(DisplayFont, Vector2(696, 184), "CHARGE", HORIZONTAL_ALIGNMENT_LEFT, 520, 66, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(704, 223), loc("地底機獣討伐アクティブクリッカー", "ABYSSAL MACHINE-HUNT ACTIVE CLICKER"), HORIZONTAL_ALIGNMENT_LEFT, 470, 15, Palette.MUTED)
+	draw_line(Vector2(704, 252), Vector2(1136, 252), Palette.with_alpha(Palette.CYAN, 0.46), 2.0)
+	draw_string(Palette.UI_FONT, Vector2(704, 280), loc("充電は弾丸。機械核は進化。地核機神を停止せよ。", "CHARGE IS AMMUNITION. CORES ARE EVOLUTION. STOP THE WORLD ENGINE."), HORIZONTAL_ALIGNMENT_LEFT, 470, 12, Palette.AMBER)
+	var labels := [
+		loc("討伐を続ける", "CONTINUE HUNT") if title_has_saved_campaign else loc("討伐を始める", "BEGIN HUNT"),
+		loc("新しい討伐", "NEW HUNT") if title_new_confirm_time <= 0.0 else loc("もう一度押して初期化", "CONFIRM NEW HUNT"),
+		loc("設定", "SETTINGS"),
+		loc("制作記録", "CREDITS"),
+		loc("ゲーム選択", "GAME LAB"),
+	]
+	for index in range(title_button_rects.size()):
+		draw_title_button(index, str(labels[index]))
+	if title_has_saved_campaign:
+		draw_string(Palette.UI_FONT, Vector2(726, 538), loc("保存記録", "SAVED HUNT"), HORIZONTAL_ALIGNMENT_LEFT, 150, 11, Palette.MUTED)
+		draw_string(DisplayFont, Vector2(726, 568), "%s  ·  %d/6 CORES  ·  LV %d/%d" % [format_time(run.session_elapsed), run.beast_cores.size(), run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_LEFT, 430, 14, Palette.MINT)
+	draw_string(Palette.UI_FONT, Vector2(726, 620), loc("方向キー / 決定　L：言語　M：BGMミュート", "D-PAD / CONFIRM  ·  L: LANGUAGE  ·  M: MUTE BGM"), HORIZONTAL_ALIGNMENT_LEFT, 470, 11, Palette.MUTED)
+	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
+	draw_string(DisplayFont, Vector2(88, 654), "VOLT NOMAD // UNIT 06", HORIZONTAL_ALIGNMENT_LEFT, 420, 15, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(88, 681), loc("第六機核適合個体・深層へ降下待機中", "SIX-CORE COMPATIBLE UNIT · READY TO DESCEND"), HORIZONTAL_ALIGNMENT_LEFT, 460, 11, Palette.MUTED)
+
+func draw_title_button(index: int, label: String) -> void:
+	var rect := title_button_rects[index]
+	var selected := title_selected == index
+	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.VIOLET if index == 3 else Palette.MUTED
+	draw_machine_plate(rect, Palette.with_alpha(accent, 0.7 if selected and index == 0 else 0.18 if selected else 0.055), Palette.with_alpha(accent, 1.0 if selected else 0.38), 10.0, 2.0 if selected else 1.0)
+	draw_rect(Rect2(rect.position + Vector2(10, 9), Vector2(4, rect.size.y - 18)), Palette.with_alpha(accent, 0.92 if selected else 0.32))
+	draw_string(DisplayFont, rect.position + Vector2(30, 39 if rect.size.y >= 60 else 33), label, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 58, 18 if rect.size.y >= 60 else 14, Palette.INK if selected and index == 0 else Palette.PAPER)
+	if selected:
+		draw_string(DisplayFont, rect.position + Vector2(rect.size.x - 42, 38 if rect.size.y >= 60 else 32), ">", HORIZONTAL_ALIGNMENT_CENTER, 24, 18, Palette.INK if index == 0 else accent)
+
+func draw_credits_roll() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.006, 0.018, 0.92))
+	for index in range(28):
+		var point := Vector2(fmod(float(index * 211), 1280.0), fmod(float(index * 127) + animation_time * 8.0, 720.0))
+		draw_circle(point, 1.0 + float(index % 3) * 0.4, Palette.with_alpha(Palette.CYAN, 0.16 + float(index % 4) * 0.04))
+	draw_rect(Rect2(0, 0, 1280, 76), Color(0.004, 0.01, 0.025, 0.96))
+	draw_string(DisplayFont, Vector2(48, 46), "PROJECT CHARGE // CREDITS", HORIZONTAL_ALIGNMENT_LEFT, 600, 22, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(48, 67), loc("地核より回収された制作記録", "PRODUCTION RECORD RECOVERED FROM THE WORLD ENGINE"), HORIZONTAL_ALIGNMENT_LEFT, 650, 10, Palette.MUTED)
+	var offset_y := 610.0 - credits_scroll * 31.0
+	var sections := [
+		["PROJECT CHARGE", loc("機械核を継ぎ、地底の世界機関へ挑む", "INHERIT THE MACHINE CORES. DESCEND TO THE WORLD ENGINE."), Palette.AMBER, 28],
+		[loc("ゲームデザイン・ディレクション", "GAME DESIGN & DIRECTION"), "TAKAHIRO SAEKI", Palette.CYAN, 15],
+		[loc("開発・ゲームデザイン支援", "DEVELOPMENT & DESIGN SUPPORT"), "OPENAI CODEX", Palette.VIOLET, 15],
+		[loc("ピクセルアート生成", "PIXEL ART GENERATION"), "PIXELLAB\nART DIRECTION & SELECTION — TAKAHIRO SAEKI", Palette.MINT, 15],
+		[loc("オリジナル音楽", "ORIGINAL MUSIC"), "NEON LAMENT / SUNO\nSUBTERRANEAN HUNT · PISTON HUNT LOOP\nFORGE OF BREAKPOINTS · ARCH SINGULARITY · CORE OF DAWN", Palette.AMBER, 15],
+		[loc("ゲームエンジン", "GAME ENGINE"), "GODOT ENGINE", Palette.CYAN, 15],
+		[loc("書体", "TYPEFACES"), "DOTGOTHIC16 · NOTO SANS JP\nSIL OPEN FONT LICENSE 1.1", Palette.MINT, 15],
+		[loc("スペシャルサンクス", "SPECIAL THANKS"), loc("AI BROWSER GAME JAM 4のプレイヤーと審査員のみなさま", "THE PLAYERS AND JUDGES OF AI BROWSER GAME JAM 4"), Palette.VIOLET, 15],
+		[loc("そして、深層へ降りたあなたへ", "AND TO YOU, WHO DESCENDED INTO THE DEPTHS"), "CHARGE COMPLETE", Palette.PAPER, 18],
+	]
+	var y := offset_y
+	for section in sections:
+		var heading := str(section[0])
+		var body := str(section[1])
+		var accent: Color = section[2]
+		var body_size := int(section[3])
+		draw_string(Palette.UI_FONT, Vector2(0, y), heading, HORIZONTAL_ALIGNMENT_CENTER, 1280, 11, Palette.with_alpha(accent, 0.78))
+		y += 36.0
+		for line in body.split("\n"):
+			draw_string(DisplayFont, Vector2(0, y), str(line), HORIZONTAL_ALIGNMENT_CENTER, 1280, body_size, accent)
+			y += float(body_size + 13)
+		y += 62.0
+	draw_rect(Rect2(0, 624, 1280, 96), Color(0.004, 0.01, 0.025, 0.94))
+	draw_string(Palette.UI_FONT, Vector2(48, 675), loc("自動スクロール　上下キーで調整", "AUTO SCROLL · UP/DOWN TO ADJUST"), HORIZONTAL_ALIGNMENT_LEFT, 500, 11, Palette.MUTED)
+	draw_campaign_button(credits_close_rect, loc("結果へ戻る", "RETURN"), Palette.MINT, false)
+
+func draw_audio_settings_overlay() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.004, 0.01, 0.025, 0.92))
+	var panel := Rect2(300, 70, 680, 620)
+	draw_machine_plate(panel, Color(0.025, 0.055, 0.11, 0.98), Palette.VIOLET, 24.0, 2.0)
+	draw_string(DisplayFont, Vector2(356, 122), loc("システム設定", "SYSTEM SETTINGS"), HORIZONTAL_ALIGNMENT_LEFT, 568, 30, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(356, 154), loc("音響と画面効果は即時反映・自動保存されます", "AUDIO AND VISUAL COMFORT CHANGES APPLY AND SAVE IMMEDIATELY"), HORIZONTAL_ALIGNMENT_LEFT, 568, 12, Palette.MUTED)
+	var labels := [
+		loc("マスター音量", "MASTER VOLUME"),
+		loc("BGM音量", "MUSIC VOLUME"),
+		loc("効果音量", "SFX VOLUME"),
+		loc("画面の揺れ", "SCREEN SHAKE"),
+		loc("画面フラッシュ", "SCREEN FLASH"),
+	]
+	var values := audio_setting_values()
+	for index in range(settings_row_rects.size()):
+		var row := settings_row_rects[index]
+		var selected := settings_selected == index
+		var accent := Palette.CYAN if index < 3 else Palette.VIOLET
+		draw_machine_plate(row, Palette.with_alpha(Palette.INK, 0.76), Palette.with_alpha(accent, 0.9 if selected else 0.22), 8.0, 2.0 if selected else 1.0)
+		draw_string(Palette.UI_FONT, row.position + Vector2(18, 32), str(labels[index]), HORIZONTAL_ALIGNMENT_LEFT, 196, 13, Palette.PAPER if selected else Palette.MUTED)
+		var slider := Rect2(row.position + Vector2(230, 20), Vector2(280, 12))
+		draw_rect(slider, Palette.with_alpha(Palette.MUTED, 0.18))
+		draw_rect(Rect2(slider.position, Vector2(slider.size.x * float(values[index]), slider.size.y)), accent)
+		draw_circle(slider.position + Vector2(slider.size.x * float(values[index]), slider.size.y * 0.5), 8.0, Palette.PAPER)
+		draw_string(DisplayFont, row.position + Vector2(518, 34), "%d" % int(round(float(values[index]) * 100.0)), HORIZONTAL_ALIGNMENT_RIGHT, 36, 13, accent)
+	draw_campaign_button(settings_reset_rect, loc("初期設定へ戻す", "RESTORE DEFAULTS"), Palette.CORAL, false)
+	draw_campaign_button(settings_close_rect, loc("閉じる", "CLOSE"), Palette.MINT, true)
+	draw_string(Palette.UI_FONT, Vector2(356, 588), loc("上下：項目　左右：調整　ESC / B：閉じる", "UP/DOWN: SELECT · LEFT/RIGHT: ADJUST · ESC/B: CLOSE"), HORIZONTAL_ALIGNMENT_LEFT, 568, 11, Palette.MUTED)
 
 func draw_background() -> void:
 	# Every approved 320x180 region backdrop scales to 1280x720 at an exact 4x.
@@ -1829,7 +2381,8 @@ func draw_campaign_ending(true_end: bool) -> void:
 	draw_campaign_button(campaign_copy_rect, copy_label, Palette.MINT if result_copy_succeeded else Palette.CORAL, false)
 	draw_string(Palette.UI_FONT, Vector2(0, 544), loc("プレイ記録をローカル保存済み　制作：Godot + Codex　PixelLab + Suno", "PLAYTEST LOG SAVED LOCALLY · GODOT + CODEX · PIXELLAB + SUNO"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 10, Palette.with_alpha(Palette.MUTED, 0.8))
 	draw_campaign_button(campaign_primary_rect, loc("新しいキャンペーン", "NEW CAMPAIGN") if true_end else loc("真ルートへ続く", "CONTINUE TRUE ROUTE"), accent, true)
-	draw_campaign_button(campaign_secondary_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
+	draw_campaign_button(campaign_credits_rect, loc("E  エンドロール", "E  CREDITS"), Palette.VIOLET, false)
+	draw_campaign_button(campaign_ending_return_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
 
 func draw_campaign_button(rect: Rect2, label: String, accent: Color, primary: bool) -> void:
 	var hovered := rect.has_point(mouse_position)
@@ -1856,7 +2409,7 @@ func draw_header() -> void:
 	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("総時間", "SESSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(752, 62), format_time(run.session_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
 	draw_small_button(reset_rect, loc("R  もう一度", "R  CONFIRM") if reset_confirm_time > 0.0 else loc("R  初期化", "R  RESET"), Palette.CORAL)
-	draw_small_button(music_rect, "M BGM" if music_enabled else "M OFF", Palette.MINT if music_enabled else Palette.CORAL)
+	draw_small_button(settings_rect, loc("設定", "SET"), Palette.VIOLET)
 	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
 	draw_small_button(menu_rect, loc("ゲーム選択", "GAME LAB"), Palette.CYAN)
 
@@ -2136,8 +2689,12 @@ func draw_direct_attack_combat_panel() -> void:
 		draw_circle(tracer_start.lerp(tracer_end, tracer_progress), 4.0, Palette.VIOLET)
 
 	draw_stage_rule_indicator()
-	var status := message if message_time > 0.0 else tutorial_hint()
-	draw_string(Palette.UI_FONT, Vector2(448, 455), status, HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.PAPER)
+	if message_time > 0.0:
+		draw_string(Palette.UI_FONT, Vector2(448, 455), message, HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.PAPER)
+	elif comms_time > 0.0:
+		draw_comms_strip()
+	else:
+		draw_string(Palette.UI_FONT, Vector2(448, 455), tutorial_hint(), HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.PAPER)
 	draw_string(DisplayFont, Vector2(438, 482), loc("5ギア・66ノード — ギアを選んで専用ツリーを開く", "FIVE GEARS · 66 NODES — OPEN A GEAR'S DEDICATED TREE"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
 	draw_string(DisplayFont, Vector2(1030, 482), "%d / %d" % [run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_RIGHT, 184, 11, Palette.AMBER if run.skill_points_bought() > 0 else Palette.MUTED)
 	var rack_rect := Rect2(428, 488, 788, 178)
@@ -2147,6 +2704,18 @@ func draw_direct_attack_combat_panel() -> void:
 		draw_line(Vector2(rail_x, rack_rect.position.y + 8), Vector2(rail_x + 92, rack_rect.position.y + 8), Palette.with_alpha(Palette.CYAN, 0.11), 2.0)
 		draw_circle(Vector2(rail_x, rack_rect.end.y - 9), 2.0, Palette.with_alpha(Palette.CYAN, 0.20))
 	draw_gear_rack()
+
+func draw_comms_strip() -> void:
+	var rect := Rect2(438, 448, 776, 32)
+	var speaker := comms_speaker_ja if is_japanese else comms_speaker_en
+	var line := comms_text_ja if is_japanese else comms_text_en
+	var enemy_speaking := speaker == "アーク・シンギュラリティ" or speaker == "ARCH SINGULARITY"
+	var accent := Palette.CORAL if enemy_speaking else Palette.AMBER if speaker == "ヴォルト・ノマド" or speaker == "VOLT NOMAD" else Palette.CYAN
+	draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.96), Palette.with_alpha(accent, 0.68), 6.0, 1.0)
+	draw_rect(Rect2(rect.position + Vector2(6, 5), Vector2(4, rect.size.y - 10)), accent)
+	draw_string(DisplayFont, rect.position + Vector2(18, 21), speaker, HORIZONTAL_ALIGNMENT_LEFT, 142, 11, accent)
+	draw_line(rect.position + Vector2(166, 7), rect.position + Vector2(166, 25), Palette.with_alpha(accent, 0.28), 1.0)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(178, 22), line, HORIZONTAL_ALIGNMENT_LEFT, 582, 11, Palette.PAPER)
 
 func draw_stage_rule_indicator() -> void:
 	var rect := Rect2(452, 424, 748, 20)
@@ -2373,6 +2942,8 @@ func draw_tree_gear_stats(gear_id: String, origin: Vector2, accent: Color) -> vo
 		draw_string(Palette.UI_FONT, origin + Vector2(12, 23 + index * 43), lines[index], HORIZONTAL_ALIGNMENT_LEFT, 326, 11, Palette.PAPER)
 
 func auto_mutation_label() -> String:
+	if run.upgrade_level("gatling_protocol") > 0 and run.upgrade_level("rail_protocol") > 0:
+		return loc("複合砲身", "HYBRID")
 	if run.upgrade_level("gatling_protocol") > 0:
 		return loc("ガトリング", "GATLING")
 	if run.upgrade_level("rail_protocol") > 0:

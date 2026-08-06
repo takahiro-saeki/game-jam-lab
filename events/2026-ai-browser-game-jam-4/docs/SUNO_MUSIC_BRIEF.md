@@ -2,7 +2,7 @@
 
 ## 採用・実装結果（2026-08-05）
 
-全5用途の採用案をユーザーが試聴して確定し、SunoのWAV原音からGodot/Web用Ogg Vorbisへ変換した。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーまたはヘッダーの `M BGM` でオン・オフでき、設定は端末へ保存される。
+全5用途の採用案をユーザーが試聴して確定し、SunoのWAV原音からGodot/Web用Ogg Vorbisへ変換した。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
 
 | 用途 | 採用曲 | 案 | Suno原曲 | ゲーム用ファイル | 長さ |
 |---|---|---:|---|---|---:|
@@ -77,3 +77,60 @@
 5. エンディングを1〜2案
 
 初回実装では各曲の全区間をループし、場面間をクロスフェードする。真ボス三相は同一の組曲を継続して流し、プレイテストで相転移と曲展開が大きくずれる場合のみ、専用ループ点または相別ステムへ発展させる。
+
+## 敵別BGM拡張（2026-08-06）
+
+既存の `Piston Hunt Loop` はギアモウ専用、`Forge of Breakpoints` はサーマル・タイタン専用として残す。`Arch Singularity` は真ボス専用のまま維持する。以下の6曲を追加すれば、六獣・二通常ボス・真ボスの全9体が固有曲になる。
+
+全曲共通でInstrumentalをオンにし、同じプロンプトからA/Bを1回ずつ生成する。理想は2〜3分。除外要素は上記の「生成時に避けたい要素」を共通で使用する。
+
+### VAULTBACK — `Blue Vault Pulse`
+
+> Instrumental mechanical beast battle theme for VAULTBACK, a colossal thunder-shell creature that stores player energy until its armor opens. 124 BPM, D minor, deep capacitor thumps, gated electrical bass, restrained breakbeat, glassy blue arpeggios that grow brighter every eight bars, heavy shell-closing metal impacts, a compact four-note PROJECT CHARGE motif emerging from the stored electricity. The groove should feel patient, pressurized and rewarding when the shell opens, not frantic. Premium modern indie game soundtrack, clear rhythmic pocket for rapid clicking and weapon SFX, loop-friendly A-B-A structure, no vocals, no final cadence.
+
+### PYRE WYRM — `Redline Molt`
+
+> Instrumental electro-industrial combat loop for PYRE WYRM, a furnace serpent that enters overdrive whenever the player purchases an upgrade. 142 BPM, E Phrygian dominant, dry forge hammers, coiling syncopated synth bass, rising heat pulses, short bursts of distorted guitar-like synthesizer without becoming metal music, a four-note PROJECT CHARGE motif reshaped as a red-hot warning signal. Alternate controlled pressure with brief eight-bar overdrive blooms so upgrade moments feel explosive. Crisp transients, strong low-end machinery, generous space for attack SFX, seamless loop, no vocals, no cinematic ending.
+
+### RELAY HYDRA — `Cascade Trinity`
+
+> Instrumental mechanical battle track for RELAY HYDRA, a three-headed bus creature powered by alternating manual and automatic attacks. 136 BPM, C sharp minor, three interlocking rhythmic voices: piston drums, staccato modular bass and bright relay-click percussion, constantly passing a four-note PROJECT CHARGE motif between left, center and right positions. Clear call-and-response phrases that build into a six-step cascading chain, energetic and clever rather than chaotic, subtle polyrhythm over a readable four-four pulse. Wide but uncluttered mix for gameplay SFX, loopable development, no vocals, no long intro or final hit.
+
+### SWARM MATRIARCH — `Hive Command Lattice`
+
+> Instrumental high-tech battle loop for SWARM MATRIARCH, a mechanical brood queen commanding clouds of attack drones. 148 BPM, A minor, precise micro-percussion, fast hovering rotor rhythms, elastic sub bass, small bright synth particles circling a slower authoritative lead, the PROJECT CHARGE four-note motif multiplied into a controlled swarm pattern. Sections should alternate between scattered marks and synchronized automatic volleys, elegant tactical intensity instead of noisy insect horror. Modern detailed game production, preserve midrange space for clicks and drone shots, seamless loop shape, no vocals, no triumphant ending.
+
+### PHASE MANTIS — `Critical Parallax`
+
+> Instrumental precision boss-like battle loop for PHASE MANTIS, a crystalline machine predator that shifts phase and rewards guaranteed critical timing. 150 BPM, F sharp minor, razor-clean broken beats, glass harmonics, phase-shifted arpeggios, sudden half-beat silences, focused synthetic bass and a four-note PROJECT CHARGE motif appearing in mirrored and displaced forms. Build tension toward recurring analysis-complete windows where the harmony snaps into perfect alignment, cerebral, dangerous and stylish, never ambient. High rhythmic clarity for active clicking, restrained distortion, loopable A-B-C-A form, no vocals and no conclusive ending.
+
+### GRID LEECH — `Siphon Breakpoint`
+
+> Instrumental industrial boss battle music for GRID LEECH, an abyssal machine parasite that opens a siphon core for a short eight-click break window. 146 BPM, B minor, predatory suction-like sub pulses, cable snaps, hydraulic percussion, cold cyan modular sequences and a corrupted four-note PROJECT CHARGE motif that resolves only during recurring short breakout sections. Create obvious tension-and-release cycles: compressed stalking groove, three-second opening, violent mechanical payoff, then renewed pursuit. Menacing but readable, wide low end, clean attack transients and space for alarms and rapid clicks, loopable without a final chord, no vocals.
+
+### 採用後の割り当て
+
+| 敵 | 曲 |
+|---|---|
+| ギアモウ | Piston Hunt Loop A（既存） |
+| ヴォルトバック | Blue Vault Pulse（要A/B選択） |
+| パイア・ワーム | Redline Molt（要A/B選択） |
+| リレイ・ヒドラ | Cascade Trinity（要A/B選択） |
+| スウォーム・マトリアーク | Hive Command Lattice（要A/B選択） |
+| フェイズ・マンティス | Critical Parallax（要A/B選択） |
+| グリッド・リーチ | Siphon Breakpoint（要A/B選択） |
+| サーマル・タイタン | Forge of Breakpoints B（既存） |
+| アーク・シンギュラリティ | Arch Singularity A（既存） |
+
+### 生成済み候補（2026-08-06）
+
+全12候補をSuno v5.5 / Advanced / Instrumentalで生成済み。A/BはSunoの生成結果順であり、現時点では未採用。
+
+| 敵 | A | B |
+|---|---|---|
+| ヴォルトバック | [Blue Vault Pulse A](https://suno.com/song/a45f0023-c229-4b3a-8544-d04b5b02d971) | [Blue Vault Pulse B](https://suno.com/song/17608c80-33ae-4f71-9733-9586645deaf0) |
+| パイア・ワーム | [Redline Molt A](https://suno.com/song/84c0ad31-a984-43c6-9717-f95990273a07) | [Redline Molt B](https://suno.com/song/72f2d770-04f8-4690-a59d-4916c5f40c86) |
+| リレイ・ヒドラ | [Cascade Trinity A](https://suno.com/song/6c4a0e1d-5646-4dd1-94c8-27db24d85477) | [Cascade Trinity B](https://suno.com/song/9f1f8777-1341-48b3-833a-5eb82618ede4) |
+| スウォーム・マトリアーク | [Hive Command Lattice A](https://suno.com/song/f8f48fd1-c68f-4c68-9858-23c796d638c9) | [Hive Command Lattice B](https://suno.com/song/f0a24f3c-83b7-4f44-ad94-155514416d8b) |
+| フェイズ・マンティス | [Critical Parallax A](https://suno.com/song/4513110f-139a-478b-8fff-dba98279030d) | [Critical Parallax B](https://suno.com/song/3892aae9-541b-48f5-8bb0-9e634b46e3b7) |
+| グリッド・リーチ | [Siphon Breakpoint A](https://suno.com/song/b58c5f8a-f2ab-494e-9e31-21e476bfe5d6) | [Siphon Breakpoint B](https://suno.com/song/d1aea7cd-73af-40fe-a481-9b437019e97e) |

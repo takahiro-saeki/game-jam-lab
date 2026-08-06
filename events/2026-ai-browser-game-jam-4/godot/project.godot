@@ -52,3 +52,4 @@ environment/defaults/default_clear_color=Color(0.015, 0.022, 0.043, 1)
 [audio]
 
 driver/enable_input=false
+default_bus_layout="res://default_bus_layout.tres"

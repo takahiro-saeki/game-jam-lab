@@ -360,7 +360,7 @@ func _draw() -> void:
 	draw_card(0, "ZERO PERCENT CITY", loc("ミニメトロイドヴァニア", "MINI METROIDVANIA"), ZERO_ART, Palette.CYAN, [loc("3段攻撃で電力を奪還", "Recycle power with combos"), loc("移動能力を解放", "Unlock traversal modules"), loc("コア防衛機を撃破", "Break the Core Warden")])
 	draw_card(1, "CHARGEBACK", loc("デッキ構築ローグライク", "DECK-BUILDING ROGUELIKE"), CHARGEBACK_ART, Palette.MINT, [loc("3つの信用方針", "Choose a credit policy"), loc("カード系統を連携", "Chain card synergies"), loc("証拠カードを強化", "Draft upgraded evidence")])
 	draw_card(2, "CAPACITOR DEFENSE", loc("回路タワーディフェンス", "CIRCUIT TOWER DEFENSE"), CAPACITOR_ART, Palette.VIOLET, [loc("電力パケットを配線", "Route power packets"), loc("設備でネットワーク共振", "Build resonant networks"), loc("3倍速と過駆動", "Use 3× speed + Overdrive")])
-	draw_card(3, "PROJECT CHARGE", loc("アクティブクリッカー", "ACTIVE CLICKER"), null, Palette.AMBER, [loc("6セルを充電・放電", "Charge and discharge 6 cells"), loc("過充電の危険と高倍率", "Risk heat for higher output"), loc("30秒コアループ検証中", "30-second core prototype")])
+	draw_card(3, "PROJECT CHARGE", loc("機械魔獣ハント・クリッカー", "MECHANICAL HUNT CLICKER"), null, Palette.AMBER, [loc("一撃ごとに攻撃と蓄電", "Every strike attacks + charges"), loc("5ギア・257段階の武装構築", "Build 5 gears across 257 ranks"), loc("6体の魔獣から真ボスへ", "Hunt 6 beasts, then the true boss")])
 
 	draw_string(Palette.UI_FONT, Vector2(48, 686), loc("1〜4・矢印・ゲームパッドで選択  •  F1で操作設定", "SELECT: 1–4, ARROWS, OR GAMEPAD  •  F1 OPENS CONTROLS"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.MUTED)
 	if settings_open:
@@ -388,17 +388,21 @@ func draw_card(index: int, title: String, genre: String, texture: Texture2D, acc
 		draw_string(Palette.UI_FONT, Vector2(rect.position.x + 39, y), bullets[bullet_index], HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 58, 13, Palette.MUTED)
 	var button_rect := Rect2(rect.position + Vector2(20, 402), Vector2(rect.size.x - 40, 34))
 	draw_style_box(Palette.rounded_box(accent if hovered else Palette.PANEL_2, 10), button_rect)
-	draw_string(Palette.UI_FONT, button_rect.position + Vector2(0, 23), loc("プレイする", "PLAY PROTOTYPE"), HORIZONTAL_ALIGNMENT_CENTER, button_rect.size.x, 15, Palette.INK if hovered else Palette.PAPER)
+	var play_label := loc("討伐を始める", "BEGIN THE HUNT") if index == 3 else loc("プレイする", "PLAY PROTOTYPE")
+	draw_string(Palette.UI_FONT, button_rect.position + Vector2(0, 23), play_label, HORIZONTAL_ALIGNMENT_CENTER, button_rect.size.x, 15, Palette.INK if hovered else Palette.PAPER)
 
 func draw_charge_preview(rect: Rect2, accent: Color) -> void:
 	draw_rect(rect, Color("07101e"))
-	var center := rect.get_center() - Vector2(0, 4)
+	var center := rect.get_center() - Vector2(0, 12)
 	for ring in range(4):
 		draw_arc(center, 40.0 + ring * 11.0, -PI * 0.7 + menu_time * (0.3 + ring * 0.08), PI * 1.2 + menu_time * (0.3 + ring * 0.08), 36, Palette.with_alpha(accent, 0.7 - ring * 0.12), 3.0)
 	draw_circle(center, 30.0 + sin(menu_time * 3.0) * 2.0, Palette.with_alpha(accent, 0.3))
-	for index in range(6):
-		var cell_rect := Rect2(rect.position + Vector2(18 + index * 40, rect.size.y - 38), Vector2(28, 22))
-		draw_style_box(Palette.rounded_box(Palette.with_alpha(accent, 0.18 + index * 0.06), 5, accent, 1), cell_rect)
+	for index in range(5):
+		var angle := -PI * 0.82 + float(index) * PI * 0.41
+		var gear_center := center + Vector2(cos(angle), sin(angle)) * 78.0
+		draw_line(center, gear_center, Palette.with_alpha(accent, 0.28), 2.0)
+		draw_circle(gear_center, 10.0, Palette.with_alpha(accent, 0.18 + index * 0.06))
+		draw_arc(gear_center, 10.0, 0.0, TAU, 12, accent, 1.5)
 
 func draw_language_toggle() -> void:
 	draw_style_box(Palette.rounded_box(Palette.PANEL, 10, Palette.with_alpha(Palette.CYAN, 0.5), 1), language_rect)
