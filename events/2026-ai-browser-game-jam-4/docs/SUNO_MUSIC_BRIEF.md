@@ -1,18 +1,24 @@
 # PROJECT CHARGE — Suno BGM制作ブリーフ
 
-## 採用・実装結果（2026-08-05）
+## 採用・実装結果（2026-08-06）
 
-全5用途の採用案をユーザーが試聴して確定し、SunoのWAV原音からGodot/Web用Ogg Vorbisへ変換した。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
+全11曲の採用案をユーザーが試聴して確定し、SunoのWAV原音からGodot/Web用Ogg Vorbisへ変換した。六体の機械魔獣、二体の通常ボス、真ボスはすべて固有BGMを持ち、地図・ツリーとエンディングにも独立した曲を割り当てている。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
 
 | 用途 | 採用曲 | 案 | Suno原曲 | ゲーム用ファイル | 長さ |
 |---|---|---:|---|---|---:|
 | 地図・ツリー・ボス選択 | Subterranean Hunt | B | [38e390e5](https://suno.com/song/38e390e5-211a-42c6-bba1-9d0bae8d8c4a) | `subterranean_hunt.ogg` | 2:18 |
-| 六体の通常戦 | Piston Hunt Loop | A | [e8a9630a](https://suno.com/song/e8a9630a-0232-4f61-a5cb-965fa47adb97) | `piston_hunt_loop.ogg` | 2:54 |
-| 通常・強化ボス | Forge of Breakpoints | B | [939de7cd](https://suno.com/song/939de7cd-8c5b-45cf-bd1c-083f2e424ffb) | `forge_of_breakpoints.ogg` | 2:19 |
+| ギアモウ | Piston Hunt Loop | A | [e8a9630a](https://suno.com/song/e8a9630a-0232-4f61-a5cb-965fa47adb97) | `piston_hunt_loop.ogg` | 2:54 |
+| ヴォルトバック | Blue Vault Pulse | A | [d4693641](https://suno.com/song/d4693641-6e67-4e0c-852e-d1eac03383e2) | `blue_vault_pulse.ogg` | 3:00 |
+| パイア・ワーム | Redline Molt | B | [059ca762](https://suno.com/song/059ca762-c4fb-4939-accd-7e44a9c617b2) | `redline_molt.ogg` | 3:00 |
+| リレイ・ヒドラ | Cascade Trinity | A | [2ef6ef83](https://suno.com/song/2ef6ef83-f5fd-4f4c-8f45-61d555253cb6) | `cascade_trinity.ogg` | 3:00 |
+| スウォーム・マトリアーク | Hive Command Lattice | A | [856931c9](https://suno.com/song/856931c9-15fa-40c3-bb29-ff656d3c99b8) | `hive_command_lattice.ogg` | 3:00 |
+| フェイズ・マンティス | Critical Parallax | B | [f968b738](https://suno.com/song/f968b738-6e79-4a72-a712-d5544c2628d9) | `critical_parallax.ogg` | 3:00 |
+| グリッド・リーチ | Siphon Breakpoint | A | [357a05b0](https://suno.com/song/357a05b0-1683-4638-9e86-e253e9e92123) | `siphon_breakpoint.ogg` | 3:00 |
+| サーマル・タイタン／強化ボス | Forge of Breakpoints | B | [939de7cd](https://suno.com/song/939de7cd-8c5b-45cf-bd1c-083f2e424ffb) | `forge_of_breakpoints.ogg` | 2:19 |
 | 真ボス | Arch Singularity | A | [79144c1c](https://suno.com/song/79144c1c-bc79-4873-a200-01cbe32b80e0) | `arch_singularity.ogg` | 2:11 |
 | 通常・真エンディング | Core of Dawn | A | [d196ebaf](https://suno.com/song/d196ebaf-3d80-4a38-8881-b3b0fba76023) | `core_of_dawn.ogg` | 2:20 |
 
-原音は48 kHz / 16-bit / stereo WAV。波形のダイナミクスを変える再圧縮型ノーマライズは避け、曲ごとの固定ゲインで約 -18 LUFSへ統一してからVorbis quality 5へ変換した。変換後は -18.0〜-18.1 LUFS、合計約12.3 MiB。元WAVはリポジトリへ含めず、各Oggのメタデータにタイトル、作者名 `NeoN Lament`、Suno song IDを保存している。
+原音は48 kHz / 16-bit / stereo WAV。波形のダイナミクスを変える再圧縮型ノーマライズは避け、曲ごとの固定ゲインで約 -18 LUFSへ統一してからVorbis quality 5へ変換した。追加6曲の変換後は -18.03〜-18.08 LUFS、全11曲で合計約30.3 MiB。元WAVはリポジトリへ含めず、各Oggのメタデータにタイトル、作者名 `NeoN Lament`、Suno song IDを保存している。
 
 ## 共通方針
 
@@ -108,17 +114,17 @@
 
 > Instrumental industrial boss battle music for GRID LEECH, an abyssal machine parasite that opens a siphon core for a short eight-click break window. 146 BPM, B minor, predatory suction-like sub pulses, cable snaps, hydraulic percussion, cold cyan modular sequences and a corrupted four-note PROJECT CHARGE motif that resolves only during recurring short breakout sections. Create obvious tension-and-release cycles: compressed stalking groove, three-second opening, violent mechanical payoff, then renewed pursuit. Menacing but readable, wide low end, clean attack transients and space for alarms and rapid clicks, loopable without a final chord, no vocals.
 
-### 採用後の割り当て
+### 確定した敵別割り当て
 
 | 敵 | 曲 |
 |---|---|
 | ギアモウ | Piston Hunt Loop A（既存） |
-| ヴォルトバック | Blue Vault Pulse（要A/B選択） |
-| パイア・ワーム | Redline Molt（要A/B選択） |
-| リレイ・ヒドラ | Cascade Trinity（要A/B選択） |
-| スウォーム・マトリアーク | Hive Command Lattice（要A/B選択） |
-| フェイズ・マンティス | Critical Parallax（要A/B選択） |
-| グリッド・リーチ | Siphon Breakpoint（要A/B選択） |
+| ヴォルトバック | Blue Vault Pulse A |
+| パイア・ワーム | Redline Molt B |
+| リレイ・ヒドラ | Cascade Trinity A |
+| スウォーム・マトリアーク | Hive Command Lattice A |
+| フェイズ・マンティス | Critical Parallax B |
+| グリッド・リーチ | Siphon Breakpoint A |
 | サーマル・タイタン | Forge of Breakpoints B（既存） |
 | アーク・シンギュラリティ | Arch Singularity A（既存） |
 
@@ -135,11 +141,13 @@
 | フェイズ・マンティス | [Critical Parallax A](https://suno.com/song/4513110f-139a-478b-8fff-dba98279030d) | [Critical Parallax B](https://suno.com/song/3892aae9-541b-48f5-8bb0-9e634b46e3b7) |
 | グリッド・リーチ | [Siphon Breakpoint A](https://suno.com/song/b58c5f8a-f2ab-494e-9e31-21e476bfe5d6) | [Siphon Breakpoint B](https://suno.com/song/d1aea7cd-73af-40fe-a481-9b437019e97e) |
 
-### 3分ループ再生成候補（2026-08-06・現行選考対象）
+### 3分ループ再生成候補（2026-08-06・選考完了）
 
 Suno v5.5 / Advanced / Instrumentalに加えて、長さを`Custom 3:00`へ固定した。プロンプトも8〜16小節の反復セル、4秒以内の主グルーヴ開始、長いブレイク・フェードアウト・終止音の禁止、最終小節と冒頭の和声・拍・空気感の一致を明示した。
 
 カスタム尺でも早く終わったリレイ・ヒドラ初回A（1:54）とグリッド・リーチ初回A（2:34）は除外し、その2体だけ再抽選した。下記の最終12候補はすべて2:58〜3:00。
+
+ユーザー選択はヴォルトバックA、パイア・ワームB、リレイ・ヒドラA、スウォーム・マトリアークA、フェイズ・マンティスB、グリッド・リーチA。採用6曲はWAVから固定ゲインでマスタリングし、上表のOggとして実装済み。
 
 | 敵 | A | B |
 |---|---|---|

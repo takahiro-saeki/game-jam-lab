@@ -16,20 +16,26 @@ const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
 const BGMStreams := {
 	"map": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
 	"hunt": preload("res://assets/audio/project_charge/piston_hunt_loop.ogg"),
+	"vaultback": preload("res://assets/audio/project_charge/blue_vault_pulse.ogg"),
+	"pyre_wyrm": preload("res://assets/audio/project_charge/redline_molt.ogg"),
+	"relay_hydra": preload("res://assets/audio/project_charge/cascade_trinity.ogg"),
+	"swarm_matriarch": preload("res://assets/audio/project_charge/hive_command_lattice.ogg"),
+	"phase_mantis": preload("res://assets/audio/project_charge/critical_parallax.ogg"),
+	"grid_leech": preload("res://assets/audio/project_charge/siphon_breakpoint.ogg"),
 	"boss": preload("res://assets/audio/project_charge/forge_of_breakpoints.ogg"),
 	"singularity": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
 	"ending": preload("res://assets/audio/project_charge/core_of_dawn.ogg"),
 }
-# Each encounter resolves through this table. Missing dedicated masters keep a
-# safe fallback until their selected Suno exports are integrated.
+# Every enemy encounter has its own mastered track. The generic keys remain the
+# dedicated Gearmaw and Thermal Titan tracks as well as safe fallback values.
 const EncounterBGMKeys := {
 	"gearmaw": "hunt",
-	"vaultback": "hunt",
-	"pyre_wyrm": "hunt",
-	"relay_hydra": "hunt",
-	"swarm_matriarch": "hunt",
-	"phase_mantis": "hunt",
-	"grid_leech": "boss",
+	"vaultback": "vaultback",
+	"pyre_wyrm": "pyre_wyrm",
+	"relay_hydra": "relay_hydra",
+	"swarm_matriarch": "swarm_matriarch",
+	"phase_mantis": "phase_mantis",
+	"grid_leech": "grid_leech",
 	"thermal_titan": "boss",
 	"arch_singularity": "singularity",
 }

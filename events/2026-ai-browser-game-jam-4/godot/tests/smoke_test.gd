@@ -446,7 +446,23 @@ func test_charge_clicker_v5() -> void:
 	game.title_screen_open = false
 	game.queue_encounter_intro("gearmaw")
 	check(game.comms_time > 0.0 and not game.comms_text_ja.is_empty() and game.comms_queue.size() == 1, "each hunt can stage a non-blocking bilingual character exchange")
-	check(game.BGMStreams.size() == 5 and game.desired_bgm_key() == "map", "five mastered tracks cover the initial map and tree context")
+	check(game.BGMStreams.size() == 11 and game.desired_bgm_key() == "map", "eleven mastered tracks cover every enemy plus map and ending contexts")
+	var unique_encounter_music := {}
+	for music_key in game.EncounterBGMKeys.values():
+		unique_encounter_music[str(music_key)] = true
+	check(game.EncounterBGMKeys.size() == 9 and unique_encounter_music.size() == 9, "all nine enemy encounters resolve to different BGM tracks")
+	var expected_encounter_music := {
+		"gearmaw": "hunt",
+		"vaultback": "vaultback",
+		"pyre_wyrm": "pyre_wyrm",
+		"relay_hydra": "relay_hydra",
+		"swarm_matriarch": "swarm_matriarch",
+		"phase_mantis": "phase_mantis",
+		"grid_leech": "grid_leech",
+		"thermal_titan": "boss",
+		"arch_singularity": "singularity",
+	}
+	check(game.EncounterBGMKeys == expected_encounter_music, "selected Suno masters are assigned to the intended enemy identities")
 	var music_test_phases := {
 		game.CampaignRoute.RoutePhase.STAGE: "hunt",
 		game.CampaignRoute.RoutePhase.BOSS: "boss",
