@@ -2,11 +2,12 @@
 
 ## 2026-08-06 — PRIME CURRENT v8
 
-- PixelLab API (`pixen`) で本当のラスボス3形態を各3案、合計9枚生成。
+- PixelLab API (`pixen`) で本当のラスボス3形態を各3案、合計9枚を生成。第3形態の闇王再設計3案を追加し、最終ボス候補は合計12枚。
 - レビューバッチ: `v8-final-boss-form-1`, `v8-final-boss-form-2`, `v8-final-boss-form-3`。
 - 暫定ゲーム採用: `final-crownless-reliquary-v8-b.png`, `final-null-cathedral-radial-v8-a.png`, `final-first-current-singular-v8-c.png`。
 - 残り6枚も人間レビューと差し替え比較のためリポジトリ内に保持。
 - 生成プロンプト、Codex評価、Human Review欄は `tools/art-review/data/review-manifest.json` に保存。
+- 第3形態の再設計要望を受け、細身の闇王を軸に追加3案を `v8-final-boss-form-3-dark-king` で生成。ゲームへの差し替えはHuman Review確定後に行う。
 
 Generated with OpenAI's built-in image generation tool on August 1, 2026. The outputs were resized to 1280px-wide JPEGs for the Godot Web build. Generated images contain no requested text, logos, trademarks, or franchise elements.
 

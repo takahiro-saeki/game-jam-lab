@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-06T09:10:08.178Z",
+  "updatedAt": "2026-08-06T12:47:33.090Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -4005,8 +4005,14 @@
             "rank": 2,
             "score": 88,
             "summary": "城塞級の重量感と胸部炉は強い一方、頭部の王冠が『無冠』という設定と衝突します。",
-            "strengths": ["重装第一形態として明快", "胸部炉が小表示でも読める"],
-            "concerns": ["王冠が残っている", "既存パレットより褐色が強い"]
+            "strengths": [
+              "重装第一形態として明快",
+              "胸部炉が小表示でも読める"
+            ],
+            "concerns": [
+              "王冠が残っている",
+              "既存パレットより褐色が強い"
+            ]
           },
           "humanReview": {
             "status": "unreviewed",
@@ -4044,8 +4050,13 @@
             "rank": 1,
             "score": 94,
             "summary": "暫定採用。黒い歩行城塞の輪郭、封印炉、左右非対称の兵装が最もラスボス第一形態らしく読めます。",
-            "strengths": ["ゲーム内縮小でも巨大さが残る", "第二形態へ崩せる暗い機核構造"],
-            "concerns": ["小さな冠状部品は設定上『破損した接続端子』として扱う"]
+            "strengths": [
+              "ゲーム内縮小でも巨大さが残る",
+              "第二形態へ崩せる暗い機核構造"
+            ],
+            "concerns": [
+              "小さな冠状部品は設定上『破損した接続端子』として扱う"
+            ]
           },
           "humanReview": {
             "status": "unreviewed",
@@ -4083,14 +4094,20 @@
             "rank": 3,
             "score": 85,
             "summary": "主人公との鏡像関係は美しいですが、細身で清潔なため第一形態の圧倒的重量が不足します。",
-            "strengths": ["主人公との物語的な類似", "白い装甲が暗背景で映える"],
-            "concerns": ["中ボス寄りの体格", "王冠と輪が設定を先に語りすぎる"]
+            "strengths": [
+              "主人公との物語的な類似",
+              "白い装甲が暗背景で映える"
+            ],
+            "concerns": [
+              "中ボス寄りの体格",
+              "王冠と輪が設定を先に語りすぎる"
+            ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-06T12:40:26.210Z"
           }
         }
       ]
@@ -4133,8 +4150,13 @@
             "rank": 1,
             "score": 95,
             "summary": "暫定採用。人型を捨てた放射炉と顔のような零相核が、第二形態への変貌を最も強く伝えます。",
-            "strengths": ["一目で形態変化が分かる", "中心核と左右器官が小表示でも明瞭"],
-            "concerns": ["第一形態との共通部品をGodotの遷移演出で補強する"]
+            "strengths": [
+              "一目で形態変化が分かる",
+              "中心核と左右器官が小表示でも明瞭"
+            ],
+            "concerns": [
+              "第一形態との共通部品をGodotの遷移演出で補強する"
+            ]
           },
           "humanReview": {
             "status": "unreviewed",
@@ -4172,8 +4194,13 @@
             "rank": 3,
             "score": 76,
             "summary": "三角構図は強いものの、人間の顔と記号的な形が世界観から浮き、機械魔獣としての独自性を弱めます。",
-            "strengths": ["三方向の攻撃を想像しやすい"],
-            "concerns": ["生身の人物に見える", "中央の記号が既存宗教・錬金術風に読める"]
+            "strengths": [
+              "三方向の攻撃を想像しやすい"
+            ],
+            "concerns": [
+              "生身の人物に見える",
+              "中央の記号が既存宗教・錬金術風に読める"
+            ]
           },
           "humanReview": {
             "status": "unreviewed",
@@ -4211,14 +4238,20 @@
             "rank": 2,
             "score": 87,
             "summary": "縦長で気品があり同一個体にも見えますが、変貌量が小さく第二形態の驚きは弱めです。",
-            "strengths": ["第1形態との連続性が高い", "既存配色との親和性"],
-            "concerns": ["人型のままで形態差が小さい", "空洞の読み取りに大表示が必要"]
+            "strengths": [
+              "第1形態との連続性が高い",
+              "既存配色との親和性"
+            ],
+            "concerns": [
+              "人型のままで形態差が小さい",
+              "空洞の読み取りに大表示が必要"
+            ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
+            "status": "approved",
+            "rating": 5,
             "note": "",
-            "reviewedAt": null
+            "reviewedAt": "2026-08-06T12:40:45.626Z"
           }
         }
       ]
@@ -4261,8 +4294,13 @@
             "rank": 3,
             "score": 73,
             "summary": "電流骨格という狙いは出ていますが、骸骨と翼の図像が強く、PROJECT CHARGE固有の機械性を失っています。",
-            "strengths": ["装甲喪失が即座に伝わる"],
-            "concerns": ["骸骨天使の既視感", "ピクセル表現が細く縮小に弱い"]
+            "strengths": [
+              "装甲喪失が即座に伝わる"
+            ],
+            "concerns": [
+              "骸骨天使の既視感",
+              "ピクセル表現が細く縮小に弱い"
+            ]
           },
           "humanReview": {
             "status": "unreviewed",
@@ -4300,8 +4338,14 @@
             "rank": 2,
             "score": 84,
             "summary": "主人公の祖型という物語性は優秀ですが、等身と装備が近すぎてラスボス最終形態のスケールが不足します。",
-            "strengths": ["主人公との鏡像が成立", "細身の輪郭が読みやすい"],
-            "concerns": ["プレイヤーキャラに見える", "原初電流の異質さが弱い"]
+            "strengths": [
+              "主人公との鏡像が成立",
+              "細身の輪郭が読みやすい"
+            ],
+            "concerns": [
+              "プレイヤーキャラに見える",
+              "原初電流の異質さが弱い"
+            ]
           },
           "humanReview": {
             "status": "unreviewed",
@@ -4339,8 +4383,163 @@
             "rank": 1,
             "score": 96,
             "summary": "暫定採用。巨大な単核、五色の電流、内部に残る顔が『人格だけが炉に残った』最終形態を独創的に表現します。",
-            "strengths": ["一枚で最終形態と分かる象徴性", "真エンディング紙芝居にも強い"],
-            "concerns": ["王冠は支配の象徴ではなく旧接続端子の残像として演出する"]
+            "strengths": [
+              "一枚で最終形態と分かる象徴性",
+              "真エンディング紙芝居にも強い"
+            ],
+            "concerns": [
+              "王冠は支配の象徴ではなく旧接続端子の残像として演出する"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v8-final-boss-form-3-dark-king",
+      "order": 27,
+      "title": "Prime Current form III — Dark King refinement",
+      "titleJa": "本当のラスボス・第3形態 闇王再設計",
+      "objective": "細い人型の身体を核に、王冠・外套・闇の電流で横幅と威厳を作る。装置型ではなく、静かな所作だけで最終支配者と伝わる第3形態へ刷新する。",
+      "gate": "細身が明瞭、闇の王として格がある、既存の五色OVERLIMITと原初電流の設定を失わない、戦闘画面の128〜180px表示でも顔・心核・王冠が読める案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "final-dark-king-veil-v8-d",
+          "title": "Veiled Current Sovereign",
+          "titleJa": "電帷の闇王",
+          "variation": "細い黒金の王体と、身体ではなく闇の電流で広がる長い外套。",
+          "prompt": "A single original ultimate final boss named the First Current, an extremely slender tall mechanical dark king with a narrow black-gold torso and long elegant limbs, tiny expressionless ivory mask, a broken three-point crown floating above the head, one lowered hand and one open hand passing judgment, a vast torn mantle made from black electrical current spreading behind the thin body, antique gold conductor filigree, cyan-white lightning seams, five subtle colored currents converging at a small circular chest core, stylish severe lonely monarch, regal silhouette created by crown and current mantle rather than bulky armor. Premium authored 16-bit pixel art boss sprite, crisp deliberate large pixel clusters, deep navy black warm ivory antique gold electric cyan with restrained amber violet coral mint accents, hard one-to-two pixel outline, centered full body readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no giant round reactor, no bulky body, no chibi, no horns, no skeleton, no feathered wings, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-dark-king-veil-v8-d.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T12:46:10.475Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 93,
+            "summary": "細い黒金の本体と長い外套で『闇の王』を素直に表現。王道で格好よく、第1・第2形態から人型へ収束する変化も読みやすいです。",
+            "strengths": [
+              "細身と王の威厳を両立",
+              "片手を差し出すポーズに人格がある",
+              "黒・金・シアンが既存UIに馴染む"
+            ],
+            "concerns": [
+              "B案より左右差と固有性が弱い",
+              "縮小時に脚の金色がやや目立つ"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-dark-king-eclipse-v8-e",
+          "title": "Eclipse Regent",
+          "titleJa": "蝕環の黒王",
+          "variation": "槍のように細い王体を、欠けた日蝕環と左右非対称の電流衣が囲む。",
+          "prompt": "A single original ultimate final boss called the First Current, a razor-slender mechanical regent with an elongated black ceramic body, long coat-tail conductor plates and delicate gold joint lines, a smooth half-black half-ivory mask without visible eyes, a shattered eclipse halo floating behind a narrow crown, asymmetrical streams of shadow electricity forming one high collar and one long trailing cloak, a small cyan singular core beneath the throat, five faint OVERLIMIT colors orbiting only as tiny sparks, elegant duelist-like stance with one impossibly long hand, beautiful and intimidating dark ruler, enormous presence despite an unmistakably thin body. Premium authored 16-bit pixel art boss sprite, crisp deliberate large pixel clusters, deep navy near-black antique gold warm ivory and electric cyan palette with minimal accent colors, hard one-to-two pixel outline, centered full body readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no bulky armor, no circular reactor body, no chibi, no demon horns, no exposed skeleton, no feather wings, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-dark-king-eclipse-v8-e.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T12:46:40.330Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 97,
+            "summary": "暫定本命。槍のように細い王体、欠けた日蝕環、左右へ開く導体外套が最もスタイリッシュで、静かな最終支配者として強く読めます。",
+            "strengths": [
+              "128〜180pxでも王冠・仮面・心核が明瞭",
+              "身体を太らせず横方向のボス感を確保",
+              "左右非対称の電流線が原初電流らしい",
+              "既存3形態の中で最も端正な最終形"
+            ],
+            "concerns": [
+              "五色OVERLIMITはゲーム側の発光演出で補う",
+              "採用時は現在のC案より表示倍率を少し上げたい"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-dark-king-throne-v8-f",
+          "title": "Throneless King",
+          "titleJa": "無座の原初王",
+          "variation": "玉座を背負わず、空洞の王冠と影の腕だけを従える最も静かな王。",
+          "prompt": "A single original ultimate final boss named the First Current, a very thin and tall throneless machine king standing perfectly still, minimal midnight armor fitted tightly over a needle-like body, long narrow legs and arms, blank cracked ivory death-mask, an oversized hollow crown suspended far above by cyan current filaments, two real hands held calmly at the sides while four enormous phantom hands made from black-blue lightning unfold behind like a royal court, a torn floor-length shadow mantle that never hides the slim body, tiny gold circuit ornaments and a compact five-color heart, stylish restrained ominous sovereign, darkest and most iconic final silhouette. Premium authored 16-bit pixel art boss sprite, crisp deliberate large pixel clusters, near-black deep navy warm ivory antique gold and cyan-white palette with restrained five-color heart accents, hard one-to-two pixel outline, centered full body readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no bulky armor, no giant orb body, no chibi, no horns, no skeleton, no feathered wings, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-dark-king-throne-v8-f.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T12:47:33.090Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 78,
+            "summary": "大きな幻手と雷で最終戦の圧は強い一方、仮面が髑髏に寄り、スタイリッシュな機械王より死霊王の印象が先に立ちます。",
+            "strengths": [
+              "最も強い戦闘圧と広いシルエット",
+              "細い本体は明瞭"
+            ],
+            "concerns": [
+              "髑髏の既視感が強い",
+              "雷が外周で切れやすい",
+              "PROJECT CHARGE固有の機械性がA・Bより弱い"
+            ]
           },
           "humanReview": {
             "status": "unreviewed",
