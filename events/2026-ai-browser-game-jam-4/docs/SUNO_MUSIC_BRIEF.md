@@ -122,9 +122,9 @@
 | サーマル・タイタン | Forge of Breakpoints B（既存） |
 | アーク・シンギュラリティ | Arch Singularity A（既存） |
 
-### 生成済み候補（2026-08-06）
+### 初回生成候補（2026-08-06・差し替え前）
 
-全12候補をSuno v5.5 / Advanced / Instrumentalで生成済み。A/BはSunoの生成結果順であり、現時点では未採用。
+全12候補をSuno v5.5 / Advanced / Instrumentalで生成したが、Sunoの自動尺によって一部が16秒〜1分台になったため、選考対象から外した。以下は生成履歴と出典追跡のために残す。
 
 | 敵 | A | B |
 |---|---|---|
@@ -134,3 +134,18 @@
 | スウォーム・マトリアーク | [Hive Command Lattice A](https://suno.com/song/f8f48fd1-c68f-4c68-9858-23c796d638c9) | [Hive Command Lattice B](https://suno.com/song/f0a24f3c-83b7-4f44-ad94-155514416d8b) |
 | フェイズ・マンティス | [Critical Parallax A](https://suno.com/song/4513110f-139a-478b-8fff-dba98279030d) | [Critical Parallax B](https://suno.com/song/3892aae9-541b-48f5-8bb0-9e634b46e3b7) |
 | グリッド・リーチ | [Siphon Breakpoint A](https://suno.com/song/b58c5f8a-f2ab-494e-9e31-21e476bfe5d6) | [Siphon Breakpoint B](https://suno.com/song/d1aea7cd-73af-40fe-a481-9b437019e97e) |
+
+### 3分ループ再生成候補（2026-08-06・現行選考対象）
+
+Suno v5.5 / Advanced / Instrumentalに加えて、長さを`Custom 3:00`へ固定した。プロンプトも8〜16小節の反復セル、4秒以内の主グルーヴ開始、長いブレイク・フェードアウト・終止音の禁止、最終小節と冒頭の和声・拍・空気感の一致を明示した。
+
+カスタム尺でも早く終わったリレイ・ヒドラ初回A（1:54）とグリッド・リーチ初回A（2:34）は除外し、その2体だけ再抽選した。下記の最終12候補はすべて2:58〜3:00。
+
+| 敵 | A | B |
+|---|---|---|
+| ヴォルトバック | [Blue Vault Pulse 3M Loop A — 3:00](https://suno.com/song/d4693641-6e67-4e0c-852e-d1eac03383e2) | [Blue Vault Pulse 3M Loop B — 2:59](https://suno.com/song/b43491a6-65e4-4ea0-90d8-a9a87a6fd625) |
+| パイア・ワーム | [Redline Molt 3M Loop A — 3:00](https://suno.com/song/b0a7addd-f790-423b-b2e0-35fdea31561f) | [Redline Molt 3M Loop B — 3:00](https://suno.com/song/059ca762-c4fb-4939-accd-7e44a9c617b2) |
+| リレイ・ヒドラ | [Cascade Trinity 3M Loop A — 3:00](https://suno.com/song/2ef6ef83-f5fd-4f4c-8f45-61d555253cb6) | [Cascade Trinity 3M Loop B — 3:00](https://suno.com/song/75b65cf2-5e63-4dc1-ae9d-621e4e6a3944) |
+| スウォーム・マトリアーク | [Hive Command Lattice 3M Loop A — 3:00](https://suno.com/song/856931c9-15fa-40c3-bb29-ff656d3c99b8) | [Hive Command Lattice 3M Loop B — 2:58](https://suno.com/song/ac0e9945-68a2-43e8-aa7c-44fa97503785) |
+| フェイズ・マンティス | [Critical Parallax 3M Loop A — 3:00](https://suno.com/song/1fb0ce55-ef2b-43ba-85b9-625d87116664) | [Critical Parallax 3M Loop B — 3:00](https://suno.com/song/f968b738-6e79-4a72-a712-d5544c2628d9) |
+| グリッド・リーチ | [Siphon Breakpoint 3M Loop A — 3:00](https://suno.com/song/357a05b0-1683-4638-9e86-e253e9e92123) | [Siphon Breakpoint 3M Loop B — 3:00](https://suno.com/song/e6534aad-95b6-48e5-9a5b-04373f72b450) |

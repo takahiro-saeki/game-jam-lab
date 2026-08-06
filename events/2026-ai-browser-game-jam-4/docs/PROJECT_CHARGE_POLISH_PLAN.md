@@ -57,7 +57,7 @@ User:
 
 ## Phase 3 — Character and story presentation
 
-Status: FIRST PASS IMPLEMENTED / TONE REVIEW WAITING
+Status: TONE A LOCKED / COPY POLISH NEXT
 
 Codex:
 
@@ -68,12 +68,12 @@ Codex:
 
 User:
 
-- 主人公の人格と支援者の距離感を3案から選ぶ。
-- 会話全文の最終トーンを確認する。
+- A案「クールで淡々とした狩人らしい会話」を採用済み。
+- 完成稿で意味やテンポに違和感がある箇所だけ確認する。
 
 ## Phase 4 — Ending and credits
 
-Status: IMPLEMENTED / CREDIT NAME REVIEW WAITING
+Status: IMPLEMENTED / CREDIT NAME CONFIRMED
 
 Codex:
 
@@ -84,8 +84,8 @@ Codex:
 
 User:
 
-- クレジットに表示する制作者名義を最終確認する。
-- Special Thanksへ載せたい名前がある場合だけ共有する。
+- 制作者名義は `TAKAHIRO SAEKI` で確定。
+- Special Thanksは現在のイベント参加者・審査員向け表記を維持し、追加したい名前が決まった時点で追記する。
 
 ## Phase 5 — Final submission QA
 
