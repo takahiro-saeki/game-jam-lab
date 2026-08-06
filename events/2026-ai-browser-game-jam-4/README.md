@@ -12,7 +12,7 @@
 1. **ZERO PERCENT CITY** — a compact battery-powered metroidvania.
 2. **CHARGEBACK** — a financial deck-building roguelike where your credit limit is your life.
 3. **CAPACITOR DEFENSE** — a circuit-routing tower defense driven by visible energy packets.
-4. **PROJECT CHARGE** — a mechanical-beast hunting clicker where every input attacks or generates power, while five visible machines expand through 66 branching skills and permanent stolen-core synergies.
+4. **PROJECT CHARGE** — a mechanical-beast hunting clicker where every input attacks or issues a PURE command, while five visible machines expand through 86 branching skills and permanent stolen-core synergies.
 
 The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE has been rebuilt around six visible mechanical-beast battles: any three hunts lead to a chosen normal boss and ending, while the remaining beasts, enhanced boss, and ARCH SINGULARITY form its optional true route.
 
@@ -22,7 +22,8 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 
 - [Original active-clicker concept](docs/CHARGE_CLICKER_GDD.md)
 - [Previous v5 five-gear specification](docs/PROJECT_CHARGE_V5_GDD.md)
-- [Current v6 tiered-overclock specification](docs/PROJECT_CHARGE_V6_GDD.md)
+- [Current v7 PURE COMMAND / records / Infinite specification](docs/PROJECT_CHARGE_V7_GDD.md)
+- [Archived v6 tiered-overclock specification](docs/PROJECT_CHARGE_V6_GDD.md)
 - [Previous v4 direct-CHARGE specification](docs/PROJECT_CHARGE_V4_GDD.md)
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
 - [Current playtest guide](docs/PROJECT_CHARGE_PLAYTEST.md)
@@ -75,10 +76,11 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 - Press the large **CHARGE ATTACK** button, `Space`, `Enter` / `X`, right-click, or the configured gamepad action. One input always produces exactly one manual command; holding a key never creates hidden auto-clicks.
 - The AUTO cannon fires from the beginning and remains online while manual attacks continue; no activation purchase or toggle is required.
 - Heat, cooling, meltdown, stored cells, and mandatory DISCHARGE have been removed. Enemy mechanics provide bonus windows and never erase progress.
-- Spend CHARGE across five visible machines: Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame. Each card has a human-selected PixelLab emblem and opens its own branching skill tree; together they contain 66 nodes and 257 ranks across three technology tiers.
-- The human-selected Volt Nomad is visible as the player character during every fight, with separate idle, pile-driver recoil, and PURE CHARGE feedback. Scrap Mine, Geothermal Core, and Biocircuit Crystal backgrounds switch automatically with the selected enemy.
-- The Dynamo tree eventually unlocks **PURE CHARGE**. In this manual mode a click deals zero damage but generates six times the CHARGE and briefly supercharges AUTO fire, creating a deliberate economy-versus-damage choice.
-- The Autogun tree splits into mutually exclusive Gatling and Rail mutations. Core Frame nodes require the corresponding defeated-beast core, so hunt order changes which builds become available.
+- Spend CHARGE across five visible machines: Striker Arm, Dynamo Heart, Autogun Rig, Drone Hive, and Core Frame. Each card has a human-selected PixelLab emblem and opens its own branching skill tree; together they contain 86 nodes and 317 ranks across three technology tiers.
+- The human-selected Volt Nomad is visible as the player character during every fight, with separate idle, pile-driver recoil, and PURE COMMAND feedback. Scrap Mine, Geothermal Core, and Biocircuit Crystal backgrounds switch automatically with the selected enemy.
+- The Dynamo tree eventually unlocks **PURE COMMAND**. It permanently replaces the weaker direct click, generates six times the CHARGE, builds AUTO overcharge, places marks, and preserves indirect Striker command effects.
+- Gatling and Rail mutations can both be completed and fuse into the Hybrid barrel. Core Frame nodes require the corresponding defeated-beast core, so hunt order changes which builds become available.
+- Ten persistent hunt records cover normal campaign goals, including all 317 skill ranks. Infinite Mode opens after the true ending as an optional CHARGE workshop with escalating waves and no exclusive achievements.
 - Open a tree by clicking one of the five gear cards, pressing `1`–`5` / `T`, or gamepad `Menu`. Navigate nodes with the D-pad, switch gear with `Q` / `E` or shoulder buttons, and purchase with `Enter` / gamepad `A`.
 - TIER II unlocks after the first normal boss; TIER III unlocks after all six beast cores. Switch the visible tier with `Z` / `X` or the mapped language/active button while the tree is open.
 - Respec all five trees for free from the hunt map. Exact current and maximum enemy HP are always shown beside the percentage gauge.
@@ -88,8 +90,8 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 - Progress, CHARGE, upgrade ranks, acquired cores, enemy HP, and the current hunt save automatically and resume after closing the browser.
 - Use the arrow keys, D-pad, or left stick on maps and the skill tree. Ending results can be copied with `C` or the configured active-ability button.
 - The header tracks total session time. Normal and true endings expose a detailed JSON report and append it locally, while the deterministic benchmark runner records comparable automated clear times.
-- Five human-selected Suno tracks switch between map/tree, normal hunt, normal boss, ARCH SINGULARITY, and ending scenes with a short crossfade. Press `M` or click `M BGM` to toggle music; the choice is saved.
-- To erase the full campaign and start over, press `R` twice within the three-second confirmation window.
+- Eleven human-selected Suno tracks give all nine enemies unique battle music plus dedicated map/tree and ending themes, with a short crossfade. Press `M` to toggle music; the choice is saved.
+- To erase the campaign and start over, press `R` twice within the three-second confirmation window. Persistent hunt records remain unlocked.
 
 ## Local development
 
@@ -133,4 +135,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v6 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 66 nodes and 257 ranks across three progression tiers, PURE CHARGE generation mode, six automatically integrated beast cores, two boss cores, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, bilingual UI/results, atomic saves, playtest telemetry, eleven scene-reactive mastered tracks with exclusive BGM for all nine enemies, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the normal/full routes in about 6.4/10.7 minutes at five inputs per second and 14.6/21.1 minutes at two inputs per second; first-time human targets remain 18–25 and 45–70 minutes. PixelLab candidates, prompts, human reviews, and selected integrations remain recorded locally; Volt Nomad is the approved v6 protagonist.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v7 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 86 nodes and 317 ranks across three progression tiers, permanent PURE COMMAND evolution, six automatically integrated beast cores, two boss cores, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, persistent achievements, post-ending Infinite Mode, bilingual UI/results, atomic saves, playtest telemetry, eleven scene-reactive mastered tracks with exclusive BGM for all nine enemies, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the normal/full routes in about 6.4/10.7 minutes at five inputs per second and 14.6/21.9 minutes at two inputs per second; first-time human targets remain 18–25 and 45–70 minutes. PixelLab candidates, prompts, human reviews, and selected integrations remain recorded locally; Volt Nomad is the approved v6 protagonist art.

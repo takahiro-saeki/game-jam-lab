@@ -14,6 +14,7 @@ enum RoutePhase {
 	ENHANCED_BOSS,
 	SINGULARITY,
 	TRUE_END,
+	INFINITE,
 }
 
 var phase := RoutePhase.MAP
@@ -25,6 +26,8 @@ var defeated_boss_ids: Array[String] = []
 var first_boss_id := ""
 var normal_end_seen := false
 var true_end_seen := false
+var infinite_wave := 0
+var infinite_best_wave := 0
 
 func reset() -> void:
 	phase = RoutePhase.MAP
@@ -36,6 +39,8 @@ func reset() -> void:
 	first_boss_id = ""
 	normal_end_seen = false
 	true_end_seen = false
+	infinite_wave = 0
+	infinite_best_wave = 0
 
 func available_stage_ids() -> Array[String]:
 	var result: Array[String] = []
@@ -135,9 +140,29 @@ func normal_route_ready() -> bool:
 func true_route_ready() -> bool:
 	return completed_stage_ids.size() == Catalog.STAGES.size() and defeated_boss_ids.size() == Catalog.BOSSES.size()
 
+func start_infinite() -> bool:
+	if phase != RoutePhase.TRUE_END or not true_end_seen:
+		return false
+	infinite_wave = maxi(1, infinite_wave)
+	phase = RoutePhase.INFINITE
+	return true
+
+func complete_infinite_wave() -> bool:
+	if phase != RoutePhase.INFINITE:
+		return false
+	infinite_best_wave = maxi(infinite_best_wave, infinite_wave)
+	infinite_wave += 1
+	return true
+
+func leave_infinite() -> bool:
+	if phase != RoutePhase.INFINITE or not true_end_seen:
+		return false
+	phase = RoutePhase.TRUE_END
+	return true
+
 func snapshot() -> Dictionary:
 	return {
-		"version": 2,
+		"version": 3,
 		"phase": phase,
 		"current_stage_id": current_stage_id,
 		"current_boss_id": current_boss_id,
@@ -147,10 +172,12 @@ func snapshot() -> Dictionary:
 		"first_boss_id": first_boss_id,
 		"normal_end_seen": normal_end_seen,
 		"true_end_seen": true_end_seen,
+		"infinite_wave": infinite_wave,
+		"infinite_best_wave": infinite_best_wave,
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
-	if int(data.get("version", 0)) != 2:
+	if int(data.get("version", 0)) not in [2, 3]:
 		return false
 	reset()
 	var valid_stages := Catalog.stage_ids()
@@ -177,9 +204,13 @@ func restore_snapshot(data: Dictionary) -> bool:
 		current_boss_id = ""
 	normal_end_seen = bool(data.get("normal_end_seen", false))
 	true_end_seen = bool(data.get("true_end_seen", false))
-	phase = clampi(int(data.get("phase", RoutePhase.MAP)), RoutePhase.MAP, RoutePhase.TRUE_END)
+	infinite_wave = maxi(0, int(data.get("infinite_wave", 0)))
+	infinite_best_wave = maxi(0, int(data.get("infinite_best_wave", 0)))
+	phase = clampi(int(data.get("phase", RoutePhase.MAP)), RoutePhase.MAP, RoutePhase.INFINITE)
 	if phase == RoutePhase.STAGE and current_stage_id.is_empty():
 		phase = RoutePhase.TRUE_MAP if normal_end_seen else RoutePhase.MAP
 	if phase in [RoutePhase.BOSS, RoutePhase.ENHANCED_BOSS, RoutePhase.SINGULARITY] and current_boss_id.is_empty():
 		phase = RoutePhase.TRUE_MAP if normal_end_seen else RoutePhase.BOSS_SELECT
+	if phase == RoutePhase.INFINITE and not true_end_seen:
+		phase = RoutePhase.MAP
 	return true

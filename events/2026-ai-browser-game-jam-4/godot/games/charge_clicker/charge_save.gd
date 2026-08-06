@@ -5,6 +5,8 @@ const SECTION := "run"
 const KEY := "snapshot"
 const CAMPAIGN_SECTION := "campaign"
 const CAMPAIGN_KEY := "snapshot"
+const ACHIEVEMENT_SECTION := "achievements"
+const ACHIEVEMENT_KEY := "snapshot"
 
 var save_path := DEFAULT_PATH
 
@@ -41,13 +43,15 @@ func load_campaign_into(route) -> bool:
 		return false
 	return route.restore_snapshot(snapshot)
 
-func save_bundle(run, route) -> Error:
+func save_bundle(run, route, achievement_state = null) -> Error:
 	var config := ConfigFile.new()
 	config.set_value(SECTION, KEY, run.snapshot())
 	config.set_value(CAMPAIGN_SECTION, CAMPAIGN_KEY, route.snapshot())
+	if achievement_state != null:
+		config.set_value(ACHIEVEMENT_SECTION, ACHIEVEMENT_KEY, achievement_state.snapshot())
 	return config.save(save_path)
 
-func load_bundle_into(run, route) -> bool:
+func load_bundle_into(run, route, achievement_state = null) -> bool:
 	var config := ConfigFile.new()
 	if config.load(save_path) != OK:
 		return false
@@ -55,7 +59,13 @@ func load_bundle_into(run, route) -> bool:
 	var campaign_snapshot: Variant = config.get_value(CAMPAIGN_SECTION, CAMPAIGN_KEY, {})
 	if run_snapshot is not Dictionary or campaign_snapshot is not Dictionary:
 		return false
-	return run.restore_snapshot(run_snapshot) and route.restore_snapshot(campaign_snapshot)
+	if not run.restore_snapshot(run_snapshot) or not route.restore_snapshot(campaign_snapshot):
+		return false
+	if achievement_state != null:
+		var achievement_snapshot: Variant = config.get_value(ACHIEVEMENT_SECTION, ACHIEVEMENT_KEY, {})
+		if achievement_snapshot is Dictionary and not achievement_snapshot.is_empty():
+			achievement_state.restore_snapshot(achievement_snapshot)
+	return true
 
 func clear() -> void:
 	if FileAccess.file_exists(save_path):

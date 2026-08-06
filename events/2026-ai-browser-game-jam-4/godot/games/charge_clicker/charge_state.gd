@@ -11,7 +11,7 @@ const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const BOSS_MAX_HP := 6200.0
 const MAX_SKILL_RANK := 10
 const RESTORE_GOAL := 1.0
-const BUILD_ID := "v6-tiered-overclock"
+const BUILD_ID := "v7-pure-command-infinite"
 
 enum StagePhase { RESTORE, BOSS, REWARD, CLEAR }
 
@@ -57,6 +57,8 @@ var target_marks := 0
 var auto_burst_counter := 0
 var support_counter := 0
 var world_hive_counter := 0
+var infinite_mode := false
+var infinite_wave := 0
 
 var manual_inputs := 0
 var auto_hits := 0
@@ -161,6 +163,8 @@ func reset() -> void:
 	auto_burst_counter = 0
 	support_counter = 0
 	world_hive_counter = 0
+	infinite_mode = false
+	infinite_wave = 0
 	upgrade_levels.clear()
 	for definition in UPGRADE_DEFINITIONS:
 		upgrade_levels[str(definition.id)] = 0
@@ -178,6 +182,8 @@ func begin_stage(stage_id: String, build_tag: String, _unused_goal: float, hp: f
 	boss_max_hp = maxf(100.0, hp)
 	enhanced_boss = false
 	singularity_boss = false
+	infinite_mode = false
+	infinite_wave = 0
 	reset_encounter()
 
 func begin_campaign_boss(boss_id: String, hp: float, is_enhanced: bool = false, is_singularity: bool = false) -> void:
@@ -187,6 +193,20 @@ func begin_campaign_boss(boss_id: String, hp: float, is_enhanced: bool = false, 
 	boss_max_hp = maxf(100.0, hp)
 	enhanced_boss = is_enhanced
 	singularity_boss = is_singularity
+	infinite_mode = false
+	infinite_wave = 0
+	reset_encounter()
+
+func begin_infinite_wave(encounter_id: String, hp: float, wave: int) -> void:
+	current_stage_id = ""
+	current_build_tag = "infinite"
+	current_boss_id = encounter_id
+	boss_max_hp = maxf(100.0, hp)
+	enhanced_boss = false
+	singularity_boss = false
+	infinite_mode = true
+	infinite_wave = maxi(1, wave)
+	encounter_index = infinite_wave - 1
 	reset_encounter()
 
 func reset_encounter() -> void:
@@ -253,6 +273,8 @@ func current_encounter_id() -> String:
 	return current_boss_id if not current_boss_id.is_empty() else current_stage_id
 
 func current_encounter_kind() -> String:
+	if infinite_mode:
+		return "infinite"
 	if singularity_boss:
 		return "true_boss"
 	if enhanced_boss:
@@ -344,11 +366,11 @@ func refresh_stats() -> void:
 	if "swarm_clock" in beast_cores:
 		drone_count += 1 + int(upgrade_level("swarm_memory") / 3)
 	var recovered_cores := beast_cores.size() + boss_cores.size()
-	var shared_generation := pow(1.35, upgrade_level("deep_capacitor")) * pow(1.60, upgrade_level("infinite_dynamo")) * (1.0 + float(recovered_cores) * float(upgrade_level("resonance_economy")) * 0.035)
+	var shared_generation := pow(1.35, upgrade_level("deep_capacitor")) * pow(1.60, upgrade_level("infinite_dynamo")) * (1.0 + float(recovered_cores) * float(upgrade_level("resonance_economy")) * 0.035) * (1.0 + float(recovered_cores) * float(upgrade_level("salvage_lattice")) * 0.012)
 	charge_per_click = pow(1.22, charge_level) * pow(1.30, upgrade_level("kinetic_recovery")) * shared_generation
 	auto_charge_per_shot = 0.16 * (1.0 + float(upgrade_level("auto_induction")) * 0.25) * (1.0 + float(upgrade_level("charge_drone")) * 0.30) * pow(1.40, upgrade_level("war_dividend")) * pow(1.32, upgrade_level("harvester_drones")) * shared_generation
 	critical_chance = minf(0.74, 0.04 + float(upgrade_level("critical_math")) * 0.04 + float(upgrade_level("phase_tracker")) * 0.03)
-	critical_multiplier = 2.0 + float(upgrade_level("critical_math")) * 0.12
+	critical_multiplier = 2.0 + float(upgrade_level("critical_math")) * 0.12 + float(boss_cores.size() * upgrade_level("core_prism")) * 0.05
 	combo_bonus_per_stack = 0.025 + float(upgrade_level("combo_gear")) * 0.012
 	combo_cap = 8 + upgrade_level("combo_gear") * 3
 	core_power = (1.0 + float(resonance_level) * 0.10) * pow(1.14, upgrade_level("dual_core_link"))
@@ -368,6 +390,9 @@ func global_output_multiplier() -> float:
 	var crown := upgrade_level("six_core_crown")
 	if crown > 0:
 		multiplier *= 1.0 + float(beast_cores.size() * crown) * 0.010
+	var convergence := upgrade_level("core_convergence")
+	if convergence > 0:
+		multiplier *= 1.0 + float(beast_cores.size() * convergence) * 0.004
 	var bank := upgrade_level("event_bank")
 	if bank > 0:
 		multiplier *= 1.0 + minf(0.5, log(1.0 + float(credits)) * 0.015 * float(bank))
@@ -448,6 +473,8 @@ func purchase_upgrade(id: String) -> bool:
 	credits -= paid
 	invested_charge += paid
 	upgrade_levels[id] = upgrade_level(id) + 1
+	if id == "zero_output_generator":
+		manual_mode = "generate"
 	purchases += 1
 	var definition := upgrade_definition(id)
 	purchase_history.append({
@@ -476,6 +503,10 @@ func purchase_upgrade(id: String) -> bool:
 	if upgrade_level("perpetual_engine") > 0:
 		var perpetual_return := grant_charge(float(paid) * 0.25)
 		invested_charge = maxi(0, invested_charge - perpetual_return)
+	var reclamation_rate := float(upgrade_level("reclamation_bus")) * 0.03 + float(upgrade_level("closed_economy")) * 0.02
+	if reclamation_rate > 0.0:
+		var reclamation_return := grant_charge(float(paid) * reclamation_rate)
+		invested_charge = maxi(0, invested_charge - reclamation_return)
 	return true
 
 func skill_points_bought() -> int:
@@ -519,7 +550,10 @@ func toggle_manual_mode() -> bool:
 	if not generation_mode_unlocked():
 		manual_mode = "attack"
 		return false
-	manual_mode = "generate" if manual_mode == "attack" else "attack"
+	# PURE COMMAND permanently replaces the basic attack once unlocked. Keeping
+	# this compatibility method makes old callers harmless without exposing a
+	# weaker mode toggle to the player.
+	manual_mode = "generate"
 	return true
 
 func grant_beast_core(id: String) -> bool:
@@ -553,10 +587,12 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 	manual_inputs += 1
 	manual_streak = mini(combo_cap, manual_streak + 1) if combo_timer > 0.0 else 1
 	combo_timer = 0.7
-	var generating := manual_mode == "generate" and generation_mode_unlocked()
+	var generating := generation_mode_unlocked()
+	manual_mode = "generate" if generating else "attack"
 	if generating:
-		auto_boost_stacks = mini(10, auto_boost_stacks + 1)
-		auto_boost_timer = 2.2
+		var boost_cap := 10 + upgrade_level("command_capacitor") * 2
+		auto_boost_stacks = mini(boost_cap, auto_boost_stacks + 1)
+		auto_boost_timer = 2.2 + float(upgrade_level("command_capacitor")) * 0.5
 	var forced_analysis := "phase_computation" in beast_cores and analysis >= 100.0
 	var is_critical := critical_mode == 1 or forced_analysis or (critical_mode < 0 and rng.randf() < effective_critical_chance("manual"))
 	if is_critical:
@@ -573,16 +609,18 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 	var modified := modify_attack("manual", damage, is_critical)
 	damage = float(modified.damage)
 	var shockwave := 0.0
-	if not generating and "impact_guidance" in beast_cores and manual_inputs % 10 == 0:
+	if "impact_guidance" in beast_cores and manual_inputs % 10 == 0:
 		shockwave = manual_damage * (4.0 + float(upgrade_level("impact_memory")) * 0.8) * core_power
 		last_mechanic_event = "impact_shockwave"
 	var punch_rank := upgrade_level("armor_punch")
-	if not generating and punch_rank > 0 and manual_inputs % maxi(4, 12 - punch_rank * 2) == 0:
+	if punch_rank > 0 and manual_inputs % maxi(4, 12 - punch_rank * 2) == 0:
 		shockwave += manual_damage * (1.5 + float(punch_rank) * 0.75)
 		last_mechanic_event = "armor_punch"
-	if not generating and upgrade_level("worldsplitter") > 0 and manual_inputs % 25 == 0:
-		shockwave += boss_max_hp * 0.003
+	if upgrade_level("worldsplitter") > 0 and manual_inputs % 25 == 0:
+		shockwave += boss_max_hp * (0.003 + float(upgrade_level("fracture_archive")) * 0.0005)
 		last_mechanic_event = "worldsplitter"
+	if generating and objective_ratio() >= 0.65:
+		shockwave *= 1.0 + float(upgrade_level("execution_protocol")) * 0.20
 	var echo := 0.0
 	var relay_memory := upgrade_level("relay_memory")
 	if not generating and "cascade_relay" in beast_cores and rng.randf() < minf(0.72, (0.16 + float(relay_memory) * 0.035) * core_power):
@@ -593,6 +631,10 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 	if upgrade_level("harvest_knuckle") > 0 and manual_inputs % 10 == 0:
 		charge_amount += 10.0 * core_power
 		last_mechanic_event = "harvest"
+	var salvage_rank := upgrade_level("salvage_impulse")
+	if salvage_rank > 0 and manual_inputs % 25 == 0:
+		charge_amount += charge_per_click * float(salvage_rank) * 4.0
+		last_mechanic_event = "salvage_impulse"
 	var earned := grant_charge(charge_amount)
 	var applied := deal_damage(damage + shockwave + echo)
 	var commanded_volley := 0.0
@@ -602,9 +644,23 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 			volley_damage = minf(volley_damage, direct_hit_cap())
 		commanded_volley = deal_damage(volley_damage)
 		last_mechanic_event = "twin_trigger"
+	var escort_rank := upgrade_level("escort_protocol")
+	if generating and escort_rank > 0 and manual_inputs % maxi(5, 11 - escort_rank) == 0 and stage_phase == StagePhase.BOSS:
+		var escort_damage := auto_damage * float(drone_count) * float(escort_rank) * 0.35 * global_output_multiplier()
+		if singularity_boss or enhanced_boss:
+			escort_damage = minf(escort_damage, direct_hit_cap())
+		commanded_volley += deal_damage(escort_damage)
+		last_mechanic_event = "escort_volley"
+	var cadence_rank := upgrade_level("terminal_cadence")
+	if generating and cadence_rank > 0 and manual_inputs % maxi(10, 18 - cadence_rank * 2) == 0 and stage_phase == StagePhase.BOSS:
+		var cadence_damage := auto_damage * float(drone_count) * (0.5 + float(cadence_rank) * 0.35) * global_output_multiplier()
+		if singularity_boss or enhanced_boss:
+			cadence_damage = minf(cadence_damage, direct_hit_cap())
+		commanded_volley += deal_damage(cadence_damage)
+		last_mechanic_event = "terminal_cadence"
 	var painter_rank := upgrade_level("target_painter")
 	if painter_rank > 0:
-		target_marks = mini(12, target_marks + 1)
+		target_marks = mini(12 + upgrade_level("formation_matrix") * 2, target_marks + 1)
 	if "predation_reversal" in boss_cores:
 		earned += grant_charge(predation_feedback(applied + commanded_volley, "manual"))
 	var burst := trigger_singularity_burst("manual")
@@ -636,11 +692,13 @@ func auto_attack(critical_mode: int = -1) -> Dictionary:
 	else:
 		analysis = minf(100.0, analysis + (1.5 + float(upgrade_level("phase_memory")) * 0.3) * float(drone_count) * core_power)
 	var damage := auto_damage * float(drone_count) * (critical_multiplier if is_critical else 1.0)
+	if is_critical:
+		damage *= 1.0 + float(upgrade_level("adaptive_feed")) * 0.12
 	if auto_boost_timer > 0.0:
-		damage *= 1.0 + float(auto_boost_stacks) * 0.10
+		damage *= 1.0 + float(auto_boost_stacks) * (0.10 + float(upgrade_level("overflow_bus")) * 0.02)
 	if target_marks > 0:
 		damage *= 1.0 + float(target_marks) * (0.10 + float(upgrade_level("target_painter")) * 0.02 + float(upgrade_level("horizon_mark")) * 0.05)
-		target_marks = 0
+		target_marks = mini(target_marks, upgrade_level("mark_memory") + upgrade_level("formation_matrix"))
 		last_mechanic_event = "painted_volley"
 	var hunter_rank := upgrade_level("hunter_drone")
 	var hp_ratio := boss_hp / maxf(1.0, boss_max_hp)
@@ -651,12 +709,14 @@ func auto_attack(critical_mode: int = -1) -> Dictionary:
 	damage *= pow(1.0 + float(maxi(0, drone_count - 1)) * 0.035, upgrade_level("synchronized_swarm"))
 	damage *= pow(1.15, upgrade_level("legion_protocol"))
 	var burst_rank := upgrade_level("burst_loader")
+	var burst_fired := false
 	if burst_rank > 0:
 		auto_burst_counter += 1
 		var storm_rank := upgrade_level("storm_loader")
 		if auto_burst_counter >= maxi(3, 10 - burst_rank - storm_rank):
 			auto_burst_counter = 0
-			damage *= 3.0 + float(storm_rank) * 0.75
+			burst_fired = true
+			damage *= 3.0 + float(storm_rank) * 0.75 + float(upgrade_level("phase_magazine")) * 0.20
 			last_mechanic_event = "auto_burst"
 	if is_critical and upgrade_level("annihilation_round") > 0:
 		damage *= 2.2
@@ -665,14 +725,18 @@ func auto_attack(critical_mode: int = -1) -> Dictionary:
 	damage = float(modified.damage)
 	var echo := 0.0
 	var chain_rank := upgrade_level("chain_rounds")
-	if chain_rank > 0 and rng.randf() < float(chain_rank) * 0.09:
-		echo += damage * (0.32 + float(chain_rank) * 0.08)
+	var echo_chamber_rank := upgrade_level("echo_chamber")
+	if chain_rank > 0 and rng.randf() < minf(0.75, float(chain_rank) * 0.09 + float(echo_chamber_rank) * 0.06):
+		echo += damage * (0.32 + float(chain_rank) * 0.08 + float(echo_chamber_rank) * 0.10)
 		last_mechanic_event = "chain_round"
 	var relay_memory := upgrade_level("relay_memory")
 	if "cascade_relay" in beast_cores and rng.randf() < minf(0.72, (0.12 + float(relay_memory) * 0.03) * core_power):
 		echo += damage * (0.45 + float(relay_memory) * 0.09) * core_power
 		last_mechanic_event = "relay_echo"
-	var earned := grant_charge(auto_charge_per_shot * float(drone_count))
+	var reserve_multiplier := 1.0 + minf(0.30, log(1.0 + float(credits)) * 0.01 * float(upgrade_level("reserve_transformer")))
+	var earned := grant_charge(auto_charge_per_shot * float(drone_count) * reserve_multiplier)
+	if burst_fired and upgrade_level("capacitor_rounds") > 0:
+		earned += grant_charge(charge_per_click * float(upgrade_level("capacitor_rounds")) * 1.5)
 	if upgrade_level("support_fabricator") > 0:
 		support_counter += 1
 		if support_counter >= 20:
@@ -682,9 +746,10 @@ func auto_attack(critical_mode: int = -1) -> Dictionary:
 	var hive_volley := 0.0
 	if upgrade_level("world_hive") > 0:
 		world_hive_counter += 1
-		if world_hive_counter >= 12:
+		var sovereign_rank := upgrade_level("sovereign_marker")
+		if world_hive_counter >= maxi(7, 12 - sovereign_rank):
 			world_hive_counter = 0
-			hive_volley = boss_max_hp * 0.0015
+			hive_volley = boss_max_hp * (0.0015 + float(sovereign_rank) * 0.00025)
 			last_mechanic_event = "world_hive"
 	var applied := deal_damage(damage + echo + hive_volley)
 	if "predation_reversal" in boss_cores:
@@ -764,10 +829,11 @@ func modify_attack(source: String, damage: float, is_critical: bool) -> Dictiona
 
 func direct_hit_cap() -> float:
 	if enhanced_boss and not singularity_boss:
-		return boss_max_hp * 0.001
+		return boss_max_hp * (0.001 + float(upgrade_level("lawbreaker_bus")) * 0.00004)
 	var cap_ratio := 0.00035 + float(upgrade_level("singularity_decoder")) * 0.00005
 	if upgrade_level("world_engine_key") > 0:
 		cap_ratio += 0.00010
+	cap_ratio += float(upgrade_level("lawbreaker_bus")) * 0.00003
 	return boss_max_hp * cap_ratio
 
 func predation_feedback(applied_damage: float, source: String) -> float:
@@ -934,7 +1000,7 @@ func objective_ratio() -> float:
 	return 1.0 - boss_hp / maxf(1.0, boss_max_hp)
 
 func estimated_manual_dps(clicks_per_second: float = 4.0) -> float:
-	if manual_mode == "generate" and generation_mode_unlocked():
+	if generation_mode_unlocked():
 		return 0.0
 	var combo_average := 1.0 + float(mini(combo_cap, 8)) * combo_bonus_per_stack * 0.55
 	return manual_damage * clicks_per_second * combo_average * (1.0 + critical_chance * (critical_multiplier - 1.0))
@@ -1000,7 +1066,7 @@ func select_reward(_id: String) -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 6,
+		"version": 7,
 		"build_id": BUILD_ID,
 		"credits": credits,
 		"lifetime_charge": lifetime_charge,
@@ -1050,6 +1116,8 @@ func snapshot() -> Dictionary:
 		"auto_burst_counter": auto_burst_counter,
 		"support_counter": support_counter,
 		"world_hive_counter": world_hive_counter,
+		"infinite_mode": infinite_mode,
+		"infinite_wave": infinite_wave,
 		"armor_cracks": armor_cracks,
 		"enemy_armor_layers": enemy_armor_layers,
 		"shell_open_timer": shell_open_timer,
@@ -1077,7 +1145,7 @@ func snapshot() -> Dictionary:
 
 func restore_snapshot(data: Dictionary) -> bool:
 	var version := int(data.get("version", 0))
-	if version not in [5, 6]:
+	if version not in [5, 6, 7]:
 		return false
 	reset()
 	credits = maxi(0, int(data.get("credits", 0)))
@@ -1134,15 +1202,16 @@ func restore_snapshot(data: Dictionary) -> bool:
 	singularity_boss = bool(data.get("singularity_boss", false))
 	encounter_index = maxi(0, int(data.get("encounter_index", 0)))
 	charge_fraction = clampf(float(data.get("charge_fraction", 0.0)), 0.0, 0.999)
-	manual_mode = str(data.get("manual_mode", "attack"))
-	if manual_mode not in ["attack", "generate"] or (manual_mode == "generate" and not generation_mode_unlocked()):
-		manual_mode = "attack"
-	auto_boost_stacks = clampi(int(data.get("auto_boost_stacks", 0)), 0, 10)
+	manual_mode = "generate" if generation_mode_unlocked() else "attack"
+	var restored_boost_cap := 10 + upgrade_level("command_capacitor") * 2
+	auto_boost_stacks = clampi(int(data.get("auto_boost_stacks", 0)), 0, restored_boost_cap)
 	auto_boost_timer = maxf(0.0, float(data.get("auto_boost_timer", 0.0)))
 	target_marks = clampi(int(data.get("target_marks", 0)), 0, 12)
 	auto_burst_counter = maxi(0, int(data.get("auto_burst_counter", 0)))
 	support_counter = maxi(0, int(data.get("support_counter", 0)))
 	world_hive_counter = maxi(0, int(data.get("world_hive_counter", 0)))
+	infinite_mode = bool(data.get("infinite_mode", false))
+	infinite_wave = maxi(0, int(data.get("infinite_wave", 0)))
 	armor_cracks = clampi(int(data.get("armor_cracks", 0)), 0, 11)
 	enemy_armor_layers = clampi(int(data.get("enemy_armor_layers", 3)), 0, 3)
 	shell_open_timer = maxf(0.0, float(data.get("shell_open_timer", 0.0)))

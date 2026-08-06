@@ -10,6 +10,7 @@ const AudioSettings = preload("res://shared/project_charge_audio_settings.gd")
 const ChargeState = preload("res://games/charge_clicker/charge_state.gd")
 const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
+const AchievementState = preload("res://games/charge_clicker/charge_achievements.gd")
 const CampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
@@ -145,6 +146,7 @@ var music_volume_before_mute := 0.72
 var run
 var save_manager
 var campaign_route
+var achievements
 var is_japanese := false
 var controller_bindings: Dictionary = ControllerConfig.default_bindings()
 var persistence_enabled := true
@@ -197,6 +199,9 @@ var settings_selected := 0
 var credits_open := false
 var credits_return_to_title := false
 var credits_scroll := 0.0
+var achievements_open := false
+var achievement_notice: Dictionary = {}
+var achievement_notice_time := 0.0
 var comms_queue: Array[Dictionary] = []
 var comms_speaker_ja := ""
 var comms_speaker_en := ""
@@ -232,9 +237,10 @@ var respec_rect := Rect2(1012, 616, 190, 42)
 var title_button_rects: Array[Rect2] = [
 	Rect2(726, 304, 410, 62),
 	Rect2(726, 380, 410, 54),
-	Rect2(726, 448, 128, 48),
-	Rect2(867, 448, 128, 48),
-	Rect2(1008, 448, 128, 48),
+	Rect2(726, 448, 96, 48),
+	Rect2(830, 448, 96, 48),
+	Rect2(934, 448, 96, 48),
+	Rect2(1038, 448, 98, 48),
 ]
 var settings_row_rects: Array[Rect2] = [
 	Rect2(356, 202, 568, 52),
@@ -248,6 +254,8 @@ var settings_reset_rect := Rect2(356, 610, 220, 48)
 var campaign_credits_rect := Rect2(326, 632, 292, 48)
 var campaign_ending_return_rect := Rect2(662, 632, 292, 48)
 var credits_close_rect := Rect2(1032, 642, 190, 46)
+var achievements_close_rect := Rect2(514, 642, 252, 46)
+var campaign_achievement_rect := Rect2(34, 632, 260, 48)
 
 func _ready() -> void:
 	apply_web_art_preview()
@@ -259,6 +267,7 @@ func _ready() -> void:
 	add_child(synth)
 	run = ChargeState.new()
 	campaign_route = CampaignRoute.new()
+	achievements = AchievementState.new()
 	save_manager = ChargeSave.new()
 	for index in range(GearCatalog.GEARS.size()):
 		gear_rects.append(Rect2(438 + index * 156, 500, 148, 160))
@@ -266,7 +275,7 @@ func _ready() -> void:
 	for row in range(2):
 		for column in range(3):
 			stage_map_rects.append(Rect2(62 + column * 404, 180 + row * 208, 348, 176))
-	var resumed: bool = persistence_enabled and save_manager.load_bundle_into(run, campaign_route)
+	var resumed: bool = persistence_enabled and save_manager.load_bundle_into(run, campaign_route, achievements)
 	title_has_saved_campaign = resumed
 	title_screen_open = not art_preview_enabled
 	if art_preview_enabled:
@@ -285,6 +294,7 @@ func _ready() -> void:
 	else:
 		show_message(loc("討伐地図から最初の機械魔獣を選択", "SELECT YOUR FIRST MECHANICAL BEAST"), 5.0)
 	setup_music()
+	evaluate_achievements(false)
 	refresh_music()
 	queue_redraw()
 
@@ -314,6 +324,8 @@ func desired_bgm_key() -> String:
 			return str(EncounterBGMKeys.get(run.current_boss_id, "boss")) if run.current_boss_id in ["grid_leech", "thermal_titan"] else "boss"
 		CampaignRoute.RoutePhase.SINGULARITY:
 			return "singularity"
+		CampaignRoute.RoutePhase.INFINITE:
+			return str(EncounterBGMKeys.get(run.current_boss_id, "hunt"))
 		CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END:
 			return "ending"
 		_:
@@ -508,6 +520,7 @@ func reset_run() -> void:
 	discharge_wave = 0.0
 	show_message(loc("新しいキャンペーンを開始", "NEW CAMPAIGN INITIALIZED"), 1.8)
 	synth.play_chord([220.0, 329.63, 440.0], 0.22, -24.0)
+	save_progress()
 	queue_redraw()
 
 func enter_campaign_from_title() -> void:
@@ -520,7 +533,7 @@ func enter_campaign_from_title() -> void:
 func request_new_campaign_from_title() -> void:
 	if title_has_saved_campaign and title_new_confirm_time <= 0.0:
 		title_new_confirm_time = 3.0
-		show_message(loc("保存データを消去します。もう一度選択して確定", "ERASE THE SAVED HUNT? SELECT AGAIN TO CONFIRM"), 3.0)
+		show_message(loc("キャンペーンを初期化します（実績は保持）。もう一度選択して確定", "RESET THE CAMPAIGN? RECORDS WILL REMAIN. SELECT AGAIN TO CONFIRM"), 3.0)
 		synth.error()
 		queue_redraw()
 		return
@@ -535,7 +548,7 @@ func request_reset() -> bool:
 		reset_run()
 		return true
 	reset_confirm_time = 3.0
-	show_message(loc("全進行を消去します。3秒以内にもう一度R / 初期化", "ERASE ALL PROGRESS? PRESS R / RESET AGAIN WITHIN 3 SECONDS"), 3.0)
+	show_message(loc("キャンペーンを初期化します（実績は保持）。3秒以内にもう一度R", "RESET CAMPAIGN? RECORDS REMAIN. PRESS R AGAIN WITHIN 3 SECONDS"), 3.0)
 	synth.error()
 	queue_redraw()
 	return false
@@ -561,7 +574,12 @@ func _process(delta: float) -> void:
 		reset_confirm_time -= delta
 	if title_new_confirm_time > 0.0:
 		title_new_confirm_time -= delta
+	if achievement_notice_time > 0.0:
+		achievement_notice_time -= delta
 	update_comms(delta)
+	if achievements_open:
+		queue_redraw()
+		return
 	if credits_open:
 		credits_scroll = minf(60.0, credits_scroll + delta)
 		queue_redraw()
@@ -610,7 +628,7 @@ func campaign_gameplay_active() -> bool:
 		return true
 	if campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
 		return run.stage_phase not in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]
-	if campaign_route.phase in [CampaignRoute.RoutePhase.BOSS, CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY]:
+	if campaign_route.phase in [CampaignRoute.RoutePhase.BOSS, CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.INFINITE]:
 		return run.stage_phase == ChargeState.StagePhase.BOSS
 	return false
 
@@ -626,6 +644,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	# consuming it here, a click/confirm that closes the game can also activate a
 	# launcher card in the same frame.
 	get_viewport().set_input_as_handled()
+	if achievements_open:
+		handle_achievements_input(event)
+		return
 	if credits_open:
 		handle_credits_input(event)
 		return
@@ -766,9 +787,38 @@ func activate_title_selection() -> void:
 		2:
 			open_audio_settings()
 		3:
-			open_credits(true)
+			open_achievements()
 		4:
+			open_credits(true)
+		5:
 			return_to_menu.emit()
+
+func open_achievements() -> void:
+	achievements_open = true
+	settings_open = false
+	gear_tree_open = false
+	end_charge()
+	synth.confirm()
+	queue_redraw()
+
+func close_achievements() -> void:
+	achievements_open = false
+	synth.click()
+	queue_redraw()
+
+func handle_achievements_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if achievements_close_rect.has_point(event.position):
+			close_achievements()
+	elif event is InputEventScreenTouch and event.pressed:
+		if achievements_close_rect.has_point(event.position):
+			close_achievements()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_ESCAPE, KEY_ENTER, KEY_SPACE, KEY_H]:
+			close_achievements()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index in [controller_button("back"), controller_button("primary")]:
+			close_achievements()
 
 func open_credits(from_title: bool) -> void:
 	credits_open = true
@@ -946,6 +996,8 @@ func handle_campaign_input(event: InputEvent) -> void:
 			copy_campaign_result()
 		elif event.keycode == KEY_E and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
 			open_credits(false)
+		elif event.keycode == KEY_H:
+			open_achievements()
 		elif event.keycode == KEY_R:
 			request_reset()
 		elif event.keycode == KEY_T and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
@@ -999,6 +1051,9 @@ func handle_campaign_point(point: Vector2) -> void:
 		return
 	if campaign_credits_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
 		open_credits(false)
+		return
+	if campaign_achievement_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+		open_achievements()
 		return
 	if campaign_secondary_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY]:
 		return_to_menu.emit()
@@ -1066,7 +1121,7 @@ func activate_campaign_selection() -> void:
 		CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY:
 			launch_current_campaign_boss()
 		CampaignRoute.RoutePhase.TRUE_END:
-			reset_run()
+			start_infinite_mode()
 	queue_redraw()
 
 func first_available_stage_index() -> int:
@@ -1119,6 +1174,47 @@ func launch_current_campaign_boss() -> bool:
 	screen_shake = 0.35
 	synth.boss_engage()
 	save_progress()
+	return true
+
+func start_infinite_mode() -> bool:
+	if not campaign_route.start_infinite():
+		return false
+	show_message(loc("Infinite Mode解放 — 実績条件なし・全強化を完成できる", "INFINITE MODE OPEN — NO EXCLUSIVE RECORDS, FINISH ANY STANDARD SKILLS"), 3.0)
+	return launch_infinite_wave()
+
+func infinite_encounter_id(wave: int) -> String:
+	var ids: Array[String] = []
+	ids.append_array(StageCatalog.stage_ids())
+	ids.append_array(StageCatalog.boss_ids())
+	ids.append(str(StageCatalog.TRUE_BOSS.id))
+	return ids[wrapi(maxi(1, wave) - 1, 0, ids.size())]
+
+func infinite_hp_for_wave(wave: int) -> float:
+	return float(StageCatalog.TRUE_BOSS.hp) * pow(1.65, float(maxi(0, wave - 1)))
+
+func infinite_reward_for_wave(wave: int) -> int:
+	return maxi(1, int(round(2000000.0 * pow(1.8, float(maxi(0, wave - 1))))))
+
+func launch_infinite_wave() -> bool:
+	if campaign_route.phase != CampaignRoute.RoutePhase.INFINITE:
+		return false
+	var wave := maxi(1, campaign_route.infinite_wave)
+	var encounter_id := infinite_encounter_id(wave)
+	run.begin_infinite_wave(encounter_id, infinite_hp_for_wave(wave), wave)
+	show_message(loc("無限演算 WAVE %d — %s" % [wave, encounter_name()], "INFINITE WAVE %d — %s" % [wave, encounter_name()]), 2.6)
+	queue_encounter_intro(encounter_id)
+	screen_flash = 0.65
+	synth.boss_engage()
+	save_progress()
+	return true
+
+func leave_infinite_mode() -> bool:
+	if not campaign_route.leave_infinite():
+		return false
+	run.infinite_mode = false
+	show_message(loc("Infinite Modeを終了 — 完全復旧記録へ帰還", "INFINITE MODE ENDED — RETURNING TO TOTAL RESTORATION"), 2.2)
+	save_progress()
+	queue_redraw()
 	return true
 
 func complete_stage_and_return_to_route() -> bool:
@@ -1245,8 +1341,6 @@ func handle_key(event: InputEventKey) -> void:
 			perform_charge()
 		KEY_A:
 			perform_charge()
-		KEY_G:
-			toggle_generation_mode()
 		KEY_T:
 			open_gear_tree(selected_gear_index)
 		KEY_L:
@@ -1287,7 +1381,7 @@ func handle_controller_button(event: InputEventJoypadButton) -> void:
 	if event.button_index == controller_button("secondary"):
 		perform_charge()
 	elif event.button_index == controller_button("combat_action"):
-		toggle_generation_mode()
+		perform_charge()
 	elif event.button_index == controller_button("menu"):
 		open_gear_tree(selected_gear_index)
 	elif event.button_index == controller_button("language"):
@@ -1302,8 +1396,6 @@ func handle_point(point: Vector2) -> void:
 		toggle_language()
 	elif reset_rect.has_point(point):
 		request_reset()
-	elif mode_toggle_rect.has_point(point):
-		toggle_generation_mode()
 	elif enemy_click_rect.has_point(point):
 		perform_charge()
 	else:
@@ -1341,6 +1433,8 @@ func handle_completion_input(event: InputEvent) -> void:
 		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
 			if run.stage_phase == ChargeState.StagePhase.REWARD:
 				select_reward(reward_selected)
+			elif campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
+				launch_infinite_wave()
 			else:
 				complete_stage_and_return_to_route()
 	elif event is InputEventJoypadButton and event.pressed:
@@ -1353,6 +1447,8 @@ func handle_completion_input(event: InputEvent) -> void:
 		elif event.button_index == controller_button("primary"):
 			if run.stage_phase == ChargeState.StagePhase.REWARD:
 				select_reward(reward_selected)
+			elif campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
+				launch_infinite_wave()
 			else:
 				complete_stage_and_return_to_route()
 		elif event.button_index == controller_button("language"):
@@ -1384,7 +1480,9 @@ func controller_motion_direction(event: InputEventJoypadMotion) -> Vector2i:
 	return direction
 
 func handle_completion_point(point: Vector2) -> void:
-	if menu_rect.has_point(point) or clear_menu_rect.has_point(point):
+	if clear_menu_rect.has_point(point) and campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
+		leave_infinite_mode()
+	elif menu_rect.has_point(point) or clear_menu_rect.has_point(point):
 		return_to_menu.emit()
 	elif language_rect.has_point(point):
 		toggle_language()
@@ -1394,7 +1492,10 @@ func handle_completion_point(point: Vector2) -> void:
 				select_reward(index)
 				return
 	elif clear_retry_rect.has_point(point):
-		complete_stage_and_return_to_route()
+		if campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
+			launch_infinite_wave()
+		else:
+			complete_stage_and_return_to_route()
 
 func reward_copy(index: int) -> Dictionary:
 	return [
@@ -1447,8 +1548,20 @@ func show_thermal_spike(healed: float) -> void:
 	save_progress()
 
 func save_progress() -> void:
+	evaluate_achievements(true)
 	if persistence_enabled and save_manager != null:
-		save_manager.save_bundle(run, campaign_route)
+		save_manager.save_bundle(run, campaign_route, achievements)
+
+func evaluate_achievements(show_notice: bool = true) -> void:
+	if achievements == null or run == null or campaign_route == null:
+		return
+	var newly_unlocked: Array[Dictionary] = achievements.evaluate(run, campaign_route)
+	if newly_unlocked.is_empty() or not show_notice:
+		return
+	achievement_notice = newly_unlocked.back()
+	achievement_notice_time = 4.0
+	if synth != null:
+		synth.play_chord([261.63, 392.0, 523.25, 659.25], 0.32, -21.0)
 
 func controller_button(action: String) -> int:
 	return int(controller_bindings.get(action, ControllerConfig.DEFAULTS.get(action, JOY_BUTTON_A)))
@@ -1565,8 +1678,6 @@ func handle_gear_tree_input(event: InputEvent) -> void:
 			close_gear_tree()
 		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
 			purchase_selected_tree_node()
-		elif event.keycode == KEY_G:
-			toggle_generation_mode()
 		elif event.keycode in [KEY_LEFT, KEY_A]:
 			navigate_tree_node(Vector2i.LEFT)
 		elif event.keycode in [KEY_RIGHT, KEY_D]:
@@ -1605,7 +1716,7 @@ func handle_gear_tree_input(event: InputEvent) -> void:
 				elif event.button_index in [controller_button("back"), controller_button("menu")]:
 					close_gear_tree()
 				elif event.button_index == controller_button("combat_action"):
-					toggle_generation_mode()
+					purchase_selected_tree_node()
 				elif event.button_index == controller_button("language"):
 					set_tree_tier(selected_tree_tier % 3 + 1)
 	elif event is InputEventJoypadMotion:
@@ -1699,7 +1810,7 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 	if bool(result.boss_defeated):
 		handle_enemy_defeated()
 	elif generating:
-		show_message(loc("PURE CHARGE：ダメージ0 / CHARGE +%d / AUTO過給 ×%d" % [int(result.charge), run.auto_boost_stacks], "PURE CHARGE: 0 DAMAGE / +%d CHARGE / AUTO BOOST ×%d" % [int(result.charge), run.auto_boost_stacks]), 0.9)
+		show_message(loc("PURE指令：直接ダメージ0 / CHARGE +%d / AUTO過給 ×%d" % [int(result.charge), run.auto_boost_stacks], "PURE COMMAND: 0 DIRECT DAMAGE / +%d CHARGE / AUTO BOOST ×%d" % [int(result.charge), run.auto_boost_stacks]), 0.9)
 	else:
 		var multiplier_text := " ×%.2f" % run.last_damage_multiplier if absf(run.last_damage_multiplier - 1.0) > 0.05 else ""
 		show_message(loc("%sへ %sダメージ%s / CHARGE +%d" % [encounter_name(), format_number(float(result.damage)), multiplier_text, int(result.charge)], "%s DAMAGE TO %s%s / CHARGE +%d" % [format_number(float(result.damage)), encounter_name(), multiplier_text, int(result.charge)]), 0.8)
@@ -1719,7 +1830,13 @@ func toggle_auto(play_sound: bool = true) -> bool:
 func handle_enemy_defeated() -> void:
 	end_charge()
 	gear_tree_open = false
-	if campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
+	if campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
+		var completed_wave: int = int(campaign_route.infinite_wave)
+		var reward: int = infinite_reward_for_wave(completed_wave)
+		run.grant_charge(float(reward))
+		campaign_route.complete_infinite_wave()
+		show_message(loc("WAVE %d突破 — CHARGE +%s" % [completed_wave, format_number(reward)], "WAVE %d CLEARED — +%s CHARGE" % [completed_wave, format_number(reward)]), 3.0)
+	elif campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
 		show_message(encounter_name() + loc("撃破 — 機械核を回収", " DEFEATED — CORE RECOVERED"), 3.0)
 	else:
 		complete_campaign_boss()
@@ -1763,10 +1880,10 @@ func try_purchase_skill(id: String, effect_position: Vector2 = SHARD_SOCKET_CENT
 
 func toggle_generation_mode() -> bool:
 	if not run.toggle_manual_mode():
-		show_message(loc("発電心臓の『零出力発電』でPURE CHARGEを解禁", "UNLOCK ZERO-OUTPUT DRIVE IN THE DYNAMO TREE"), 2.0)
+		show_message(loc("発電心臓の『零出力発電』でPURE COMMANDを解禁", "UNLOCK ZERO-OUTPUT DRIVE IN THE DYNAMO TREE"), 2.0)
 		synth.error()
 		return false
-	show_message(loc("手動モード：", "MANUAL MODE: ") + (loc("PURE CHARGE — ダメージ0 / 発電6倍", "PURE CHARGE — 0 DAMAGE / 6× GENERATION") if run.manual_mode == "generate" else loc("CHARGE ATTACK — 直接攻撃", "CHARGE ATTACK — DIRECT DAMAGE")), 2.0)
+	show_message(loc("PURE COMMANDは恒久接続済み", "PURE COMMAND IS PERMANENTLY ONLINE"), 2.0)
 	synth.play_chord([261.63, 392.0, 523.25], 0.18, -22.0)
 	queue_redraw()
 	return true
@@ -2089,6 +2206,8 @@ func _draw() -> void:
 		draw_title_screen()
 		if settings_open:
 			draw_audio_settings_overlay()
+		if achievements_open:
+			draw_achievements_overlay()
 		return
 	var shake_offset := Vector2.ZERO
 	if screen_shake > 0.0:
@@ -2111,6 +2230,10 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.with_alpha(flash_color, screen_flash * 0.18 * audio_settings.flash_intensity))
 	if settings_open:
 		draw_audio_settings_overlay()
+	if achievements_open:
+		draw_achievements_overlay()
+	elif achievement_notice_time > 0.0 and not achievement_notice.is_empty():
+		draw_achievement_toast()
 
 func draw_title_screen() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.01, 0.022, 0.05, 0.46))
@@ -2129,6 +2252,7 @@ func draw_title_screen() -> void:
 		loc("討伐を続ける", "CONTINUE HUNT") if title_has_saved_campaign else loc("討伐を始める", "BEGIN HUNT"),
 		loc("新しい討伐", "NEW HUNT") if title_new_confirm_time <= 0.0 else loc("もう一度押して初期化", "CONFIRM NEW HUNT"),
 		loc("設定", "SETTINGS"),
+		loc("実績", "RECORDS"),
 		loc("制作記録", "CREDITS"),
 		loc("ゲーム選択", "GAME LAB"),
 	]
@@ -2145,10 +2269,10 @@ func draw_title_screen() -> void:
 func draw_title_button(index: int, label: String) -> void:
 	var rect := title_button_rects[index]
 	var selected := title_selected == index
-	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.VIOLET if index == 3 else Palette.MUTED
+	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.AMBER if index == 3 else Palette.VIOLET if index == 4 else Palette.MUTED
 	draw_machine_plate(rect, Palette.with_alpha(accent, 0.7 if selected and index == 0 else 0.18 if selected else 0.055), Palette.with_alpha(accent, 1.0 if selected else 0.38), 10.0, 2.0 if selected else 1.0)
 	draw_rect(Rect2(rect.position + Vector2(10, 9), Vector2(4, rect.size.y - 18)), Palette.with_alpha(accent, 0.92 if selected else 0.32))
-	draw_string(DisplayFont, rect.position + Vector2(30, 39 if rect.size.y >= 60 else 33), label, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 58, 18 if rect.size.y >= 60 else 14, Palette.INK if selected and index == 0 else Palette.PAPER)
+	draw_string(DisplayFont, rect.position + Vector2(20 if rect.size.x < 110 else 30, 39 if rect.size.y >= 60 else 33), label, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - (36 if rect.size.x < 110 else 58), 18 if rect.size.y >= 60 else 12 if rect.size.x < 110 else 14, Palette.INK if selected and index == 0 else Palette.PAPER)
 	if selected:
 		draw_string(DisplayFont, rect.position + Vector2(rect.size.x - 42, 38 if rect.size.y >= 60 else 32), ">", HORIZONTAL_ALIGNMENT_CENTER, 24, 18, Palette.INK if index == 0 else accent)
 
@@ -2216,6 +2340,70 @@ func draw_audio_settings_overlay() -> void:
 	draw_campaign_button(settings_reset_rect, loc("初期設定へ戻す", "RESTORE DEFAULTS"), Palette.CORAL, false)
 	draw_campaign_button(settings_close_rect, loc("閉じる", "CLOSE"), Palette.MINT, true)
 	draw_string(Palette.UI_FONT, Vector2(356, 588), loc("上下：項目　左右：調整　ESC / B：閉じる", "UP/DOWN: SELECT · LEFT/RIGHT: ADJUST · ESC/B: CLOSE"), HORIZONTAL_ALIGNMENT_LEFT, 568, 11, Palette.MUTED)
+
+func draw_achievements_overlay() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.008, 0.02, 0.94))
+	var panel := Rect2(56, 62, 1168, 636)
+	draw_machine_plate(panel, Color(0.025, 0.052, 0.10, 0.99), Palette.AMBER, 22.0, 2.0)
+	draw_string(DisplayFont, Vector2(94, 112), loc("討伐実績", "HUNT RECORDS"), HORIZONTAL_ALIGNMENT_LEFT, 700, 30, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(94, 142), loc("Infinite Mode専用の実績はありません。通常進行で狙える記録のみです。", "INFINITE MODE HAS NO EXCLUSIVE RECORDS — EVERY GOAL BELONGS TO THE STANDARD HUNT."), HORIZONTAL_ALIGNMENT_LEFT, 820, 12, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(970, 126), "%d / %d" % [achievements.unlocked_count(), AchievementState.DEFINITIONS.size()], HORIZONTAL_ALIGNMENT_RIGHT, 200, 24, Palette.AMBER)
+	for index in range(AchievementState.DEFINITIONS.size()):
+		var definition: Dictionary = AchievementState.DEFINITIONS[index]
+		var column := index / 5
+		var row := index % 5
+		var rect := Rect2(92 + column * 554, 166 + row * 88, 526, 76)
+		var unlocked: bool = achievements.is_unlocked(str(definition.id))
+		var accent := Palette.MINT if unlocked else Palette.MUTED
+		draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.78), Palette.with_alpha(accent, 0.82 if unlocked else 0.20), 9.0, 2.0 if unlocked else 1.0)
+		draw_circle(rect.position + Vector2(28, 38), 13.0, Palette.with_alpha(accent, 0.22 if unlocked else 0.08))
+		draw_string(DisplayFont, rect.position + Vector2(15, 44), "◆" if unlocked else "◇", HORIZONTAL_ALIGNMENT_CENTER, 26, 15, accent)
+		draw_string(DisplayFont, rect.position + Vector2(54, 28), str(definition.get("name_ja" if is_japanese else "name_en", definition.id)), HORIZONTAL_ALIGNMENT_LEFT, 300, 15, Palette.PAPER if unlocked else Palette.MUTED)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(54, 54), str(definition.get("desc_ja" if is_japanese else "desc_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 350, 11, Palette.PAPER if unlocked else Palette.MUTED)
+		draw_string(DisplayFont, rect.position + Vector2(410, 43), achievement_progress(str(definition.id)), HORIZONTAL_ALIGNMENT_CENTER, 100, 12, accent)
+	draw_campaign_button(achievements_close_rect, loc("閉じる", "CLOSE"), Palette.MINT, true)
+
+func achievement_progress(id: String) -> String:
+	match id:
+		"first_core":
+			return "%d / 1" % mini(1, run.beast_cores.size())
+		"normal_end":
+			return "1 / 1" if campaign_route.normal_end_seen else "0 / 1"
+		"six_cores":
+			return "%d / 6" % run.beast_cores.size()
+		"dual_boss_cores":
+			return "%d / 2" % run.boss_cores.size()
+		"true_end":
+			return "1 / 1" if campaign_route.true_end_seen else "0 / 1"
+		"pure_command":
+			return "ONLINE" if run.generation_mode_unlocked() else "OFFLINE"
+		"hybrid_arsenal":
+			return "%d / 2" % (int(run.upgrade_level("gatling_protocol") > 0) + int(run.upgrade_level("rail_protocol") > 0))
+		"tier_three":
+			var tier_three_ranks := 0
+			for skill in GearCatalog.SKILLS:
+				if int(skill.get("tier", 1)) == 3:
+					tier_three_ranks += run.upgrade_level(str(skill.id))
+			return "1 / 1" if tier_three_ranks > 0 else "0 / 1"
+		"gear_mastery":
+			var best := -1
+			var target := 0
+			for gear in GearCatalog.GEARS:
+				var gear_id := str(gear.id)
+				var value: int = run.gear_level(gear_id)
+				if value > best:
+					best = value
+					target = GearCatalog.max_ranks_for_gear(gear_id)
+			return "%d / %d" % [best, target]
+		"all_skills":
+			return "%d / %d" % [run.skill_points_bought(), run.total_possible_ranks()]
+	return ""
+
+func draw_achievement_toast() -> void:
+	var rect := Rect2(380, 96, 520, 72)
+	draw_machine_plate(rect, Color(0.025, 0.052, 0.10, 0.98), Palette.AMBER, 12.0, 2.0)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(22, 25), loc("実績解除", "RECORD UNLOCKED"), HORIZONTAL_ALIGNMENT_LEFT, 150, 11, Palette.AMBER)
+	draw_string(DisplayFont, rect.position + Vector2(22, 54), str(achievement_notice.get("name_ja" if is_japanese else "name_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 470, 18, Palette.PAPER)
 
 func draw_background() -> void:
 	# Every approved 320x180 region backdrop scales to 1280x720 at an exact 4x.
@@ -2386,7 +2574,8 @@ func draw_campaign_ending(true_end: bool) -> void:
 		copy_label = loc("コピー済み", "COPIED") if result_copy_succeeded else loc("コピーできません", "COPY FAILED")
 	draw_campaign_button(campaign_copy_rect, copy_label, Palette.MINT if result_copy_succeeded else Palette.CORAL, false)
 	draw_string(Palette.UI_FONT, Vector2(0, 544), loc("プレイ記録をローカル保存済み　制作：Godot + Codex　PixelLab + Suno", "PLAYTEST LOG SAVED LOCALLY · GODOT + CODEX · PIXELLAB + SUNO"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 10, Palette.with_alpha(Palette.MUTED, 0.8))
-	draw_campaign_button(campaign_primary_rect, loc("新しいキャンペーン", "NEW CAMPAIGN") if true_end else loc("真ルートへ続く", "CONTINUE TRUE ROUTE"), accent, true)
+	draw_campaign_button(campaign_primary_rect, loc("Infinite Modeへ", "ENTER INFINITE MODE") if true_end else loc("真ルートへ続く", "CONTINUE TRUE ROUTE"), accent, true)
+	draw_campaign_button(campaign_achievement_rect, loc("H  実績", "H  RECORDS"), Palette.AMBER, false)
 	draw_campaign_button(campaign_credits_rect, loc("E  エンドロール", "E  CREDITS"), Palette.VIOLET, false)
 	draw_campaign_button(campaign_ending_return_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
 
@@ -2410,9 +2599,9 @@ func draw_header() -> void:
 		for ring in range(3):
 			draw_arc(SHARD_SOCKET_CENTER, 23.0 + ring * 7.0 + (1.0 - shard_pulse) * 8.0, 0.0, TAU, 24, Palette.with_alpha(Palette.CYAN, shard_pulse * (0.5 - ring * 0.1)), 2.0)
 	draw_texture_rect(energy_shard_texture, Rect2(SHARD_SOCKET_CENTER - Vector2(18, 18), Vector2(36, 36)), false)
-	draw_string(Palette.UI_FONT, Vector2(606, 25), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 94, 10, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(606, 25), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 94, 11, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(606, 56), format_number(run.credits), HORIZONTAL_ALIGNMENT_CENTER, 94, 22, Palette.AMBER)
-	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("総時間", "SESSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(752, 31), loc("総時間", "SESSION"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.MUTED)
 	draw_string(Palette.UI_FONT, Vector2(752, 62), format_time(run.session_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER)
 	draw_small_button(reset_rect, loc("R  もう一度", "R  CONFIRM") if reset_confirm_time > 0.0 else loc("R  初期化", "R  RESET"), Palette.CORAL)
 	draw_small_button(settings_rect, loc("設定", "SET"), Palette.VIOLET)
@@ -2428,6 +2617,8 @@ func campaign_header_context() -> String:
 		return loc("通常ボスを選択", "SELECT NORMAL BOSS")
 	if campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
 		return loc("討伐記録", "HUNT RECORD")
+	if campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
+		return "INFINITE MODE // WAVE %d" % maxi(1, run.infinite_wave)
 	if not run.current_stage_id.is_empty():
 		var definition := current_stage_definition()
 		if not definition.is_empty():
@@ -2496,16 +2687,16 @@ func draw_reactor_panel() -> void:
 	for step in range(6):
 		var contact_color := charge_color if step < mini(6, run.manual_streak) else Palette.with_alpha(Palette.MUTED, 0.22)
 		draw_rect(Rect2(charge_rect.position + Vector2(107 + step * 25, 17), Vector2(17, 4)), contact_color)
-	draw_string(DisplayFont, charge_rect.position + Vector2(82, 39), loc("PURE CHARGE", "PURE CHARGE") if run.manual_mode == "generate" else loc("CHARGE攻撃", "CHARGE ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 21, Palette.PAPER)
-	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(82, 66), loc("0ダメージ / 発電6倍 / AUTO過給", "0 DAMAGE / 6× GENERATION / AUTO BOOST") if run.manual_mode == "generate" else loc("1入力＝1打撃＋CHARGE", "ONE INPUT = ONE HIT + CHARGE"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 10, Palette.MUTED)
+	draw_string(DisplayFont, charge_rect.position + Vector2(82, 39), loc("PURE指令", "PURE COMMAND") if run.generation_mode_unlocked() else loc("CHARGE攻撃", "CHARGE ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 21, Palette.PAPER)
+	draw_string(Palette.UI_FONT, charge_rect.position + Vector2(82, 66), loc("直接0 / 発電6倍 / AUTO指令", "0 DIRECT / 6× GEN / AUTO COMMAND") if run.generation_mode_unlocked() else loc("1入力＝1打撃＋CHARGE", "ONE INPUT = ONE HIT + CHARGE"), HORIZONTAL_ALIGNMENT_CENTER, charge_rect.size.x - 88, 11, Palette.MUTED)
 	var mode_available: bool = run.generation_mode_unlocked()
 	var mode_color := Palette.MINT if mode_available else Palette.MUTED
 	draw_machine_plate(mode_toggle_rect, Palette.with_alpha(mode_color, 0.16 if mode_available else 0.035), Palette.with_alpha(mode_color, 0.78 if mode_available else 0.25), 9.0, 1.0)
-	draw_string(DisplayFont, mode_toggle_rect.position + Vector2(0, 27), loc("G  手動モード切替", "G  SWITCH MANUAL MODE") if mode_available else loc("発電ツリーでPURE CHARGE解禁", "UNLOCK PURE CHARGE IN DYNAMO TREE"), HORIZONTAL_ALIGNMENT_CENTER, mode_toggle_rect.size.x, 12, Palette.PAPER if mode_available else Palette.MUTED)
+	draw_string(DisplayFont, mode_toggle_rect.position + Vector2(0, 27), loc("PURE COMMAND  恒久接続", "PURE COMMAND  PERMANENT") if mode_available else loc("発電ツリーでPURE COMMAND解禁", "UNLOCK PURE COMMAND IN DYNAMO"), HORIZONTAL_ALIGNMENT_CENTER, mode_toggle_rect.size.x, 12, Palette.PAPER if mode_available else Palette.MUTED)
 	var footer := Rect2(54, 649, 312, 31)
 	draw_machine_plate(footer, Palette.with_alpha(Palette.INK, 0.72), Palette.with_alpha(Palette.CYAN, 0.18), 5.0, 1.0)
-	draw_string(Palette.UI_FONT, Vector2(62, 662), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 296, 9, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
-	draw_string(Palette.UI_FONT, Vector2(62, 676), loc("クリック %d  AUTO %d  臨界 %d", "CLICKS %d  AUTO %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 296, 8, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 662), tutorial_hint(), HORIZONTAL_ALIGNMENT_LEFT, 296, 11, Palette.AMBER if run.credits >= cheapest_upgrade_cost() else Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(62, 676), loc("クリック %d  AUTO %d  臨界 %d", "CLICKS %d  AUTO %d  CRITS %d") % [run.manual_inputs, run.auto_hits, run.critical_hits], HORIZONTAL_ALIGNMENT_LEFT, 296, 10, Palette.MUTED)
 
 func draw_legacy_reactor_visual() -> void:
 	draw_texture_rect(reactor_texture, Rect2(REACTOR_CENTER - Vector2(96, 96), Vector2(192, 192)), false, Color(0.84, 0.9, 1.0, 0.9))
@@ -2522,7 +2713,7 @@ func draw_legacy_reactor_visual() -> void:
 	draw_string(Palette.UI_FONT, REACTOR_CENTER + Vector2(-78, 23), "CHARGE", HORIZONTAL_ALIGNMENT_CENTER, 156, 11, Palette.MUTED)
 
 func draw_protagonist_hunter() -> void:
-	var generating: bool = run.manual_mode == "generate"
+	var generating: bool = run.generation_mode_unlocked()
 	var active_color := Palette.MINT if generating else Palette.AMBER if protagonist_action_pulse > 0.05 else Palette.CYAN
 	var center := Vector2(212, 265 + sin(animation_time * 1.8) * 2.0)
 	if generating:
@@ -2547,7 +2738,7 @@ func draw_protagonist_hunter() -> void:
 	draw_texture_rect(ProtagonistTexture, Rect2(center - Vector2(104, 104), Vector2(208, 208)), false, Color(1.0, 1.0, 1.0, 0.98))
 	var state_label := loc("待機", "STANDBY")
 	if generating:
-		state_label = "PURE CHARGE"
+		state_label = "PURE COMMAND"
 	elif protagonist_action_pulse > 0.05:
 		state_label = loc("撃鉄打撃", "PILE-DRIVER STRIKE")
 	var status_plate := Rect2(74, 354, 276, 34)
@@ -2701,7 +2892,7 @@ func draw_direct_attack_combat_panel() -> void:
 		draw_comms_strip()
 	else:
 		draw_string(Palette.UI_FONT, Vector2(448, 455), tutorial_hint(), HORIZONTAL_ALIGNMENT_CENTER, 770, 14, Palette.PAPER)
-	draw_string(DisplayFont, Vector2(438, 482), loc("5ギア・66ノード — ギアを選んで専用ツリーを開く", "FIVE GEARS · 66 NODES — OPEN A GEAR'S DEDICATED TREE"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(438, 482), loc("5ギア・86ノード — ギアを選んで専用ツリーを開く", "FIVE GEARS · 86 NODES — OPEN A GEAR'S DEDICATED TREE"), HORIZONTAL_ALIGNMENT_LEFT, 760, 12, Palette.MUTED)
 	draw_string(DisplayFont, Vector2(1030, 482), "%d / %d" % [run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_RIGHT, 184, 11, Palette.AMBER if run.skill_points_bought() > 0 else Palette.MUTED)
 	var rack_rect := Rect2(428, 488, 788, 178)
 	draw_machine_plate(rack_rect, Palette.with_alpha(Palette.INK, 0.91), Palette.with_alpha(Palette.CYAN, 0.28), 12.0, 1.0)
@@ -2822,11 +3013,11 @@ func draw_gear_rack() -> void:
 			var tier_ratio := float(tier_level) / float(maxi(1, tier_max))
 			var tier_y := rect.position.y + 76 + (tier - 1) * 17
 			var tier_unlocked: bool = tier <= run.technology_tier()
-			draw_string(Palette.UI_FONT, Vector2(rect.position.x + 12, tier_y + 8), "T%s" % roman_tier(tier), HORIZONTAL_ALIGNMENT_LEFT, 20, 7, color if tier_unlocked else Palette.MUTED)
+			draw_string(Palette.UI_FONT, Vector2(rect.position.x + 12, tier_y + 8), "T%s" % roman_tier(tier), HORIZONTAL_ALIGNMENT_LEFT, 20, 9, color if tier_unlocked else Palette.MUTED)
 			draw_rect(Rect2(rect.position.x + 34, tier_y + 2, 96, 6), Palette.with_alpha(color, 0.10 if tier_unlocked else 0.035))
 			draw_rect(Rect2(rect.position.x + 34, tier_y + 2, 96 * tier_ratio, 6), Palette.AMBER if tier_level >= tier_max else color)
 		draw_string(DisplayFont, rect.position + Vector2(12, 137), "LV %d / %d" % [level, maximum], HORIZONTAL_ALIGNMENT_LEFT, 124, 11, color if level > 0 else Palette.MUTED)
-		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 154), loc("ツリーを開く", "OPEN TREE"), HORIZONTAL_ALIGNMENT_RIGHT, 124, 9, Palette.PAPER if hovered or selected else Palette.MUTED)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 154), loc("ツリーを開く", "OPEN TREE"), HORIZONTAL_ALIGNMENT_RIGHT, 124, 11, Palette.PAPER if hovered or selected else Palette.MUTED)
 
 func draw_gear_tree_overlay() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.008, 0.016, 0.038, 0.975))
@@ -2839,15 +3030,15 @@ func draw_gear_tree_overlay() -> void:
 		var gear_texture: Texture2D = GearTextures.get(str(gear.id))
 		draw_machine_plate(tab, Palette.with_alpha(color, 0.26 if selected else 0.045), Palette.with_alpha(color, 1.0 if selected else 0.32), 9.0, 2.0 if selected else 1.0)
 		draw_texture_rect(gear_texture, Rect2(tab.position + Vector2(9, 8), Vector2(38, 38)), false, Color(1.0, 1.0, 1.0, 1.0 if selected else 0.62))
-		draw_string(Palette.UI_FONT, tab.position + Vector2(179, 18), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_RIGHT, 14, 8, color)
+		draw_string(Palette.UI_FONT, tab.position + Vector2(179, 18), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_RIGHT, 14, 10, color)
 		draw_string(DisplayFont, tab.position + Vector2(50, 23), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 126, 12, Palette.PAPER if selected else Palette.MUTED)
-		draw_string(Palette.UI_FONT, tab.position + Vector2(50, 42), "LV %d / %d" % [run.gear_level(str(gear.id)), GearCatalog.max_ranks_for_gear(str(gear.id))], HORIZONTAL_ALIGNMENT_LEFT, 126, 9, color)
+		draw_string(Palette.UI_FONT, tab.position + Vector2(50, 42), "LV %d / %d" % [run.gear_level(str(gear.id)), GearCatalog.max_ranks_for_gear(str(gear.id))], HORIZONTAL_ALIGNMENT_LEFT, 126, 11, color)
 	draw_small_button(tree_close_rect, loc("閉じる", "CLOSE"), Palette.CORAL)
 
 	var current_gear: Dictionary = GearCatalog.GEARS[selected_gear_index]
 	var accent := Color(str(current_gear.accent))
 	draw_string(DisplayFont, Vector2(66, 198), gear_name(current_gear), HORIZONTAL_ALIGNMENT_LEFT, 176, 18, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(250, 196), str(current_gear.get("desc_ja" if is_japanese else "desc_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 272, 10, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(250, 196), str(current_gear.get("desc_ja" if is_japanese else "desc_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 272, 12, Palette.MUTED)
 	for tier_index in range(3):
 		var tier := tier_index + 1
 		var tier_rect := tree_tier_rects[tier_index]
@@ -2855,9 +3046,9 @@ func draw_gear_tree_overlay() -> void:
 		var tier_unlocked: bool = tier <= run.technology_tier()
 		var tier_color := accent if tier_unlocked else Palette.MUTED
 		draw_machine_plate(tier_rect, Palette.with_alpha(tier_color, 0.24 if tier_selected else 0.045), Palette.with_alpha(tier_color, 1.0 if tier_selected else 0.30), 6.0, 2.0 if tier_selected else 1.0)
-		draw_string(DisplayFont, tier_rect.position + Vector2(0, 22), "TIER %s" % roman_tier(tier), HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 10, Palette.PAPER if tier_selected else tier_color)
+		draw_string(DisplayFont, tier_rect.position + Vector2(0, 22), "TIER %s" % roman_tier(tier), HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 11, Palette.PAPER if tier_selected else tier_color)
 		if not tier_unlocked:
-			draw_string(Palette.UI_FONT, tier_rect.position + Vector2(0, 31), "LOCK", HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 6, Palette.CORAL)
+			draw_string(Palette.UI_FONT, tier_rect.position + Vector2(0, 31), "LOCK", HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 8, Palette.CORAL)
 	var skills := selected_tree_skills()
 	for definition in skills:
 		var parent_id := str(definition.get("parent", ""))
@@ -2887,13 +3078,13 @@ func draw_tree_node(index: int, definition: Dictionary, accent: Color) -> void:
 	draw_rect(Rect2(rect.position + Vector2(7, 7), Vector2(5, rect.size.y - 14)), Palette.with_alpha(border, 0.9 if level > 0 or selected else 0.2))
 	var copy := skill_copy(definition)
 	draw_string(DisplayFont, rect.position + Vector2(20, 25), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 184, 12, Palette.PAPER if unlocked else Palette.MUTED)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(20, 47), "LV %d / %d" % [level, maximum], HORIZONTAL_ALIGNMENT_LEFT, 90, 10, border)
+	draw_string(Palette.UI_FONT, rect.position + Vector2(20, 47), "LV %d / %d" % [level, maximum], HORIZONTAL_ALIGNMENT_LEFT, 90, 11, border)
 	if maxed:
 		draw_string(DisplayFont, rect.position + Vector2(108, 48), "MAX", HORIZONTAL_ALIGNMENT_RIGHT, 88, 11, Palette.MINT)
 	elif not unlocked:
 		draw_string(DisplayFont, rect.position + Vector2(108, 48), "LOCK", HORIZONTAL_ALIGNMENT_RIGHT, 88, 10, Palette.CORAL)
 	else:
-		draw_string(Palette.UI_FONT, rect.position + Vector2(108, 48), "%d CHARGE" % run.upgrade_cost(id), HORIZONTAL_ALIGNMENT_RIGHT, 88, 10, Palette.AMBER if affordable else Palette.MUTED)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(108, 48), "%d CHARGE" % run.upgrade_cost(id), HORIZONTAL_ALIGNMENT_RIGHT, 88, 11, Palette.AMBER if affordable else Palette.MUTED)
 	var progress := float(level) / float(maxi(1, maximum))
 	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176, 5)), Palette.with_alpha(border, 0.10))
 	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176 * progress, 5)), border)
@@ -2928,7 +3119,7 @@ func draw_tree_detail_panel(accent: Color) -> void:
 		draw_campaign_button(tree_respec_rect, loc("無料リスペック", "FREE RESPEC"), Palette.MINT, false)
 	else:
 		draw_string(Palette.UI_FONT, Vector2(918, 648), loc("AUTO砲はツリー表示中も戦闘を継続", "AUTO FIRE CONTINUES WHILE THIS TREE IS OPEN"), HORIZONTAL_ALIGNMENT_CENTER, 286, 10, Palette.VIOLET)
-	draw_string(Palette.UI_FONT, Vector2(816, 690), loc("方向キー：選択　ENTER/A：購入　Q/E：ギア　Z/X・Y：TIER", "D-PAD: SELECT · ENTER/A: BUY · Q/E: GEAR · Z/X OR Y: TIER"), HORIZONTAL_ALIGNMENT_CENTER, 408, 9, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(816, 690), loc("方向キー：選択　ENTER/A：購入　Q/E：ギア　Z/X・Y：TIER", "D-PAD: SELECT · ENTER/A: BUY · Q/E: GEAR · Z/X OR Y: TIER"), HORIZONTAL_ALIGNMENT_CENTER, 408, 10, Palette.MUTED)
 
 func draw_tree_gear_stats(gear_id: String, origin: Vector2, accent: Color) -> void:
 	var lines: Array[String] = []
@@ -2936,7 +3127,7 @@ func draw_tree_gear_stats(gear_id: String, origin: Vector2, accent: Color) -> vo
 		"striker":
 			lines = [loc("クリック威力  %s" % format_number(run.manual_damage), "CLICK POWER  %s" % format_number(run.manual_damage)), loc("臨界率  %.0f%%" % (run.critical_chance * 100.0), "CRIT CHANCE  %.0f%%" % (run.critical_chance * 100.0)), loc("連打上限  %d" % run.combo_cap, "COMBO CAP  %d" % run.combo_cap)]
 		"dynamo":
-			lines = [loc("手動発電  %.2f" % run.charge_per_click, "MANUAL GEN  %.2f" % run.charge_per_click), loc("AUTO発電  %.2f/弾" % run.auto_charge_per_shot, "AUTO GEN  %.2f/SHOT" % run.auto_charge_per_shot), loc("手動モード  %s" % run.manual_mode.to_upper(), "MANUAL MODE  %s" % run.manual_mode.to_upper())]
+			lines = [loc("手動発電  %.2f" % run.charge_per_click, "MANUAL GEN  %.2f" % run.charge_per_click), loc("AUTO発電  %.2f/弾" % run.auto_charge_per_shot, "AUTO GEN  %.2f/SHOT" % run.auto_charge_per_shot), loc("手動系統  %s" % ("PURE COMMAND" if run.generation_mode_unlocked() else "CHARGE ATTACK"), "MANUAL SYSTEM  %s" % ("PURE COMMAND" if run.generation_mode_unlocked() else "CHARGE ATTACK"))]
 		"autogun":
 			lines = ["AUTO DPS  %s" % format_number(run.estimated_auto_dps()), loc("射撃間隔  %.2f秒" % run.auto_interval, "INTERVAL  %.2fs" % run.auto_interval), loc("砲身変異  %s" % auto_mutation_label(), "WEAPON FORM  %s" % auto_mutation_label())]
 		"drone":
@@ -3021,7 +3212,7 @@ func draw_objective_header() -> void:
 	var current: float = run.boss_max_hp - run.boss_hp if is_boss else run.restore_progress
 	var target: float = run.boss_max_hp if is_boss else run.restore_goal
 	draw_string(DisplayFont, Vector2(446, 129), title, HORIZONTAL_ALIGNMENT_LEFT, 360, 15, accent)
-	draw_string(Palette.UI_FONT, Vector2(446, 147), phase, HORIZONTAL_ALIGNMENT_LEFT, 360, 10, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(446, 147), phase, HORIZONTAL_ALIGNMENT_LEFT, 360, 12, Palette.MUTED)
 	if is_boss:
 		draw_texture_rect(WraithGaugeTexture, Rect2(824, 105, 390, 58), false, Color(0.9, 0.94, 1.0, 0.82))
 		var remaining_ratio: float = clampf(run.boss_hp / maxf(1.0, run.boss_max_hp), 0.0, 1.0)
@@ -3033,7 +3224,7 @@ func draw_objective_header() -> void:
 			draw_machine_plate(seal_rect, Palette.with_alpha(Palette.CORAL if intact else Palette.CYAN, 0.8 if intact else 0.12), Palette.CORAL if intact else Palette.with_alpha(Palette.CYAN, 0.38), 3.0, 1.0)
 		var value_text := "%.1f%%" % (remaining_ratio * 100.0)
 		draw_string(Palette.UI_FONT, Vector2(980, 143), value_text, HORIZONTAL_ALIGNMENT_CENTER, 92, 15, Palette.PAPER)
-		draw_string(Palette.UI_FONT, Vector2(824, 158), "%s / %s HP" % [format_integer(run.boss_hp), format_integer(run.boss_max_hp)], HORIZONTAL_ALIGNMENT_CENTER, 390, 9, Palette.PAPER)
+		draw_string(Palette.UI_FONT, Vector2(824, 158), "%s / %s HP" % [format_integer(run.boss_hp), format_integer(run.boss_max_hp)], HORIZONTAL_ALIGNMENT_CENTER, 390, 11, Palette.PAPER)
 	else:
 		var ratio: float = clampf(current / maxf(1.0, target), 0.0, 1.0)
 		var bar := Rect2(820, 120, 378, 26)
@@ -3077,11 +3268,14 @@ func draw_clear_overlay() -> void:
 	var panel := Rect2(270, 108, 740, 534)
 	draw_machine_plate(panel, Palette.PANEL, Palette.AMBER, 22.0, 2.0)
 	var is_stage_hunt: bool = campaign_route.phase == CampaignRoute.RoutePhase.STAGE
-	draw_string(DisplayFont, Vector2(0, 168), loc("機械魔獣 討伐", "MECHANICAL BEAST DEFEATED") if is_stage_hunt else loc("深層主獣 討伐", "ABYSSAL BOSS DEFEATED"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 34, Palette.AMBER)
+	var is_infinite: bool = campaign_route.phase == CampaignRoute.RoutePhase.INFINITE
+	draw_string(DisplayFont, Vector2(0, 168), loc("無限演算 突破", "INFINITE WAVE CLEARED") if is_infinite else loc("機械魔獣 討伐", "MECHANICAL BEAST DEFEATED") if is_stage_hunt else loc("深層主獣 討伐", "ABYSSAL BOSS DEFEATED"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 34, Palette.AMBER)
 	var definition := current_stage_definition()
 	draw_string(DisplayFont, Vector2(0, 205), stage_name(definition) if not definition.is_empty() else encounter_name(), HORIZONTAL_ALIGNMENT_CENTER, 1280, 18, Palette.PAPER)
 	var core_name := loc("主獣核（自動統合）", "BOSS CORE — AUTO INTEGRATED")
-	if not definition.is_empty():
+	if is_infinite:
+		core_name = "+%s CHARGE" % format_number(infinite_reward_for_wave(maxi(1, campaign_route.infinite_wave - 1)))
+	elif not definition.is_empty():
 		core_name = str(definition.get("core_name_ja" if is_japanese else "core_name_en", "CORE"))
 	var stats := [
 		[loc("クリアタイム", "CLEAR TIME"), format_time(run.stage_clear_time)],
@@ -3089,19 +3283,21 @@ func draw_clear_overlay() -> void:
 		[loc("最大打撃", "PEAK HIT"), format_number(run.highest_output)],
 		[loc("累計CHARGE", "TOTAL CHARGE"), format_number(run.lifetime_charge)],
 		[loc("強化レベル合計", "TOTAL UPGRADE LEVELS"), str(run.skill_points_bought())],
-		[loc("回収機械核", "RECOVERED CORE"), core_name],
+		[loc("無限報酬", "INFINITE REWARD") if is_infinite else loc("回収機械核", "RECOVERED CORE"), core_name],
 	]
 	for index in range(stats.size()):
 		var y := 250 + index * 42
 		draw_string(Palette.UI_FONT, Vector2(340, y), str(stats[index][0]), HORIZONTAL_ALIGNMENT_LEFT, 250, 14, Palette.MUTED)
 		draw_string(Palette.UI_FONT, Vector2(610, y), str(stats[index][1]), HORIZONTAL_ALIGNMENT_RIGHT, 300, 17, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(0, 520), loc("核は自動で統合され、以後のすべての戦闘で効果を発揮する", "THE CORE IS AUTOMATICALLY INTEGRATED FOR EVERY FUTURE BATTLE"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 14, Palette.CYAN)
+	draw_string(Palette.UI_FONT, Vector2(0, 520), loc("獲得CHARGEで未完成スキルを強化できる。WAVE専用実績はない。", "SPEND THE REWARD ON UNFINISHED SKILLS — WAVES HAVE NO EXCLUSIVE RECORDS.") if is_infinite else loc("核は自動で統合され、以後のすべての戦闘で効果を発揮する", "THE CORE IS AUTOMATICALLY INTEGRATED FOR EVERY FUTURE BATTLE"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 14, Palette.CYAN)
 	draw_machine_plate(clear_retry_rect, Palette.AMBER, Palette.PAPER, 10.0, 2.0)
-	draw_string(DisplayFont, clear_retry_rect.position + Vector2(0, 34), loc("討伐地図へ", "HUNT MAP"), HORIZONTAL_ALIGNMENT_CENTER, clear_retry_rect.size.x, 16, Palette.INK)
+	draw_string(DisplayFont, clear_retry_rect.position + Vector2(0, 34), loc("次のWAVE", "NEXT WAVE") if is_infinite else loc("討伐地図へ", "HUNT MAP"), HORIZONTAL_ALIGNMENT_CENTER, clear_retry_rect.size.x, 16, Palette.INK)
 	draw_machine_plate(clear_menu_rect, Palette.PANEL_2, Palette.CYAN, 10.0, 1.0)
-	draw_string(Palette.UI_FONT, clear_menu_rect.position + Vector2(0, 34), loc("ゲーム選択", "GAME LAB"), HORIZONTAL_ALIGNMENT_CENTER, clear_menu_rect.size.x, 16, Palette.PAPER)
+	draw_string(Palette.UI_FONT, clear_menu_rect.position + Vector2(0, 34), loc("完全復旧記録へ", "END INFINITE") if is_infinite else loc("ゲーム選択", "GAME LAB"), HORIZONTAL_ALIGNMENT_CENTER, clear_menu_rect.size.x, 16, Palette.PAPER)
 
 func boss_integrity_label() -> String:
+	if run.infinite_mode:
+		return loc("無限演算耐久", "INFINITE FRAME HP")
 	if run.singularity_boss:
 		return loc("事象安定度", "EVENT STABILITY")
 	if run.current_boss_id == "thermal_titan":

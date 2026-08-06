@@ -66,8 +66,6 @@ func drive_encounter(state, profile: Dictionary) -> void:
 	var delta := float(profile.delta)
 	var purchase_interval := maxi(1, int(profile.purchase_interval))
 	for step in range(240000):
-		if state.generation_mode_unlocked():
-			state.manual_mode = "attack" if step % 4 == 0 else "generate"
 		state.manual_attack(-1)
 		state.advance_session_time(delta)
 		state.tick(delta, false)

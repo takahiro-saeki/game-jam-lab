@@ -8,7 +8,7 @@ const INK := Color("09111f")
 const PANEL := Color("111d31")
 const PANEL_2 := Color("182b43")
 const PAPER := Color("f5f0db")
-const MUTED := Color("91a4b7")
+const MUTED := Color("b4c4d3")
 const CYAN := Color("4deeea")
 const BLUE := Color("3a86ff")
 const VIOLET := Color("9b5de5")
@@ -24,8 +24,8 @@ static func with_alpha(color: Color, alpha: float) -> Color:
 static func make_ui_font() -> FontVariation:
 	var font := FontVariation.new()
 	font.base_font = UI_FONT_FILE
-	font.variation_opentype = {"wght": 500.0}
-	font.variation_embolden = 0.3
+	font.variation_opentype = {"wght": 600.0}
+	font.variation_embolden = 0.42
 	return font
 
 static func rounded_box(color: Color, radius: int = 16, border_color: Color = Color.TRANSPARENT, border_width: int = 0) -> StyleBoxFlat:

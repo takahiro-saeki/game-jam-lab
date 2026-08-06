@@ -9,6 +9,7 @@ const ChargeClickerSave = preload("res://games/charge_clicker/charge_save.gd")
 const ChargeStageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const ChargeCampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const ChargeGearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
+const ChargeAchievements = preload("res://games/charge_clicker/charge_achievements.gd")
 const Launcher = preload("res://main.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 
@@ -346,11 +347,12 @@ func improve_test_grid(game: Node) -> void:
 		game.handle_node(4)
 
 func test_charge_clicker_v5() -> void:
-	print("\nPROJECT CHARGE V6 — TIERED FIVE-GEAR AUTO ENGINE")
+	print("\nPROJECT CHARGE V7 — PURE COMMAND / RECORDS / INFINITE")
 	var state := ChargeClickerState.new()
 	state.rng.seed = 404
-	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v6 starts with AUTO fire online and direct enemy combat")
-	check(ChargeGearCatalog.GEARS.size() == 5 and ChargeGearCatalog.SKILLS.size() == 66, "five visible gear trees contain sixty-six distinct nodes across three tiers")
+	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v7 starts with AUTO fire online and direct enemy combat")
+	check(ChargeGearCatalog.GEARS.size() == 5 and ChargeGearCatalog.SKILLS.size() == 86 and ChargeGearCatalog.total_max_ranks() == 317, "five visible gear trees contain eighty-six nodes and 317 attainable ranks")
+	check(ChargeGearCatalog.skills_for_gear_tier("striker", 2).size() == 5 and ChargeGearCatalog.skills_for_gear_tier("core", 3).size() == 5, "Tier II and III expand every gear from three to five nodes")
 	check(state.technology_tier() == 1 and not state.skill_unlocked("servo_overdrive") and state.skill_lock_reason("servo_overdrive") == "tier:2", "Tier II remains visibly locked before the normal boss")
 	var tier_state := ChargeClickerState.new()
 	tier_state.grant_boss_core("predation_reversal")
@@ -393,17 +395,17 @@ func test_charge_clicker_v5() -> void:
 		state.purchase_upgrade("auto_induction")
 	for rank in range(3):
 		state.purchase_upgrade("compound_interest")
-	check(state.purchase_upgrade("zero_output_generator") and state.toggle_manual_mode(), "DYNAMO capstone unlocks the selectable PURE CHARGE command")
+	check(state.purchase_upgrade("zero_output_generator") and state.manual_mode == "generate", "DYNAMO capstone permanently evolves the click into PURE COMMAND")
 	var generator_hp := state.boss_hp
 	var generator_hit := state.manual_attack(0)
-	check(float(generator_hit.damage) == 0.0 and state.boss_hp == generator_hp and int(generator_hit.charge) >= 6, "PURE CHARGE deals zero damage while generating substantially more points")
-	check(state.auto_boost_stacks == 1 and state.estimated_auto_dps() > old_auto, "PURE CHARGE clicks overclock the automatic arsenal instead of replacing it")
-	state.toggle_manual_mode()
+	check(float(generator_hit.damage) == 0.0 and state.boss_hp == generator_hp and int(generator_hit.charge) >= 6, "PURE COMMAND deals zero direct damage while generating substantially more points")
+	check(state.auto_boost_stacks == 1 and state.estimated_auto_dps() > old_auto, "PURE COMMAND overclocks the automatic arsenal instead of replacing it")
+	check(state.toggle_manual_mode() and state.manual_mode == "generate", "PURE COMMAND cannot be toggled back to the weaker direct attack")
 
 	state.begin_stage("vaultback", "charge", 1.0, 10000.0, 1)
 	state.grant_charge(50.0)
-	var open_hit := state.manual_attack(0)
-	check(state.shell_open_timer > 0.0 and state.last_damage_multiplier >= 2.0 and float(open_hit.damage) > state.manual_damage * 2.0, "VAULTBACK turns CHARGE production into a positive damage window")
+	var open_hit := state.auto_attack(0)
+	check(state.shell_open_timer > 0.0 and state.last_damage_multiplier >= 2.0 and float(open_hit.damage) > state.auto_damage * 2.0, "VAULTBACK turns PURE generation into a positive AUTO damage window")
 	state.begin_stage("pyre_wyrm", "upgrade", 1.0, 10000.0, 2)
 	state.credits = 1000
 	state.purchase_upgrade("impact_coil")
@@ -430,13 +432,13 @@ func test_charge_clicker_v5() -> void:
 	var bought_rail := hybrid_state.purchase_upgrade("rail_protocol")
 	check(bought_gatling and bought_rail and hybrid_state.skill_points_bought() == 8, "gatling and rail branches can both complete in one campaign")
 	check(is_equal_approx(hybrid_state.auto_interval, 0.95 * 0.7425) and is_equal_approx(hybrid_state.auto_damage, 0.9 * 2.304), "dual weapon mutations fuse into the deliberate HYBRID profile")
-	check(hybrid_state.total_possible_ranks() == 257, "all 257 displayed upgrade ranks are now attainable")
+	check(hybrid_state.total_possible_ranks() == 317, "all 317 displayed upgrade ranks are attainable")
 
 	var game := ChargeClickerGame.new()
 	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
-	check(game.title_screen_open and game.title_button_rects.size() == 5, "PROJECT CHARGE opens on a complete dedicated title screen")
+	check(game.title_screen_open and game.title_button_rects.size() == 6, "PROJECT CHARGE opens on a complete title screen with persistent records")
 	game.open_audio_settings()
 	check(game.settings_open and game.settings_row_rects.size() == 5 and AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0, "settings expose saved audio and visual-comfort controls on separate buses")
 	game.close_audio_settings()
@@ -506,14 +508,34 @@ func test_charge_clicker_v5() -> void:
 	check(route.phase == route.RoutePhase.ENHANCED_BOSS and route.current_boss_id == "thermal_titan", "the unchosen boss returns enhanced after all six beasts")
 	check(route.defeat_current_boss() and route.phase == route.RoutePhase.SINGULARITY, "six beast cores and two boss victories unlock ARCH SINGULARITY")
 	check(route.current_boss_id == "arch_singularity", "true boss uses the finalized ARCH SINGULARITY identity")
+	var infinite_route := ChargeCampaignRoute.new()
+	check(infinite_route.restore_snapshot(route.snapshot()) and infinite_route.defeat_current_boss(), "true-boss victory restores into the complete ending")
+	check(infinite_route.phase == infinite_route.RoutePhase.TRUE_END and infinite_route.start_infinite(), "true ending unlocks optional Infinite Mode")
+	check(infinite_route.infinite_wave == 1 and infinite_route.complete_infinite_wave() and infinite_route.infinite_wave == 2, "Infinite Mode records a cleared wave and advances without resetting the build")
+	check(infinite_route.leave_infinite() and infinite_route.phase == infinite_route.RoutePhase.TRUE_END, "Infinite Mode can return to the completed campaign record")
+
+	var achievement_run := ChargeClickerState.new()
+	var achievement_route := infinite_route
+	for definition in ChargeGearCatalog.SKILLS:
+		achievement_run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
+	for core_id in ["impact_guidance", "deep_storage", "redheat_conversion", "cascade_relay", "swarm_clock", "phase_computation"]:
+		achievement_run.grant_beast_core(core_id)
+	achievement_run.grant_boss_core("predation_reversal")
+	achievement_run.grant_boss_core("furnace_sovereign")
+	achievement_run.refresh_stats()
+	var achievement_state := ChargeAchievements.new()
+	achievement_state.evaluate(achievement_run, achievement_route)
+	check(achievement_state.is_unlocked("all_skills") and achievement_state.unlocked_count() == ChargeAchievements.DEFINITIONS.size(), "standard records include full skill mastery without an Infinite-exclusive achievement")
 
 	var save_path := "/tmp/project_charge_v5_smoke_test.cfg"
 	var save := ChargeClickerSave.new(save_path)
-	check(save.save_bundle(state, route) == OK, "v6 tiered run and hunt route serialize atomically")
+	check(save.save_bundle(state, route, achievement_state) == OK, "v7 run, route and persistent records serialize atomically")
 	var restored_state := ChargeClickerState.new()
 	var restored_route := ChargeCampaignRoute.new()
-	check(save.load_bundle_into(restored_state, restored_route), "v6 campaign save restores successfully")
+	var restored_achievements := ChargeAchievements.new()
+	check(save.load_bundle_into(restored_state, restored_route, restored_achievements), "v7 campaign save restores successfully")
 	check("impact_guidance" in restored_state.beast_cores and restored_state.lifetime_charge == state.lifetime_charge and restored_route.phase == restored_route.RoutePhase.SINGULARITY, "save preserves CHARGE, repeatable upgrades, cores and route position")
+	check(restored_achievements.is_unlocked("all_skills"), "achievement records persist independently of campaign state")
 	var telemetry := ChargeClickerState.new()
 	telemetry.set_playtest_mode("benchmark")
 	telemetry.begin_stage("gearmaw", "manual", 1.0, 1.0, 0)
@@ -528,8 +550,8 @@ func test_charge_clicker_v5() -> void:
 
 	var normal_seconds := simulate_project_charge_v5(false)
 	var true_seconds := simulate_project_charge_v5(true)
-	print("PROJECT CHARGE v6 efficient normal route: %.1f seconds" % normal_seconds)
-	print("PROJECT CHARGE v6 efficient true route: %.1f seconds" % true_seconds)
+	print("PROJECT CHARGE v7 efficient normal route: %.1f seconds" % normal_seconds)
+	print("PROJECT CHARGE v7 efficient true route: %.1f seconds" % true_seconds)
 	check(normal_seconds > 0.0 and normal_seconds < true_seconds, "true route is materially longer than the normal judging route")
 
 func simulate_project_charge_v5(include_true_route: bool) -> float:
@@ -546,14 +568,14 @@ func simulate_project_charge_v5(include_true_route: bool) -> float:
 		simulated.begin_stage(id, str(definition.build_tag), 1.0, ChargeStageCatalog.stage_hp(id, stage_index), stage_index)
 		var encounter_started := simulated.elapsed
 		drive_project_charge_v5(simulated, 24000)
-		print("  v6 sim %s: %.1fs, maxHP %.0f, upgrades %d, autoDPS %.0f, charge %d" % [id, simulated.elapsed - encounter_started, simulated.boss_max_hp, simulated.skill_points_bought(), simulated.estimated_auto_dps(), simulated.credits])
+		print("  v7 sim %s: %.1fs, maxHP %.0f, upgrades %d, autoDPS %.0f, charge %d" % [id, simulated.elapsed - encounter_started, simulated.boss_max_hp, simulated.skill_points_bought(), simulated.estimated_auto_dps(), simulated.credits])
 		simulated.grant_beast_core(str(definition.core_id))
 		if stage_index == 2:
 			var boss := ChargeStageCatalog.boss("grid_leech")
 			simulated.begin_campaign_boss("grid_leech", float(boss.hp), false, false)
 			var boss_started := simulated.elapsed
 			drive_project_charge_v5(simulated, 36000)
-			print("  v6 sim grid_leech: %.1fs, maxHP %.0f, autoDPS %.0f" % [simulated.elapsed - boss_started, simulated.boss_max_hp, simulated.estimated_auto_dps()])
+			print("  v7 sim grid_leech: %.1fs, maxHP %.0f, autoDPS %.0f" % [simulated.elapsed - boss_started, simulated.boss_max_hp, simulated.estimated_auto_dps()])
 			simulated.grant_boss_core(str(boss.core_id))
 			if not include_true_route:
 				return simulated.elapsed
@@ -562,19 +584,17 @@ func simulate_project_charge_v5(include_true_route: bool) -> float:
 		simulated.begin_campaign_boss("thermal_titan", float(enhanced.enhanced_hp), true, false)
 		var enhanced_started := simulated.elapsed
 		drive_project_charge_v5(simulated, 60000)
-		print("  v6 sim thermal_titan+: %.1fs, maxHP %.0f, autoDPS %.0f" % [simulated.elapsed - enhanced_started, simulated.boss_max_hp, simulated.estimated_auto_dps()])
+		print("  v7 sim thermal_titan+: %.1fs, maxHP %.0f, autoDPS %.0f" % [simulated.elapsed - enhanced_started, simulated.boss_max_hp, simulated.estimated_auto_dps()])
 		simulated.grant_boss_core(str(enhanced.core_id))
 		var singularity := ChargeStageCatalog.boss("arch_singularity")
 		simulated.begin_campaign_boss("arch_singularity", float(singularity.hp), false, true)
 		var singularity_started := simulated.elapsed
 		drive_project_charge_v5(simulated, 90000)
-		print("  v6 sim arch_singularity: %.1fs, hp %.0f, phase %d, upgrades %d, click %.0f, autoDPS %.0f, global %.2f, drones %d, interval %.3f, core %.2f, charge %d" % [simulated.elapsed - singularity_started, simulated.boss_hp, simulated.singularity_phase, simulated.skill_points_bought(), simulated.manual_damage, simulated.estimated_auto_dps(), simulated.global_output_multiplier(), simulated.drone_count, simulated.auto_interval, simulated.core_power, simulated.credits])
+		print("  v7 sim arch_singularity: %.1fs, hp %.0f, phase %d, upgrades %d, click %.0f, autoDPS %.0f, global %.2f, drones %d, interval %.3f, core %.2f, charge %d" % [simulated.elapsed - singularity_started, simulated.boss_hp, simulated.singularity_phase, simulated.skill_points_bought(), simulated.manual_damage, simulated.estimated_auto_dps(), simulated.global_output_multiplier(), simulated.drone_count, simulated.auto_interval, simulated.core_power, simulated.credits])
 	return simulated.elapsed
 
 func drive_project_charge_v5(simulated, max_steps: int) -> void:
 	for step in range(max_steps):
-		if simulated.generation_mode_unlocked():
-			simulated.manual_mode = "attack" if step % 4 == 0 else "generate"
 		simulated.manual_attack(-1)
 		simulated.advance_session_time(0.2)
 		simulated.tick(0.2, false)
