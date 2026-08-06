@@ -6,10 +6,13 @@
 - `http://127.0.0.1:6670/?batch=v8-final-boss-form-2`
 - `http://127.0.0.1:6670/?batch=v8-final-boss-form-3`
 - `http://127.0.0.1:6670/?batch=v8-final-boss-form-3-dark-king`（細身の闇王・再提案）
+- `http://127.0.0.1:6670/?batch=v9-final-boss-scale-concepts`（日蝕王・無限王座・闇堕機天使）
 
 各形態3案を生成済み。Codex暫定本命は順に B / A / C で、Godot版にも仮採用済みです。Human Reviewで別案を承認した場合は、ゲーム側の3つのテクスチャ参照だけを交換します。
 
 第3形態の再提案は「細い身体＋闇の王」の指定から3案を追加生成しています。Codex本命は `Eclipse Regent / 蝕環の黒王`。人間レビューが確定するまでGodotの現行C案は維持します。
+
+v9では「人型1体」から脱却し、細い王体を巨大な背後機構が包む3方向を384pxで生成しました。Codex本命は `Fallen Machine Seraph / 闇堕機天使`、次点は `Eclipse World-King / 地核蝕王`。高解像度アートリファレンスは `docs/art-direction/` に保存しています。
 
 PixelLabで生成した候補を、ファイル一覧ではなく「制作意図と比較理由が付いた提案」として確認するためのローカル専用レビュー画面です。
 

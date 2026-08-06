@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-06T12:47:33.090Z",
+  "updatedAt": "2026-08-06T13:39:42.509Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -4539,6 +4539,162 @@
               "髑髏の既視感が強い",
               "雷が外周で切れやすい",
               "PROJECT CHARGE固有の機械性がA・Bより弱い"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v9-final-boss-scale-concepts",
+      "order": 28,
+      "title": "Prime Current form III — true-final scale concepts",
+      "titleJa": "本当のラスボス・第3形態 スケール再設計",
+      "objective": "細身の闇王を中心に残しながら、日蝕機関・無限王座・堕天翼機構を画面規模の本体として加え、『強敵キャラ』ではなく『世界を終わらせる最終存在』へ引き上げる。",
+      "gate": "王の身体は細いまま、背後機構が身体の3倍以上の面積を持つ。仮面・心核・王冠の順に読め、5つのOVERLIMITが装飾ではなく構造として見える。384px透過素材をゲーム内220〜280px表示しても巨大さを感じる案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "final-eclipse-world-engine-v9-a",
+          "title": "Eclipse World-King",
+          "titleJa": "地核蝕王",
+          "variation": "細身の闇王が、五機核を従えた巨大な黒い太陽そのものを背負う。",
+          "prompt": "A single complete composite ultimate final boss assembly called the Eclipse World-King. At the center floats an unmistakably slender tall dark machine monarch with long narrow limbs, fitted black ceramic armor, split ivory mask, tiny five-color heart and one calm hand extended. The actual boss body is a colossal broken black-sun world engine behind the king, at least three times the monarch's area, with a jagged crown ring and five large different mechanical reliquaries orbiting the eclipse, connected by cyan-white current. A torn mantle made from negative space merges the thin king into the eclipse. The silhouette must instantly read as a world-ending true final boss, not a regular humanoid enemy. Premium authored 16-bit pixel art boss sprite, crisp large deliberate pixel clusters, hard one-to-two pixel outline, deep navy near-black antique gold warm ivory and electric cyan with five restrained accent cores, centered square composition, all machinery fully contained, readable at 220 to 280 pixel game display, isolated complete composite object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no giant round humanoid body, no bulky king, no chibi, no horns, no exposed skeleton, no feather wings, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 384,
+          "height": 384,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-eclipse-world-engine-v9-a.png",
+          "referenceFile": "docs/art-direction/prime-current-eclipse-king-reference.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T13:38:08.608Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 95,
+            "summary": "黒い太陽、雷環、外周機核によって前回案より明確に世界規模へ到達。細身の王体も中央で読みやすく、PROJECT CHARGEらしい最終形です。",
+            "strengths": [
+              "王本体と巨大機関の主従関係が明確",
+              "円形シルエットが戦闘UIの背景演出と相性が良い",
+              "黒・金・シアンが既存アートへ最も自然に接続"
+            ],
+            "concerns": [
+              "外周機核が明示的には4基に見える",
+              "王体がC案より少し重装に見える",
+              "採用時は5基目を胸部または最背面レイヤーとして補う"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-infinite-throne-v9-b",
+          "title": "Infinite Throne",
+          "titleJa": "無限機関王座",
+          "variation": "静かに座す細身の王は意識核にすぎず、巨大な逆聖堂王座と五つの手が真の身体。",
+          "prompt": "A single complete composite ultimate final boss called the Infinite Throne. A slender black mechanical sovereign sits or levitates perfectly still in the center, with a long narrow body, elegant hands folded, split ivory mask, five disconnected conductor crown blades and a tiny five-color heart. The true body is an enormous inverted-cathedral throne engine surrounding and dwarfing the monarch, at least three times the figure's area: black-gold arches, a deep empty central cavity, branching cables and five gigantic articulated mechanical hands, each palm holding one different colored stolen core. The structure should appear to continue beyond reality while remaining fully contained in the sprite silhouette. Premium authored 16-bit pixel art boss sprite, crisp large deliberate pixel clusters, hard one-to-two pixel outline, deep navy near-black antique gold warm ivory and electric cyan with restrained five-color cores, centered square composition with monumental throne framing the thin king, readable at 220 to 280 pixel game display, isolated complete composite object on transparent background, no scenery, no floor, no ordinary chair, no text, no logo, no watermark, no blur, no antialiasing, no bulky humanoid armor, no chibi, no demon horns, no skull, no feather wings, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 384,
+          "height": 384,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-infinite-throne-v9-b.png",
+          "referenceFile": "docs/art-direction/prime-current-infinite-throne-reference.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T13:38:55.398Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 89,
+            "summary": "五つの力を握る王座という物語性は最も強く、静かな支配者として成立。ただし透過素材単体では高解像度リファレンスほど王座の無限性が出ず、横幅も控えめです。",
+            "strengths": [
+              "王座と複数腕で5ギア統合を説明できる",
+              "座した姿が他形態と明確に差別化",
+              "仮面・王冠・心核の視認性が高い"
+            ],
+            "concerns": [
+              "A・Cより画面占有と最終戦の圧が弱い",
+              "通常の皇帝ボスにも見えうる",
+              "採用時は背景王座を別レイヤーで画面外まで拡張する必要がある"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-fallen-machine-seraph-v9-c",
+          "title": "Fallen Machine Seraph",
+          "titleJa": "闇堕機天使",
+          "variation": "細身の原初王が闇堕ちし、六枚の巨大な導体翼と逆光輪を持つ悲劇的な堕天機構へ変貌。",
+          "prompt": "A single complete composite ultimate final boss called the Fallen Machine Seraph, a corrupted dark angel-king world engine. At the center floats a very slender androgynous machine ruler with a narrow black body, long limbs, cracked ivory mask, tiny five-color heart and a broken crown fused to an inverted halo. Behind the thin body unfolds a colossal system of six asymmetric mechanical wings at least four times the body's area: black conductor blades, torn cable pinions, void membranes and cyan lightning veins, never ordinary feathers or bat wings. Five dark-star OVERLIMIT cores are embedded across the wings and a central empty black halo devours light. Lower wings dissolve into enormous shadow-current hands. Tragic beauty, fallen majesty and cosmic danger must dominate, not a generic demon. Premium authored 16-bit pixel art boss sprite, crisp large deliberate pixel clusters, hard one-to-two pixel outline, near-black deep navy tarnished silver warm ivory antique gold electric cyan with restrained violet and crimson corruption, centered square composition, all six wing structures fully contained and readable at 220 to 280 pixel game display, isolated complete composite object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no human skin, no visible skull or skeleton, no chibi, no bulky armor, no generic demon horns, no ordinary feathered angel, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 384,
+          "height": 384,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-fallen-machine-seraph-v9-c.png",
+          "referenceFile": "docs/art-direction/prime-current-fallen-seraph-reference.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T13:39:42.508Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 98,
+            "summary": "暫定本命。細い闇王、逆光輪、巨大な導体翼、五つの暗黒心核が一目で『闇堕ちした世界機関』と伝わり、今回初めて本当のラスボス感とスタイリッシュさが両立しました。",
+            "strengths": [
+              "身体は細いまま翼機構で圧倒的な横幅を獲得",
+              "仮面→心核→逆光輪の視線誘導が強い",
+              "悲劇性と危険性が同時に読める",
+              "紙芝居・形態変化・戦闘カットインのすべてに使いやすい"
+            ],
+            "concerns": [
+              "生成画では六翼が四枚の主翼に統合されて見える",
+              "下部の影翼と残り2翼はGodot側の別レイヤーで補完したい",
+              "採用時はCだけ384px前提の表示領域へ拡張が必要"
             ]
           },
           "humanReview": {
