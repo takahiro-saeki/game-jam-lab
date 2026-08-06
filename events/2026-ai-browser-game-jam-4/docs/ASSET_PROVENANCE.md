@@ -1,5 +1,13 @@
 # Asset provenance
 
+## 2026-08-06 — PRIME CURRENT v8
+
+- PixelLab API (`pixen`) で本当のラスボス3形態を各3案、合計9枚生成。
+- レビューバッチ: `v8-final-boss-form-1`, `v8-final-boss-form-2`, `v8-final-boss-form-3`。
+- 暫定ゲーム採用: `final-crownless-reliquary-v8-b.png`, `final-null-cathedral-radial-v8-a.png`, `final-first-current-singular-v8-c.png`。
+- 残り6枚も人間レビューと差し替え比較のためリポジトリ内に保持。
+- 生成プロンプト、Codex評価、Human Review欄は `tools/art-review/data/review-manifest.json` に保存。
+
 Generated with OpenAI's built-in image generation tool on August 1, 2026. The outputs were resized to 1280px-wide JPEGs for the Godot Web build. Generated images contain no requested text, logos, trademarks, or franchise elements.
 
 The Japanese and Latin body UI typeface is [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp). Device labels and display headings use [DotGothic16](https://github.com/google/fonts/tree/main/ofl/dotgothic16). Both are distributed through Google Fonts under the SIL Open Font License 1.1; font files and license copies are stored in `godot/assets/fonts/`.

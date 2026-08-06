@@ -161,6 +161,39 @@ const TRUE_BOSS := {
 	"accent": "f5f0db",
 }
 
+const FINAL_BOSS_FORMS := [
+	{
+		"id": "prime_current_form_1",
+		"form": 1,
+		"name_ja": "無冠機神 プライム・カレント",
+		"name_en": "PRIME CURRENT — THE CROWNLESS ENGINE",
+		"rule_ja": "6秒ごとに手動指令とAUTO砲の有効系統が反転する",
+		"rule_en": "Its vulnerable command path alternates between manual and AUTO every six seconds",
+		"hp": 900000000.0,
+		"accent": "4deeea",
+	},
+	{
+		"id": "prime_current_form_2",
+		"form": 2,
+		"name_ja": "零相聖堂 プライム・カレント",
+		"name_en": "PRIME CURRENT — NULL CATHEDRAL",
+		"rule_ja": "臨界攻撃か6連続以上の手動指令で零相装甲を貫く",
+		"rule_en": "Critical hits or a manual streak of six pierce its null-phase armor",
+		"hp": 3600000000.0,
+		"accent": "9b5de5",
+	},
+	{
+		"id": "prime_current_form_3",
+		"form": 3,
+		"name_ja": "原初電流 プライム・カレント",
+		"name_en": "PRIME CURRENT — THE FIRST CURRENT",
+		"rule_ja": "損傷が進むほど原初電流が露出し、すべての攻撃出力が加速する",
+		"rule_en": "As the shell fails, the first current is exposed and all damage accelerates",
+		"hp": 14400000000.0,
+		"accent": "f5f0db",
+	},
+]
+
 const ENCOUNTER_SCALING := [1.0, 1.62, 2.55, 35.0, 180.0, 1000.0]
 
 static func stage(id: String) -> Dictionary:
@@ -175,6 +208,9 @@ static func boss(id: String) -> Dictionary:
 			return definition.duplicate(true)
 	if id == str(TRUE_BOSS.id):
 		return TRUE_BOSS.duplicate(true)
+	for definition in FINAL_BOSS_FORMS:
+		if str(definition.id) == id:
+			return definition.duplicate(true)
 	return {}
 
 static func stage_ids() -> Array[String]:
@@ -186,6 +222,12 @@ static func stage_ids() -> Array[String]:
 static func boss_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for definition in BOSSES:
+		ids.append(str(definition.id))
+	return ids
+
+static func final_boss_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for definition in FINAL_BOSS_FORMS:
 		ids.append(str(definition.id))
 	return ids
 

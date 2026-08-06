@@ -15,6 +15,10 @@ enum RoutePhase {
 	SINGULARITY,
 	TRUE_END,
 	INFINITE,
+	POST_TRUE_CHOICE,
+	FINAL_BOSS,
+	FINAL_END,
+	POSTGAME,
 }
 
 var phase := RoutePhase.MAP
@@ -26,6 +30,11 @@ var defeated_boss_ids: Array[String] = []
 var first_boss_id := ""
 var normal_end_seen := false
 var true_end_seen := false
+var world_engine_credits_seen := false
+var deep_signal_answered := false
+var final_boss_form := 0
+var final_boss_defeated := false
+var final_credits_seen := false
 var infinite_wave := 0
 var infinite_best_wave := 0
 
@@ -39,6 +48,11 @@ func reset() -> void:
 	first_boss_id = ""
 	normal_end_seen = false
 	true_end_seen = false
+	world_engine_credits_seen = false
+	deep_signal_answered = false
+	final_boss_form = 0
+	final_boss_defeated = false
+	final_credits_seen = false
 	infinite_wave = 0
 	infinite_best_wave = 0
 
@@ -93,14 +107,24 @@ func choose_first_boss(id: String) -> bool:
 	return true
 
 func defeat_current_boss() -> bool:
-	if phase not in [RoutePhase.BOSS, RoutePhase.ENHANCED_BOSS, RoutePhase.SINGULARITY]:
+	if phase not in [RoutePhase.BOSS, RoutePhase.ENHANCED_BOSS, RoutePhase.SINGULARITY, RoutePhase.FINAL_BOSS]:
 		return false
 	if current_boss_id.is_empty():
 		return false
 	if current_boss_id == str(Catalog.TRUE_BOSS.id):
 		true_end_seen = true
-		phase = RoutePhase.TRUE_END
+		phase = RoutePhase.POST_TRUE_CHOICE
 		current_boss_id = ""
+		return true
+	if current_boss_id in Catalog.final_boss_ids():
+		if final_boss_form < Catalog.FINAL_BOSS_FORMS.size():
+			final_boss_form += 1
+			current_boss_id = str(Catalog.FINAL_BOSS_FORMS[final_boss_form - 1].id)
+			phase = RoutePhase.FINAL_BOSS
+		else:
+			final_boss_defeated = true
+			current_boss_id = ""
+			phase = RoutePhase.FINAL_END
 		return true
 	if current_boss_id not in Catalog.boss_ids():
 		return false
@@ -141,7 +165,7 @@ func true_route_ready() -> bool:
 	return completed_stage_ids.size() == Catalog.STAGES.size() and defeated_boss_ids.size() == Catalog.BOSSES.size()
 
 func start_infinite() -> bool:
-	if phase != RoutePhase.TRUE_END or not true_end_seen:
+	if phase not in [RoutePhase.POST_TRUE_CHOICE, RoutePhase.POSTGAME] or not true_end_seen:
 		return false
 	infinite_wave = maxi(1, infinite_wave)
 	phase = RoutePhase.INFINITE
@@ -157,12 +181,34 @@ func complete_infinite_wave() -> bool:
 func leave_infinite() -> bool:
 	if phase != RoutePhase.INFINITE or not true_end_seen:
 		return false
-	phase = RoutePhase.TRUE_END
+	phase = RoutePhase.POSTGAME if final_boss_defeated else RoutePhase.POST_TRUE_CHOICE
+	return true
+
+func choose_world_engine_credits() -> bool:
+	if phase != RoutePhase.POST_TRUE_CHOICE or not true_end_seen:
+		return false
+	world_engine_credits_seen = true
+	return true
+
+func answer_deep_signal() -> bool:
+	if phase != RoutePhase.POST_TRUE_CHOICE or not true_end_seen:
+		return false
+	deep_signal_answered = true
+	final_boss_form = 1
+	current_boss_id = str(Catalog.FINAL_BOSS_FORMS[0].id)
+	phase = RoutePhase.FINAL_BOSS
+	return true
+
+func complete_final_credits() -> bool:
+	if phase != RoutePhase.FINAL_END or not final_boss_defeated:
+		return false
+	final_credits_seen = true
+	phase = RoutePhase.POSTGAME
 	return true
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 3,
+		"version": 4,
 		"phase": phase,
 		"current_stage_id": current_stage_id,
 		"current_boss_id": current_boss_id,
@@ -172,12 +218,18 @@ func snapshot() -> Dictionary:
 		"first_boss_id": first_boss_id,
 		"normal_end_seen": normal_end_seen,
 		"true_end_seen": true_end_seen,
+		"world_engine_credits_seen": world_engine_credits_seen,
+		"deep_signal_answered": deep_signal_answered,
+		"final_boss_form": final_boss_form,
+		"final_boss_defeated": final_boss_defeated,
+		"final_credits_seen": final_credits_seen,
 		"infinite_wave": infinite_wave,
 		"infinite_best_wave": infinite_best_wave,
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
-	if int(data.get("version", 0)) not in [2, 3]:
+	var version := int(data.get("version", 0))
+	if version not in [2, 3, 4]:
 		return false
 	reset()
 	var valid_stages := Catalog.stage_ids()
@@ -200,16 +252,23 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if current_stage_id not in valid_stages or current_stage_id in completed_stage_ids:
 		current_stage_id = ""
 	current_boss_id = str(data.get("current_boss_id", ""))
-	if current_boss_id not in valid_bosses and current_boss_id != str(Catalog.TRUE_BOSS.id):
+	if current_boss_id not in valid_bosses and current_boss_id != str(Catalog.TRUE_BOSS.id) and current_boss_id not in Catalog.final_boss_ids():
 		current_boss_id = ""
 	normal_end_seen = bool(data.get("normal_end_seen", false))
 	true_end_seen = bool(data.get("true_end_seen", false))
+	world_engine_credits_seen = bool(data.get("world_engine_credits_seen", false))
+	deep_signal_answered = bool(data.get("deep_signal_answered", false))
+	final_boss_form = clampi(int(data.get("final_boss_form", 0)), 0, Catalog.FINAL_BOSS_FORMS.size())
+	final_boss_defeated = bool(data.get("final_boss_defeated", false))
+	final_credits_seen = bool(data.get("final_credits_seen", false))
 	infinite_wave = maxi(0, int(data.get("infinite_wave", 0)))
 	infinite_best_wave = maxi(0, int(data.get("infinite_best_wave", 0)))
-	phase = clampi(int(data.get("phase", RoutePhase.MAP)), RoutePhase.MAP, RoutePhase.INFINITE)
+	phase = clampi(int(data.get("phase", RoutePhase.MAP)), RoutePhase.MAP, RoutePhase.POSTGAME)
+	if version <= 3 and phase == RoutePhase.TRUE_END:
+		phase = RoutePhase.POST_TRUE_CHOICE
 	if phase == RoutePhase.STAGE and current_stage_id.is_empty():
 		phase = RoutePhase.TRUE_MAP if normal_end_seen else RoutePhase.MAP
-	if phase in [RoutePhase.BOSS, RoutePhase.ENHANCED_BOSS, RoutePhase.SINGULARITY] and current_boss_id.is_empty():
+	if phase in [RoutePhase.BOSS, RoutePhase.ENHANCED_BOSS, RoutePhase.SINGULARITY, RoutePhase.FINAL_BOSS] and current_boss_id.is_empty():
 		phase = RoutePhase.TRUE_MAP if normal_end_seen else RoutePhase.BOSS_SELECT
 	if phase == RoutePhase.INFINITE and not true_end_seen:
 		phase = RoutePhase.MAP

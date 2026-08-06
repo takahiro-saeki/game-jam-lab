@@ -14,7 +14,7 @@
 3. **CAPACITOR DEFENSE** — a circuit-routing tower defense driven by visible energy packets.
 4. **PROJECT CHARGE** — a mechanical-beast hunting clicker where every input attacks or issues a PURE command, while five visible machines expand through 86 branching skills and permanent stolen-core synergies.
 
-The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE has been rebuilt around six visible mechanical-beast battles: any three hunts lead to a chosen normal boss and ending, while the remaining beasts, enhanced boss, and ARCH SINGULARITY form its optional true route.
+The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE has been rebuilt around six visible mechanical-beast battles: any three hunts lead to a chosen normal boss and ending, while the remaining beasts and ARCH SINGULARITY lead to a persistent two-choice epilogue and an optional three-form ultimate boss.
 
 ## Selected concept: PROJECT CHARGE
 
@@ -22,7 +22,8 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 
 - [Original active-clicker concept](docs/CHARGE_CLICKER_GDD.md)
 - [Previous v5 five-gear specification](docs/PROJECT_CHARGE_V5_GDD.md)
-- [Current v7 PURE COMMAND / records / Infinite specification](docs/PROJECT_CHARGE_V7_GDD.md)
+- [Previous v7 PURE COMMAND / records / Infinite specification](docs/PROJECT_CHARGE_V7_GDD.md)
+- [Current v8 OVERLIMIT / PRIME CURRENT specification](docs/PROJECT_CHARGE_V8_GDD.md)
 - [Archived v6 tiered-overclock specification](docs/PROJECT_CHARGE_V6_GDD.md)
 - [Previous v4 direct-CHARGE specification](docs/PROJECT_CHARGE_V4_GDD.md)
 - [Production and validation plan](docs/CHARGE_CLICKER_PRODUCTION_PLAN.md)
@@ -72,7 +73,7 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 
 ### PROJECT CHARGE
 
-- Choose any three of six mechanical beasts, defeat one of two abyssal bosses, and reach the normal ending. Continue with the same build through the remaining hunts, enhanced boss, and ARCH SINGULARITY for the true ending.
+- Choose any three of six mechanical beasts, defeat one of two abyssal bosses, and reach the normal ending. Continue with the same build through the remaining hunts, enhanced boss, and ARCH SINGULARITY. After its credits, Continue returns to a persistent choice between ascending and answering the deeper signal.
 - Press the large **CHARGE ATTACK** button, `Space`, `Enter` / `X`, right-click, or the configured gamepad action. One input always produces exactly one manual command; holding a key never creates hidden auto-clicks.
 - The AUTO cannon fires from the beginning and remains online while manual attacks continue; no activation purchase or toggle is required.
 - Heat, cooling, meltdown, stored cells, and mandatory DISCHARGE have been removed. Enemy mechanics provide bonus windows and never erase progress.
@@ -80,17 +81,18 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 - The human-selected Volt Nomad is visible as the player character during every fight, with separate idle, pile-driver recoil, and PURE COMMAND feedback. Scrap Mine, Geothermal Core, and Biocircuit Crystal backgrounds switch automatically with the selected enemy.
 - The Dynamo tree eventually unlocks **PURE COMMAND**. It permanently replaces the weaker direct click, generates six times the CHARGE, builds AUTO overcharge, places marks, and preserves indirect Striker command effects.
 - Gatling and Rail mutations can both be completed and fuse into the Hybrid barrel. Core Frame nodes require the corresponding defeated-beast core, so hunt order changes which builds become available.
-- Ten persistent hunt records cover normal campaign goals, including all 317 skill ranks. Infinite Mode opens after the true ending as an optional CHARGE workshop with escalating waves and no exclusive achievements.
+- Ten persistent hunt records cover normal campaign goals, including all 317 skill ranks. Infinite Mode is an optional CHARGE workshop with escalating waves and no exclusive achievements or wave-gated abilities.
 - Open a tree by clicking one of the five gear cards, pressing `1`–`5` / `T`, or gamepad `Menu`. Navigate nodes with the D-pad, switch gear with `Q` / `E` or shoulder buttons, and purchase with `Enter` / gamepad `A`.
-- TIER II unlocks after the first normal boss; TIER III unlocks after all six beast cores. Switch the visible tier with `Z` / `X` or the mapped language/active button while the tree is open.
+- TIER II unlocks after the first normal boss; TIER III unlocks after all six beast cores. ARCH SINGULARITY unlocks permanent TIER IV OVERLIMIT restoration. Switch the visible tier with `Z` / `X` or the mapped language/active button while the tree is open.
+- OVERLIMIT has no equipment slots or exclusions: all five acquired rewrites remain active simultaneously. The first is free with the recovered Singularity Residue; later restorations cost escalating CHARGE and survive standard skill respec.
 - Respec all five trees for free from the hunt map. Exact current and maximum enemy HP are always shown beside the percentage gauge.
 - Each beast changes the optimal rhythm through positive targets: timed armor breaks, CHARGE milestones, upgrade overdrive, manual/AUTO chains, drone marking, and analysis-guaranteed criticals.
 - Every defeated beast grants a named core automatically. Its rule becomes a permanent player ability for later battles.
-- GRID LEECH opens a short eight-click shatter window. THERMAL TITAN exposes its furnace after twenty clicks. The true boss rotates through three bonus-driven trials based on the full build.
+- GRID LEECH opens a short eight-click shatter window. THERMAL TITAN exposes its furnace after twenty clicks. ARCH rotates through three bonus-driven trials. The optional PRIME CURRENT then fights across Crownless Engine, Null Cathedral, and First Current forms.
 - Progress, CHARGE, upgrade ranks, acquired cores, enemy HP, and the current hunt save automatically and resume after closing the browser.
 - Use the arrow keys, D-pad, or left stick on maps and the skill tree. Ending results can be copied with `C` or the configured active-ability button.
 - The header tracks total session time. Normal and true endings expose a detailed JSON report and append it locally, while the deterministic benchmark runner records comparable automated clear times.
-- Eleven human-selected Suno tracks give all nine enemies unique battle music plus dedicated map/tree and ending themes, with a short crossfade. Press `M` to toggle music; the choice is saved.
+- Human-selected Suno tracks give the original nine enemies unique battle music plus map/tree and normal-ending themes. v8 adds independent composition slots for the three-form PRIME CURRENT suite, world-engine credits, and true credits; existing masters are distinct provisional fallbacks until the new Suno selections are imported.
 - To erase the campaign and start over, press `R` twice within the three-second confirmation window. Persistent hunt records remain unlocked.
 
 ## Local development
@@ -125,7 +127,7 @@ godot --headless --path events/2026-ai-browser-game-jam-4/godot \
 ## AI and asset disclosure
 
 - Game concepts, GDScript implementation, testing, balancing, and documentation were created in collaboration with OpenAI Codex.
-- The three original launcher/key-art images and the ZERO PERCENT CITY gameplay backdrop were created with OpenAI image generation from original prompts written for this project. PROJECT CHARGE combines procedural Godot effects with original PixelLab machinery, UI, and nine mechanical-beast candidates; prompts, API settings, generations used, and selection notes are recorded locally.
+- The three original launcher/key-art images and the ZERO PERCENT CITY gameplay backdrop were created with OpenAI image generation from original prompts written for this project. PROJECT CHARGE combines procedural Godot effects with original PixelLab machinery, UI, mechanical beasts, and nine new PRIME CURRENT form candidates; prompts, API settings, generations used, and selection notes are recorded locally.
 - PROJECT CHARGE uses eleven original instrumental Suno generations selected by the user from A/B candidates. All nine enemies have exclusive battle music, with separate map/tree and ending tracks. Exact song URLs, IDs, processing, and runtime assignments are recorded in [`docs/SUNO_MUSIC_BRIEF.md`](docs/SUNO_MUSIC_BRIEF.md).
 - No third-party game code, trademarked characters, or downloaded art assets are included.
 - Japanese UI text uses Noto Sans JP from Google Fonts under the SIL Open Font License 1.1; the license is included at [`godot/assets/fonts/OFL-NotoSansJP.txt`](godot/assets/fonts/OFL-NotoSansJP.txt).
@@ -135,4 +137,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v7 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 86 nodes and 317 ranks across three progression tiers, permanent PURE COMMAND evolution, six automatically integrated beast cores, two boss cores, two selectable bosses, a normal ending, continuous true route, enhanced boss, three-phase true boss, persistent achievements, post-ending Infinite Mode, bilingual UI/results, atomic saves, playtest telemetry, eleven scene-reactive mastered tracks with exclusive BGM for all nine enemies, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the normal/full routes in about 6.4/10.7 minutes at five inputs per second and 14.6/21.9 minutes at two inputs per second; first-time human targets remain 18–25 and 45–70 minutes. PixelLab candidates, prompts, human reviews, and selected integrations remain recorded locally; Volt Nomad is the approved v6 protagonist art.
+The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v8 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 86 standard nodes and 317 ranks, five permanent simultaneous OVERLIMIT rewrites, PURE COMMAND evolution, eight stolen cores, normal and world-engine endings, a three-form PRIME CURRENT final chapter, an eight-scene skippable true-ending slideshow, persistent achievements, optional Infinite Mode, bilingual UI/results, atomic saves, playtest telemetry, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the original normal/full routes in about 6.4/10.7 minutes at five inputs per second; PRIME CURRENT takes about 11.6–12.8 minutes with one OVERLIMIT or 2.7 minutes with all five in the maximum-rank benchmark. Nine PixelLab final-boss proposals and their reviews are recorded locally; Volt Nomad remains the approved protagonist art.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-05T05:57:33.381Z",
+  "updatedAt": "2026-08-06T09:10:08.178Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -29,7 +29,10 @@
       "v5GearCore": "gear-core-cradle-a",
       "v5BackgroundScrap": "bg-scrap-ossuary-a",
       "v5BackgroundGeothermal": "bg-geo-pressure-foundry-a",
-      "v5BackgroundBiocrystal": "bg-biocrystal-observatory-a"
+      "v5BackgroundBiocrystal": "bg-biocrystal-observatory-a",
+      "v8FinalBossForm1": "final-crownless-reliquary-v8-b",
+      "v8FinalBossForm2": "final-null-cathedral-radial-v8-a",
+      "v8FinalBossForm3": "final-first-current-singular-v8-c"
     },
     "palette": [
       "#09111F",
@@ -3960,6 +3963,390 @@
             "rating": null,
             "note": "",
             "reviewedAt": "2026-08-05T05:57:33.381Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v8-final-boss-form-1",
+      "order": 24,
+      "title": "Prime Current form I",
+      "titleJa": "本当のラスボス・第1形態 無冠機神",
+      "objective": "まだ機械として理解できる巨大な古代機神を作り、アーク・シンギュラリティのさらに奥にいた存在だと一目で伝える。",
+      "gate": "128〜180px表示で頭部、封印された胸部炉、左右の攻撃器官が読め、次形態へ展開できる1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "final-crownless-bastion-v8-a",
+          "title": "Crownless Bastion",
+          "titleJa": "無冠の城塞機",
+          "variation": "Broad ancient armored god-engine with a missing crown socket and sealed cyan reactor.",
+          "prompt": "A single original colossal ancient machine deity called the Crownless Engine, front three-quarter pose facing left, broad armored torso like a mobile underground fortress, empty broken crown socket above a small ivory mask, sealed circular cyan reactor in the chest, asymmetric piston arm and cable-claw arm, five dormant colored conduits converging toward the heart, tragic guardian rather than evil demon. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-crownless-bastion-v8-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:04:15.054Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 88,
+            "summary": "城塞級の重量感と胸部炉は強い一方、頭部の王冠が『無冠』という設定と衝突します。",
+            "strengths": ["重装第一形態として明快", "胸部炉が小表示でも読める"],
+            "concerns": ["王冠が残っている", "既存パレットより褐色が強い"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-crownless-reliquary-v8-b",
+          "title": "Walking Reliquary",
+          "titleJa": "歩行機核櫃",
+          "variation": "Tall skeletal guardian carrying an enormous locked core reliquary inside its ribs.",
+          "prompt": "A single original towering ancient machine guardian called the Crownless Engine, tall skeletal industrial silhouette, long articulated legs, rib-like armor protecting an enormous locked cyan-and-amber core reliquary, crown removed leaving two broken antenna horns, one heavy breaker fist and one elegant conductor hand, hanging cables like a torn mantle, five small colored core lights orbiting the chest, solemn and unknowably old. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-crownless-reliquary-v8-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:04:51.138Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 94,
+            "summary": "暫定採用。黒い歩行城塞の輪郭、封印炉、左右非対称の兵装が最もラスボス第一形態らしく読めます。",
+            "strengths": ["ゲーム内縮小でも巨大さが残る", "第二形態へ崩せる暗い機核構造"],
+            "concerns": ["小さな冠状部品は設定上『破損した接続端子』として扱う"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-crownless-pilgrim-v8-c",
+          "title": "Buried Pilgrim",
+          "titleJa": "埋葬巡礼機",
+          "variation": "Leaner mirrored ancestor of the protagonist, made colossal by layered buried machinery.",
+          "prompt": "A single original ancient god-engine called the Crownless Engine, a colossal tragic ancestor that subtly mirrors the slender Volt Nomad hero, elegant humanoid mask, long mechanical limbs enlarged by layered buried machinery, one telescoping strike arm, open conductor hand, cracked circular chest seal leaking cyan current, missing crown represented by an empty halo-shaped machine mount, five colored cables bound around the torso, poised and restrained before awakening. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-crownless-pilgrim-v8-c.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:05:34.146Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 85,
+            "summary": "主人公との鏡像関係は美しいですが、細身で清潔なため第一形態の圧倒的重量が不足します。",
+            "strengths": ["主人公との物語的な類似", "白い装甲が暗背景で映える"],
+            "concerns": ["中ボス寄りの体格", "王冠と輪が設定を先に語りすぎる"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v8-final-boss-form-2",
+      "order": 25,
+      "title": "Prime Current form II",
+      "titleJa": "本当のラスボス・第2形態 零相聖堂",
+      "objective": "第1形態の身体が開いて戦場そのものになる中間形態。中心核と三つの攻撃方向を小表示でも読む。",
+      "gate": "第1形態との同一性、展開した三角または放射構造、中心の零相核が同時に成立する1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "final-null-cathedral-radial-v8-a",
+          "title": "Radial Null Cathedral",
+          "titleJa": "放射零相聖堂",
+          "variation": "The torso opens into six radial machine arches around a black central core.",
+          "prompt": "A single original second-form ancient god-engine called the Null Cathedral, the Crownless Engine unfolded into six radial mechanical arches around a perfectly black central core rimmed with cyan current, recognizable mask split above the center, piston arm and cable claw transformed into opposing weapon pylons, five colored conduits forming a converging star, vast but presented as one isolated boss object, abstract sacred machinery without real religious symbols. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-null-cathedral-radial-v8-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:06:13.269Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "暫定採用。人型を捨てた放射炉と顔のような零相核が、第二形態への変貌を最も強く伝えます。",
+            "strengths": ["一目で形態変化が分かる", "中心核と左右器官が小表示でも明瞭"],
+            "concerns": ["第一形態との共通部品をGodotの遷移演出で補強する"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-null-cathedral-triad-v8-b",
+          "title": "Triad Gate",
+          "titleJa": "三門位相機",
+          "variation": "Three giant weapon-gates form a triangular enclosure around the exposed engine heart.",
+          "prompt": "A single original second-form machine deity called the Null Cathedral, the previous humanoid shell broken into three immense triangular weapon gates enclosing an exposed cyan-white engine heart, fragments of the ivory face mounted at the top gate, breaker mechanisms at left, drone lattice at right, dynamo coils below, five OVERLIMIT colors crossing through the center, visually aggressive triangular silhouette, one complete isolated boss object. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-null-cathedral-triad-v8-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:06:54.576Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 76,
+            "summary": "三角構図は強いものの、人間の顔と記号的な形が世界観から浮き、機械魔獣としての独自性を弱めます。",
+            "strengths": ["三方向の攻撃を想像しやすい"],
+            "concerns": ["生身の人物に見える", "中央の記号が既存宗教・錬金術風に読める"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-null-cathedral-organ-v8-c",
+          "title": "Current Organ",
+          "titleJa": "電流機関堂",
+          "variation": "Vertical organ-like conduits and suspended armor create a tall readable ritual machine.",
+          "prompt": "A single original second-form god-engine called the Null Cathedral, tall vertical body unfolded into organ-like current pipes and suspended navy armor plates, familiar crownless head floating above a void core, two long armatures framing the silhouette, cyan current climbing through five restrained colored channels, central empty cavity shaped like a broken reactor rather than a building, elegant ominous machine ritual, one complete isolated object. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-null-cathedral-organ-v8-c.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:07:51.184Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 87,
+            "summary": "縦長で気品があり同一個体にも見えますが、変貌量が小さく第二形態の驚きは弱めです。",
+            "strengths": ["第1形態との連続性が高い", "既存配色との親和性"],
+            "concerns": ["人型のままで形態差が小さい", "空洞の読み取りに大表示が必要"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v8-final-boss-form-3",
+      "order": 26,
+      "title": "Prime Current form III",
+      "titleJa": "本当のラスボス・第3形態 原初電流",
+      "objective": "装甲を失い、動力と記憶だけになった最終形態。強大さと悲しさを同時に伝え、真エンド紙芝居にも使う。",
+      "gate": "白〜シアンの電流骨格、残された仮面または炉、五色の収束が暗背景で明瞭な1案を選ぶ。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "final-first-current-seraph-v8-a",
+          "title": "Current Seraph",
+          "titleJa": "電流翼機",
+          "variation": "A skeletal current body with five asymmetric machine wings and the old mask at its center.",
+          "prompt": "A single original final-form entity called the First Current, most armor gone, a lean skeletal humanoid body made of white-cyan electricity and exposed dark machine bones, the old small ivory mask and cracked chest core still recognizable, five asymmetric mechanical current wings colored subtly cyan amber violet coral mint, open hands, tragic and overwhelmingly powerful, clean iconic silhouette suitable for a true-ending illustration. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-first-current-seraph-v8-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:08:47.953Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 73,
+            "summary": "電流骨格という狙いは出ていますが、骸骨と翼の図像が強く、PROJECT CHARGE固有の機械性を失っています。",
+            "strengths": ["装甲喪失が即座に伝わる"],
+            "concerns": ["骸骨天使の既視感", "ピクセル表現が細く縮小に弱い"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-first-current-filament-v8-b",
+          "title": "Filament Ancestor",
+          "titleJa": "線維祖機",
+          "variation": "A narrow giant woven from cables and lightning, echoing the hero's silhouette.",
+          "prompt": "A single original final-form ancient machine consciousness called the First Current, a narrow towering figure woven entirely from exposed cables, luminous cyan filaments and fragments of navy armor, proportions echo the slender Volt Nomad hero, faceless ivory half-mask, one remaining telescoping forearm and one dissolving conductor hand, five colored currents braided through a brilliant circular heart, lonely ancestor and final adversary, strong readable pose. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-first-current-filament-v8-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:09:38.935Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 84,
+            "summary": "主人公の祖型という物語性は優秀ですが、等身と装備が近すぎてラスボス最終形態のスケールが不足します。",
+            "strengths": ["主人公との鏡像が成立", "細身の輪郭が読みやすい"],
+            "concerns": ["プレイヤーキャラに見える", "原初電流の異質さが弱い"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "final-first-current-singular-v8-c",
+          "title": "Singular Heart",
+          "titleJa": "原初単核",
+          "variation": "The body collapses into an immense eye-like reactor with only phantom limbs of current.",
+          "prompt": "A single original final-form entity called the First Current, its body collapsed into an immense eye-like circular reactor heart with a tiny broken ivory mask suspended inside, four phantom limbs and a crownless arc drawn in white-cyan electricity, five colored OVERLIMIT streams spiraling into the central singular heart, less humanoid but emotionally readable as exhausted ancient machinery, iconic final-boss silhouette and ending illustration. Premium authored 16-bit pixel art, crisp large pixel clusters, limited deep navy cyan amber violet coral warm ivory palette, hard one-to-two pixel outline, readable at 128 to 180 pixels, isolated complete object on transparent background, no scenery, no floor, no text, no logo, no watermark, no blur, no antialiasing, no real religious symbol, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/enemy/final-first-current-singular-v8-c.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-06T09:10:08.178Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 96,
+            "summary": "暫定採用。巨大な単核、五色の電流、内部に残る顔が『人格だけが炉に残った』最終形態を独創的に表現します。",
+            "strengths": ["一枚で最終形態と分かる象徴性", "真エンディング紙芝居にも強い"],
+            "concerns": ["王冠は支配の象徴ではなく旧接続端子の残像として演出する"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
           }
         }
       ]

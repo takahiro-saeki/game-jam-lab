@@ -1,6 +1,7 @@
 extends SceneTree
 
 const ChargeState = preload("res://games/charge_clicker/charge_state.gd")
+const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const OUTPUT_PATH := "res://tests/project_charge_benchmark.latest.json"
 
@@ -13,6 +14,12 @@ func _init() -> void:
 	for profile in profiles:
 		results.append(simulate_profile(profile, false))
 		results.append(simulate_profile(profile, true))
+	for definition in GearCatalog.OVERLIMITS:
+		results.append(simulate_prime_current([str(definition.id)], profiles[0]))
+	var all_overlimits: Array[String] = []
+	for definition in GearCatalog.OVERLIMITS:
+		all_overlimits.append(str(definition.id))
+	results.append(simulate_prime_current(all_overlimits, profiles[0]))
 	var payload := {
 		"schema_version": 1,
 		"build_id": ChargeState.BUILD_ID,
@@ -74,6 +81,42 @@ func drive_encounter(state, profile: Dictionary) -> void:
 		if state.stage_phase == state.StagePhase.CLEAR:
 			return
 	push_error("Benchmark encounter did not clear: %s" % state.current_encounter_id())
+
+func simulate_prime_current(overlimit_ids: Array[String], profile: Dictionary) -> Dictionary:
+	var state := ChargeState.new()
+	state.rng.seed = 144
+	state.set_playtest_mode("benchmark")
+	for definition in GearCatalog.SKILLS:
+		state.upgrade_levels[str(definition.id)] = int(definition.max_rank)
+	for core_id in ["impact_guidance", "deep_storage", "redheat_conversion", "cascade_relay", "swarm_clock", "phase_computation"]:
+		state.grant_beast_core(core_id)
+	state.grant_boss_core("predation_reversal")
+	state.grant_boss_core("furnace_sovereign")
+	state.refresh_stats()
+	state.unlock_overlimit_system()
+	state.credits = 5000000000
+	for id in overlimit_ids:
+		state.purchase_upgrade(id)
+	var start_time := state.elapsed
+	for definition in StageCatalog.FINAL_BOSS_FORMS:
+		state.begin_final_boss_form(str(definition.id), float(definition.hp), int(definition.form))
+		drive_final_encounter(state, profile)
+	var result := benchmark_result(state, profile, "prime_current")
+	result.total_seconds = state.elapsed - start_time
+	result.total_minutes = snappedf((state.elapsed - start_time) / 60.0, 0.01)
+	result.overlimits = overlimit_ids.duplicate()
+	result.overlimit_count = overlimit_ids.size()
+	return result
+
+func drive_final_encounter(state, profile: Dictionary) -> void:
+	var delta := float(profile.delta)
+	for step in range(240000):
+		state.manual_attack(-1)
+		state.advance_session_time(delta)
+		state.tick(delta, false)
+		if state.stage_phase == state.StagePhase.CLEAR:
+			return
+	push_error("Final benchmark encounter did not clear: %s" % state.current_encounter_id())
 
 func purchase_affordable_skills(state) -> void:
 	for pass_index in range(4):

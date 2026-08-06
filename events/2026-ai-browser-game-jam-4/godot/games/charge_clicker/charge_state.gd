@@ -11,11 +11,11 @@ const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const BOSS_MAX_HP := 6200.0
 const MAX_SKILL_RANK := 10
 const RESTORE_GOAL := 1.0
-const BUILD_ID := "v7-pure-command-infinite"
+const BUILD_ID := "v8-overlimit-prime-current"
 
 enum StagePhase { RESTORE, BOSS, REWARD, CLEAR }
 
-const UPGRADE_DEFINITIONS := GearCatalog.SKILLS
+const UPGRADE_DEFINITIONS := GearCatalog.SKILLS + GearCatalog.OVERLIMITS
 
 var credits := 0
 var lifetime_charge := 0
@@ -57,6 +57,12 @@ var target_marks := 0
 var auto_burst_counter := 0
 var support_counter := 0
 var world_hive_counter := 0
+var overlimit_system_unlocked := false
+var singularity_residue := 0
+var overlimit_invested_charge := 0
+var overlimit_trigger_counter := 0
+var perpetual_sun_meter := 0.0
+var perpetual_sun_timer := 0.0
 var infinite_mode := false
 var infinite_wave := 0
 
@@ -83,6 +89,8 @@ var current_build_tag := "manual"
 var current_boss_id := "gearmaw"
 var enhanced_boss := false
 var singularity_boss := false
+var final_boss := false
+var final_boss_form := 0
 var encounter_index := 0
 
 var beast_cores: Array[String] = []
@@ -163,6 +171,12 @@ func reset() -> void:
 	auto_burst_counter = 0
 	support_counter = 0
 	world_hive_counter = 0
+	overlimit_system_unlocked = false
+	singularity_residue = 0
+	overlimit_invested_charge = 0
+	overlimit_trigger_counter = 0
+	perpetual_sun_meter = 0.0
+	perpetual_sun_timer = 0.0
 	infinite_mode = false
 	infinite_wave = 0
 	upgrade_levels.clear()
@@ -182,6 +196,8 @@ func begin_stage(stage_id: String, build_tag: String, _unused_goal: float, hp: f
 	boss_max_hp = maxf(100.0, hp)
 	enhanced_boss = false
 	singularity_boss = false
+	final_boss = false
+	final_boss_form = 0
 	infinite_mode = false
 	infinite_wave = 0
 	reset_encounter()
@@ -193,6 +209,21 @@ func begin_campaign_boss(boss_id: String, hp: float, is_enhanced: bool = false, 
 	boss_max_hp = maxf(100.0, hp)
 	enhanced_boss = is_enhanced
 	singularity_boss = is_singularity
+	final_boss = false
+	final_boss_form = 0
+	infinite_mode = false
+	infinite_wave = 0
+	reset_encounter()
+
+func begin_final_boss_form(boss_id: String, hp: float, form: int) -> void:
+	current_stage_id = ""
+	current_build_tag = "overlimit"
+	current_boss_id = boss_id
+	boss_max_hp = maxf(100.0, hp)
+	enhanced_boss = false
+	singularity_boss = false
+	final_boss = true
+	final_boss_form = clampi(form, 1, 3)
 	infinite_mode = false
 	infinite_wave = 0
 	reset_encounter()
@@ -204,6 +235,8 @@ func begin_infinite_wave(encounter_id: String, hp: float, wave: int) -> void:
 	boss_max_hp = maxf(100.0, hp)
 	enhanced_boss = false
 	singularity_boss = false
+	final_boss = false
+	final_boss_form = 0
 	infinite_mode = true
 	infinite_wave = maxi(1, wave)
 	encounter_index = infinite_wave - 1
@@ -253,6 +286,9 @@ func reset_encounter() -> void:
 	auto_burst_counter = 0
 	support_counter = 0
 	world_hive_counter = 0
+	overlimit_trigger_counter = 0
+	perpetual_sun_meter = 0.0
+	perpetual_sun_timer = 0.0
 	encounter_recorded = false
 	encounter_started_session_time = session_elapsed
 	encounter_start_manual_inputs = manual_inputs
@@ -277,6 +313,8 @@ func current_encounter_kind() -> String:
 		return "infinite"
 	if singularity_boss:
 		return "true_boss"
+	if final_boss:
+		return "final_boss_form_%d" % final_boss_form
 	if enhanced_boss:
 		return "enhanced_boss"
 	return "beast" if not current_stage_id.is_empty() else "normal_boss"
@@ -376,6 +414,8 @@ func refresh_stats() -> void:
 	core_power = (1.0 + float(resonance_level) * 0.10) * pow(1.14, upgrade_level("dual_core_link"))
 
 func technology_tier() -> int:
+	if overlimit_system_unlocked:
+		return 4
 	if beast_cores.size() >= 6:
 		return 3
 	if not boss_cores.is_empty():
@@ -400,7 +440,30 @@ func global_output_multiplier() -> float:
 		multiplier *= 1.0 + float(upgrade_level("singularity_decoder")) * 0.10
 		if upgrade_level("world_engine_key") > 0:
 			multiplier *= 1.25
+	var active_overlimits := overlimit_count()
+	if active_overlimits > 0:
+		var overlimit_convergence := [1.0, 1.8, 3.2, 5.5, 9.0, 15.0]
+		multiplier *= float(overlimit_convergence[active_overlimits])
+	if perpetual_sun_timer > 0.0:
+		multiplier *= 3.5
 	return multiplier
+
+func unlock_overlimit_system() -> bool:
+	if overlimit_system_unlocked:
+		return false
+	overlimit_system_unlocked = true
+	singularity_residue = 1
+	return true
+
+func overlimit_count() -> int:
+	var total := 0
+	for definition in GearCatalog.OVERLIMITS:
+		if upgrade_level(str(definition.id)) > 0:
+			total += 1
+	return total
+
+func is_overlimit(id: String) -> bool:
+	return bool(upgrade_definition(id).get("overlimit", false))
 
 func upgrade_definition(id: String) -> Dictionary:
 	for definition in UPGRADE_DEFINITIONS:
@@ -416,6 +479,11 @@ func upgrade_cost(id: String) -> int:
 	var level := upgrade_level(id)
 	if definition.is_empty() or level >= int(definition.get("max_rank", MAX_SKILL_RANK)):
 		return 0
+	if bool(definition.get("overlimit", false)):
+		if singularity_residue > 0:
+			return 0
+		var restoration_costs := [20000000, 60000000, 180000000, 540000000]
+		return int(restoration_costs[clampi(overlimit_count() - 1, 0, restoration_costs.size() - 1)])
 	var raw_cost := float(definition.base_cost) * pow(float(definition.growth), level)
 	var discount := minf(0.48, float(upgrade_level("purchase_optimizer")) * 0.06 + float(upgrade_level("cost_compressor")) * 0.05)
 	return maxi(1, int(round(raw_cost * (1.0 - discount))))
@@ -430,6 +498,10 @@ func skill_unlocked(id: String) -> bool:
 		return false
 	if int(definition.get("tier", 1)) > technology_tier():
 		return false
+	if bool(definition.get("overlimit", false)):
+		var gear_id := str(definition.get("gear", ""))
+		if gear_level(gear_id) < GearCatalog.max_ranks_for_gear(gear_id):
+			return false
 	var parent := str(definition.get("parent", ""))
 	if not parent.is_empty() and upgrade_level(parent) < int(definition.get("parent_rank", 1)):
 		return false
@@ -450,6 +522,10 @@ func skill_lock_reason(id: String) -> String:
 	var required_tier := int(definition.get("tier", 1))
 	if required_tier > technology_tier():
 		return "tier:%d" % required_tier
+	if bool(definition.get("overlimit", false)):
+		var gear_id := str(definition.get("gear", ""))
+		if gear_level(gear_id) < GearCatalog.max_ranks_for_gear(gear_id):
+			return "gear_max:%s" % gear_id
 	var exclusive := str(definition.get("exclusive", ""))
 	if not exclusive.is_empty() and upgrade_level(exclusive) > 0:
 		return "exclusive:%s" % exclusive
@@ -471,7 +547,12 @@ func purchase_upgrade(id: String) -> bool:
 		return false
 	var paid := upgrade_cost(id)
 	credits -= paid
-	invested_charge += paid
+	if is_overlimit(id):
+		if singularity_residue > 0:
+			singularity_residue -= 1
+		overlimit_invested_charge += paid
+	else:
+		invested_charge += paid
 	upgrade_levels[id] = upgrade_level(id) + 1
 	if id == "zero_output_generator":
 		manual_mode = "generate"
@@ -497,27 +578,27 @@ func purchase_upgrade(id: String) -> bool:
 	if "furnace_sovereign" in boss_cores:
 		overdrive_timer = maxf(overdrive_timer, duration + 3.0 + float(upgrade_level("boss_matrix")) * 0.6)
 	refresh_stats()
-	if upgrade_level("feedback_loop") > 0:
+	if not is_overlimit(id) and upgrade_level("feedback_loop") > 0:
 		var returned := grant_charge(float(paid) * 0.15)
 		invested_charge = maxi(0, invested_charge - returned)
-	if upgrade_level("perpetual_engine") > 0:
+	if not is_overlimit(id) and upgrade_level("perpetual_engine") > 0:
 		var perpetual_return := grant_charge(float(paid) * 0.25)
 		invested_charge = maxi(0, invested_charge - perpetual_return)
 	var reclamation_rate := float(upgrade_level("reclamation_bus")) * 0.03 + float(upgrade_level("closed_economy")) * 0.02
-	if reclamation_rate > 0.0:
+	if not is_overlimit(id) and reclamation_rate > 0.0:
 		var reclamation_return := grant_charge(float(paid) * reclamation_rate)
 		invested_charge = maxi(0, invested_charge - reclamation_return)
 	return true
 
 func skill_points_bought() -> int:
 	var total := 0
-	for definition in UPGRADE_DEFINITIONS:
+	for definition in GearCatalog.SKILLS:
 		total += upgrade_level(str(definition.id))
 	return total
 
 func gear_level(gear_id: String) -> int:
 	var total := 0
-	for definition in UPGRADE_DEFINITIONS:
+	for definition in GearCatalog.SKILLS:
 		if str(definition.gear) == gear_id:
 			total += upgrade_level(str(definition.id))
 	return total
@@ -534,7 +615,7 @@ func respec_skills() -> int:
 		"combat_seconds": elapsed,
 		"encounter_id": current_encounter_id(),
 	})
-	for definition in UPGRADE_DEFINITIONS:
+	for definition in GearCatalog.SKILLS:
 		var id := str(definition.id)
 		upgrade_levels[id] = 0
 	credits += refunded
@@ -580,6 +661,25 @@ func active_synergies() -> Array[String]:
 func synergy_active(_id: String) -> bool:
 	return false
 
+func register_overlimit_activation() -> float:
+	if upgrade_level("six_core_apotheosis") <= 0 or stage_phase != StagePhase.BOSS:
+		return 0.0
+	overlimit_trigger_counter += 1
+	if overlimit_trigger_counter < 5:
+		return 0.0
+	overlimit_trigger_counter = 0
+	last_mechanic_event = "six_core_apotheosis"
+	return deal_damage(boss_max_hp * 0.006)
+
+func trigger_overlimit_signature(ratio: float, event_id: String) -> float:
+	if stage_phase != StagePhase.BOSS:
+		return 0.0
+	last_mechanic_event = event_id
+	var applied := deal_damage(boss_max_hp * ratio)
+	if stage_phase == StagePhase.BOSS:
+		applied += register_overlimit_activation()
+	return applied
+
 func manual_attack(critical_mode: int = -1) -> Dictionary:
 	if stage_phase != StagePhase.BOSS:
 		return {"valid": false, "damage": 0.0, "charge": 0, "critical": false, "boss_defeated": false}
@@ -617,7 +717,10 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 		shockwave += manual_damage * (1.5 + float(punch_rank) * 0.75)
 		last_mechanic_event = "armor_punch"
 	if upgrade_level("worldsplitter") > 0 and manual_inputs % 25 == 0:
-		shockwave += boss_max_hp * (0.003 + float(upgrade_level("fracture_archive")) * 0.0005)
+		var fracture_ratio := 0.003 + float(upgrade_level("fracture_archive")) * 0.0005
+		if final_boss:
+			fracture_ratio *= 0.18
+		shockwave += boss_max_hp * fracture_ratio
 		last_mechanic_event = "worldsplitter"
 	if generating and objective_ratio() >= 0.65:
 		shockwave *= 1.0 + float(upgrade_level("execution_protocol")) * 0.20
@@ -637,6 +740,11 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 		last_mechanic_event = "salvage_impulse"
 	var earned := grant_charge(charge_amount)
 	var applied := deal_damage(damage + shockwave + echo)
+	var overlimit_damage := 0.0
+	if upgrade_level("heavenbreaker_command") > 0 and manual_inputs % 20 == 0 and stage_phase == StagePhase.BOSS:
+		overlimit_damage += trigger_overlimit_signature(0.003, "heavenbreaker_command")
+		if stage_phase == StagePhase.BOSS:
+			overlimit_damage += deal_damage(auto_damage * float(drone_count) * 8.0 * global_output_multiplier())
 	var commanded_volley := 0.0
 	if is_critical and upgrade_level("twin_trigger") > 0 and stage_phase == StagePhase.BOSS:
 		var volley_damage := auto_damage * float(drone_count) * (2.0 + float(upgrade_level("omega_trigger")) * 0.8) * global_output_multiplier()
@@ -666,7 +774,7 @@ func manual_attack(critical_mode: int = -1) -> Dictionary:
 	var burst := trigger_singularity_burst("manual")
 	return {
 		"valid": true,
-		"damage": applied + commanded_volley + burst,
+		"damage": applied + commanded_volley + burst + overlimit_damage,
 		"base_damage": damage,
 		"shockwave": shockwave,
 		"echo": echo,
@@ -749,15 +857,25 @@ func auto_attack(critical_mode: int = -1) -> Dictionary:
 		var sovereign_rank := upgrade_level("sovereign_marker")
 		if world_hive_counter >= maxi(7, 12 - sovereign_rank):
 			world_hive_counter = 0
-			hive_volley = boss_max_hp * (0.0015 + float(sovereign_rank) * 0.00025)
+			var hive_ratio := 0.0015 + float(sovereign_rank) * 0.00025
+			if final_boss:
+				hive_ratio *= 0.18
+			hive_volley = boss_max_hp * hive_ratio
 			last_mechanic_event = "world_hive"
 	var applied := deal_damage(damage + echo + hive_volley)
+	var overlimit_damage := 0.0
+	if upgrade_level("event_horizon_cannon") > 0 and auto_hits % 20 == 0 and stage_phase == StagePhase.BOSS:
+		overlimit_damage += trigger_overlimit_signature(0.0025, "event_horizon_cannon")
+	if upgrade_level("sovereign_swarm") > 0 and auto_hits % 12 == 0 and stage_phase == StagePhase.BOSS:
+		overlimit_damage += trigger_overlimit_signature(0.002, "sovereign_swarm")
+	if upgrade_level("six_core_apotheosis") > 0 and overlimit_count() == 1 and auto_hits % 50 == 0 and stage_phase == StagePhase.BOSS:
+		overlimit_damage += trigger_overlimit_signature(0.006, "six_core_apotheosis")
 	if "predation_reversal" in boss_cores:
 		earned += grant_charge(predation_feedback(applied, "auto"))
 	var burst := trigger_singularity_burst("auto")
 	return {
 		"valid": true,
-		"damage": applied + burst,
+		"damage": applied + burst + overlimit_damage,
 		"echo": echo,
 		"charge": earned,
 		"critical": is_critical,
@@ -820,14 +938,25 @@ func modify_attack(source: String, damage: float, is_critical: bool) -> Dictiona
 
 	if singularity_boss:
 		multiplier *= singularity_multiplier(source, is_critical)
+	elif final_boss:
+		match final_boss_form:
+			1:
+				var required := "manual" if int(stage_elapsed / 6.0) % 2 == 0 else "auto"
+				multiplier *= 1.55 if source == required else 0.72
+			2:
+				multiplier *= 1.75 if is_critical or manual_streak >= 6 else 0.82
+			3:
+				multiplier *= 1.0 + minf(0.65, objective_ratio() * 0.65)
 	multiplier *= global_output_multiplier()
 	last_damage_multiplier = multiplier
 	var final_damage := damage * multiplier
-	if singularity_boss or enhanced_boss:
+	if singularity_boss or enhanced_boss or final_boss:
 		final_damage = minf(final_damage, direct_hit_cap())
 	return {"damage": final_damage, "multiplier": multiplier}
 
 func direct_hit_cap() -> float:
+	if final_boss:
+		return boss_max_hp * (0.00006 + float(overlimit_count()) * 0.000015 + float(upgrade_level("lawbreaker_bus")) * 0.00001)
 	if enhanced_boss and not singularity_boss:
 		return boss_max_hp * (0.001 + float(upgrade_level("lawbreaker_bus")) * 0.00004)
 	var cap_ratio := 0.00035 + float(upgrade_level("singularity_decoder")) * 0.00005
@@ -902,6 +1031,15 @@ func grant_charge(amount: float) -> int:
 	var previous_lifetime := lifetime_charge
 	credits += whole
 	lifetime_charge += whole
+	if upgrade_level("perpetual_sun") > 0 and stage_phase == StagePhase.BOSS:
+		var solar_threshold := maxf(1000000.0, boss_max_hp * 0.00020)
+		perpetual_sun_meter += float(whole)
+		if perpetual_sun_meter >= solar_threshold:
+			perpetual_sun_meter = fmod(perpetual_sun_meter, solar_threshold)
+			perpetual_sun_timer = 8.0
+			last_mechanic_event = "perpetual_sun"
+			deal_damage(boss_max_hp * 0.003)
+			register_overlimit_activation()
 	if current_stage_id == "vaultback":
 		vault_charge_meter += float(whole)
 		if vault_charge_meter >= 50.0:
@@ -958,6 +1096,7 @@ func tick(delta: float, _manual_held: bool = false) -> Dictionary:
 		auto_boost_stacks = 0
 	shell_open_timer = maxf(0.0, shell_open_timer - delta)
 	overdrive_timer = maxf(0.0, overdrive_timer - delta)
+	perpetual_sun_timer = maxf(0.0, perpetual_sun_timer - delta)
 	furnace_open_timer = maxf(0.0, furnace_open_timer - delta)
 	phase_timer -= delta
 	if phase_timer <= 0.0:
@@ -1066,7 +1205,7 @@ func select_reward(_id: String) -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 7,
+		"version": 8,
 		"build_id": BUILD_ID,
 		"credits": credits,
 		"lifetime_charge": lifetime_charge,
@@ -1107,6 +1246,8 @@ func snapshot() -> Dictionary:
 		"stage_clear_time": stage_clear_time,
 		"enhanced_boss": enhanced_boss,
 		"singularity_boss": singularity_boss,
+		"final_boss": final_boss,
+		"final_boss_form": final_boss_form,
 		"encounter_index": encounter_index,
 		"charge_fraction": charge_fraction,
 		"manual_mode": manual_mode,
@@ -1116,6 +1257,12 @@ func snapshot() -> Dictionary:
 		"auto_burst_counter": auto_burst_counter,
 		"support_counter": support_counter,
 		"world_hive_counter": world_hive_counter,
+		"overlimit_system_unlocked": overlimit_system_unlocked,
+		"singularity_residue": singularity_residue,
+		"overlimit_invested_charge": overlimit_invested_charge,
+		"overlimit_trigger_counter": overlimit_trigger_counter,
+		"perpetual_sun_meter": perpetual_sun_meter,
+		"perpetual_sun_timer": perpetual_sun_timer,
 		"infinite_mode": infinite_mode,
 		"infinite_wave": infinite_wave,
 		"armor_cracks": armor_cracks,
@@ -1145,7 +1292,7 @@ func snapshot() -> Dictionary:
 
 func restore_snapshot(data: Dictionary) -> bool:
 	var version := int(data.get("version", 0))
-	if version not in [5, 6, 7]:
+	if version not in [5, 6, 7, 8]:
 		return false
 	reset()
 	credits = maxi(0, int(data.get("credits", 0)))
@@ -1200,6 +1347,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	stage_clear_time = float(data.get("stage_clear_time", -1.0))
 	enhanced_boss = bool(data.get("enhanced_boss", false))
 	singularity_boss = bool(data.get("singularity_boss", false))
+	final_boss = bool(data.get("final_boss", false))
+	final_boss_form = clampi(int(data.get("final_boss_form", 0)), 0, 3)
 	encounter_index = maxi(0, int(data.get("encounter_index", 0)))
 	charge_fraction = clampf(float(data.get("charge_fraction", 0.0)), 0.0, 0.999)
 	manual_mode = "generate" if generation_mode_unlocked() else "attack"
@@ -1210,6 +1359,12 @@ func restore_snapshot(data: Dictionary) -> bool:
 	auto_burst_counter = maxi(0, int(data.get("auto_burst_counter", 0)))
 	support_counter = maxi(0, int(data.get("support_counter", 0)))
 	world_hive_counter = maxi(0, int(data.get("world_hive_counter", 0)))
+	overlimit_system_unlocked = bool(data.get("overlimit_system_unlocked", false))
+	singularity_residue = clampi(int(data.get("singularity_residue", 0)), 0, 1)
+	overlimit_invested_charge = maxi(0, int(data.get("overlimit_invested_charge", 0)))
+	overlimit_trigger_counter = clampi(int(data.get("overlimit_trigger_counter", 0)), 0, 4)
+	perpetual_sun_meter = maxf(0.0, float(data.get("perpetual_sun_meter", 0.0)))
+	perpetual_sun_timer = maxf(0.0, float(data.get("perpetual_sun_timer", 0.0)))
 	infinite_mode = bool(data.get("infinite_mode", false))
 	infinite_wave = maxi(0, int(data.get("infinite_wave", 0)))
 	armor_cracks = clampi(int(data.get("armor_cracks", 0)), 0, 11)

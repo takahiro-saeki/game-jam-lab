@@ -122,6 +122,17 @@ const SKILLS := [
 	{"id":"lawbreaker_bus","gear":"core","tier":3,"col":2,"row":2,"max_rank":3,"base_cost":3900000.0,"growth":2.25,"parent":"world_engine_key","parent_rank":1,"name_ja":"法則破断母線","name_en":"LAWBREAKER BUS","desc_ja":"強化ボスへの単発出力上限を緩和","desc_en":"Relax direct-hit limits against enhanced bosses"},
 ]
 
+# TIER IV is deliberately outside the standard 317-rank tree. These are
+# irreversible post-Arch system rewrites: once restored, every one remains
+# active simultaneously and respec never removes it.
+const OVERLIMITS := [
+	{"id":"heavenbreaker_command","gear":"striker","tier":4,"col":1,"row":1,"max_rank":1,"base_cost":20000000.0,"growth":1.0,"parent":"","parent_rank":0,"overlimit":true,"name_ja":"天蓋破砕指令","name_en":"HEAVENBREAKER COMMAND","desc_ja":"20回の手動指令ごとに敵最大HPの0.30%を破砕し、AUTO全軍へ斉射命令","desc_en":"Every 20 manual commands fractures 0.30% max HP and orders a full AUTO volley"},
+	{"id":"perpetual_sun","gear":"dynamo","tier":4,"col":1,"row":1,"max_rank":1,"base_cost":60000000.0,"growth":1.0,"parent":"","parent_rank":0,"overlimit":true,"name_ja":"永久太陽炉","name_en":"PERPETUAL SUN","desc_ja":"CHARGE生成が太陽炉を点火し、8秒間すべての出力を3.5倍","desc_en":"Generating CHARGE ignites an eight-second 3.5x total-output solar state"},
+	{"id":"event_horizon_cannon","gear":"autogun","tier":4,"col":1,"row":1,"max_rank":1,"base_cost":180000000.0,"growth":1.0,"parent":"","parent_rank":0,"overlimit":true,"name_ja":"事象地平砲","name_en":"EVENT HORIZON CANNON","desc_ja":"20回のAUTO射撃ごとに敵最大HPの0.25%を消去","desc_en":"Every 20 automatic shots erases 0.25% of enemy max HP"},
+	{"id":"sovereign_swarm","gear":"drone","tier":4,"col":1,"row":1,"max_rank":1,"base_cost":540000000.0,"growth":1.0,"parent":"","parent_rank":0,"overlimit":true,"name_ja":"主権群体","name_en":"SOVEREIGN SWARM","desc_ja":"12回のAUTO射撃ごとに敵最大HPの0.20%を群体が収奪","desc_en":"Every 12 automatic shots lets the sovereign swarm consume 0.20% max HP"},
+	{"id":"six_core_apotheosis","gear":"core","tier":4,"col":1,"row":1,"max_rank":1,"base_cost":1620000000.0,"growth":1.0,"parent":"","parent_rank":0,"overlimit":true,"name_ja":"六核神化","name_en":"SIX-CORE APOTHEOSIS","desc_ja":"他OVERLIMITの発動5回ごとに敵最大HPの0.60%を法則ごと破断","desc_en":"Every five other OVERLIMIT activations breaks 0.60% max HP at the law level"},
+]
+
 static func gear(id: String) -> Dictionary:
 	for definition in GEARS:
 		if str(definition.id) == id:
@@ -132,6 +143,9 @@ static func skill(id: String) -> Dictionary:
 	for definition in SKILLS:
 		if str(definition.id) == id:
 			return definition
+	for definition in OVERLIMITS:
+		if str(definition.id) == id:
+			return definition
 	return {}
 
 static func skills_for_gear(gear_id: String) -> Array[Dictionary]:
@@ -139,11 +153,15 @@ static func skills_for_gear(gear_id: String) -> Array[Dictionary]:
 	for definition in SKILLS:
 		if str(definition.gear) == gear_id:
 			result.append(definition)
+	for definition in OVERLIMITS:
+		if str(definition.gear) == gear_id:
+			result.append(definition)
 	return result
 
 static func skills_for_gear_tier(gear_id: String, tier: int) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	for definition in SKILLS:
+	var definitions: Array = SKILLS if tier <= 3 else OVERLIMITS
+	for definition in definitions:
 		if str(definition.gear) == gear_id and int(definition.get("tier", 1)) == tier:
 			result.append(definition)
 	return result
@@ -157,7 +175,8 @@ static func max_ranks_for_gear(gear_id: String) -> int:
 
 static func max_ranks_for_gear_tier(gear_id: String, tier: int) -> int:
 	var total := 0
-	for definition in SKILLS:
+	var definitions: Array = SKILLS if tier <= 3 else OVERLIMITS
+	for definition in definitions:
 		if str(definition.gear) == gear_id and int(definition.get("tier", 1)) == tier:
 			total += int(definition.max_rank)
 	return total

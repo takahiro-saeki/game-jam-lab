@@ -25,7 +25,12 @@ const BGMStreams := {
 	"grid_leech": preload("res://assets/audio/project_charge/siphon_breakpoint.ogg"),
 	"boss": preload("res://assets/audio/project_charge/forge_of_breakpoints.ogg"),
 	"singularity": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
-	"ending": preload("res://assets/audio/project_charge/core_of_dawn.ogg"),
+	"ending_normal": preload("res://assets/audio/project_charge/core_of_dawn.ogg"),
+	# Dedicated composition slots. These provisional masters are deliberately
+	# distinct until the two approved Suno ending masters are imported.
+	"ending_world": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
+	"ending_true": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
+	"prime_current": preload("res://assets/audio/project_charge/critical_parallax.ogg"),
 }
 # Every enemy encounter has its own mastered track. The generic keys remain the
 # dedicated Gearmaw and Thermal Titan tracks as well as safe fallback values.
@@ -39,6 +44,9 @@ const EncounterBGMKeys := {
 	"grid_leech": "grid_leech",
 	"thermal_titan": "boss",
 	"arch_singularity": "singularity",
+	"prime_current_form_1": "prime_current",
+	"prime_current_form_2": "prime_current",
+	"prime_current_form_3": "prime_current",
 }
 const ReactorTextures := {
 	"reactor-turbine-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-turbine-a.png"),
@@ -72,6 +80,9 @@ const MechanicalBeastTextures := {
 	"grid_leech": preload("res://assets/charge_clicker/pixellab/source/enemy/boss-grid-leech-v3-a.png"),
 	"thermal_titan": preload("res://assets/charge_clicker/pixellab/source/enemy/boss-thermal-titan-a.png"),
 	"arch_singularity": preload("res://assets/charge_clicker/pixellab/source/enemy/boss-arch-singularity-a.png"),
+	"prime_current_form_1": preload("res://assets/charge_clicker/pixellab/source/enemy/final-crownless-reliquary-v8-b.png"),
+	"prime_current_form_2": preload("res://assets/charge_clicker/pixellab/source/enemy/final-null-cathedral-radial-v8-a.png"),
+	"prime_current_form_3": preload("res://assets/charge_clicker/pixellab/source/enemy/final-first-current-singular-v8-c.png"),
 }
 const EnergyShardTextures := {
 	"shard-faceted-core-a": preload("res://assets/charge_clicker/pixellab/source/icon/shard-faceted-core-a.png"),
@@ -116,6 +127,9 @@ const EncounterRegions := {
 	"swarm_matriarch": "biocrystal",
 	"phase_mantis": "biocrystal",
 	"arch_singularity": "biocrystal",
+	"prime_current_form_1": "biocrystal",
+	"prime_current_form_2": "biocrystal",
+	"prime_current_form_3": "biocrystal",
 }
 const UpgradeRackTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/upgrade-rack-switchboard-a.png")
 const ControlConsoleKitTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/control-kit-switchboard-a.png")
@@ -198,7 +212,11 @@ var settings_open := false
 var settings_selected := 0
 var credits_open := false
 var credits_return_to_title := false
+var credits_context := "title"
 var credits_scroll := 0.0
+var epilogue_open := false
+var epilogue_scene := 0
+var epilogue_scene_time := 0.0
 var achievements_open := false
 var achievement_notice: Dictionary = {}
 var achievement_notice_time := 0.0
@@ -221,7 +239,7 @@ var reset_rect := Rect2(34, 22, 126, 42)
 var upgrade_rects: Array[Rect2] = []
 var gear_rects: Array[Rect2] = []
 var tree_tab_rects: Array[Rect2] = []
-var tree_tier_rects: Array[Rect2] = [Rect2(538, 174, 76, 34), Rect2(624, 174, 76, 34), Rect2(710, 174, 76, 34)]
+var tree_tier_rects: Array[Rect2] = [Rect2(500, 174, 66, 34), Rect2(574, 174, 66, 34), Rect2(648, 174, 66, 34), Rect2(722, 174, 66, 34)]
 var tree_close_rect := Rect2(1132, 112, 82, 46)
 var tree_purchase_rect := Rect2(918, 560, 286, 50)
 var tree_respec_rect := Rect2(918, 622, 286, 42)
@@ -256,6 +274,7 @@ var campaign_ending_return_rect := Rect2(662, 632, 292, 48)
 var credits_close_rect := Rect2(1032, 642, 190, 46)
 var achievements_close_rect := Rect2(514, 642, 252, 46)
 var campaign_achievement_rect := Rect2(34, 632, 260, 48)
+var epilogue_skip_rect := Rect2(1036, 28, 186, 44)
 
 func _ready() -> void:
 	apply_web_art_preview()
@@ -276,6 +295,10 @@ func _ready() -> void:
 		for column in range(3):
 			stage_map_rects.append(Rect2(62 + column * 404, 180 + row * 208, 348, 176))
 	var resumed: bool = persistence_enabled and save_manager.load_bundle_into(run, campaign_route, achievements)
+	# v7 saves ended on the old TRUE_END screen. Route migration moves them to
+	# the signal choice; restore the new post-Arch system grant once.
+	if campaign_route.true_end_seen and not run.overlimit_system_unlocked:
+		run.unlock_overlimit_system()
 	title_has_saved_campaign = resumed
 	title_screen_open = not art_preview_enabled
 	if art_preview_enabled:
@@ -311,8 +334,10 @@ func setup_music() -> void:
 		bgm_players.append(player)
 
 func desired_bgm_key() -> String:
+	if epilogue_open:
+		return "ending_true"
 	if credits_open:
-		return "ending"
+		return "ending_true" if credits_context == "final" else "ending_world" if credits_context == "world" else "ending_normal"
 	if title_screen_open:
 		return "map"
 	if campaign_route == null:
@@ -324,10 +349,16 @@ func desired_bgm_key() -> String:
 			return str(EncounterBGMKeys.get(run.current_boss_id, "boss")) if run.current_boss_id in ["grid_leech", "thermal_titan"] else "boss"
 		CampaignRoute.RoutePhase.SINGULARITY:
 			return "singularity"
+		CampaignRoute.RoutePhase.FINAL_BOSS:
+			return "prime_current"
 		CampaignRoute.RoutePhase.INFINITE:
 			return str(EncounterBGMKeys.get(run.current_boss_id, "hunt"))
-		CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END:
-			return "ending"
+		CampaignRoute.RoutePhase.NORMAL_END:
+			return "ending_normal"
+		CampaignRoute.RoutePhase.POST_TRUE_CHOICE:
+			return "ending_world"
+		CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME:
+			return "ending_true"
 		_:
 			return "map"
 
@@ -466,6 +497,24 @@ func configure_campaign_preview() -> void:
 			run.grant_boss_core("predation_reversal")
 			campaign_route.defeat_current_boss()
 			campaign_route.continue_true_route()
+		"post_true_choice":
+			campaign_route.true_end_seen = true
+			campaign_route.phase = CampaignRoute.RoutePhase.POST_TRUE_CHOICE
+			run.overlimit_system_unlocked = true
+			run.singularity_residue = 1
+			for definition in GearCatalog.SKILLS:
+				run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
+			run.refresh_stats()
+		"final_end":
+			campaign_route.true_end_seen = true
+			campaign_route.final_boss_defeated = true
+			campaign_route.phase = CampaignRoute.RoutePhase.FINAL_END
+			run.overlimit_system_unlocked = true
+			for definition in GearCatalog.SKILLS:
+				run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
+			for definition in GearCatalog.OVERLIMITS:
+				run.upgrade_levels[str(definition.id)] = 1
+			run.refresh_stats()
 		_:
 			campaign_selected = 0
 
@@ -476,7 +525,10 @@ func configure_art_preview_state() -> void:
 	if not stage_definition.is_empty():
 		run.begin_stage(preview_id, str(stage_definition.build_tag), 1.0, StageCatalog.stage_hp(preview_id, 0), 0)
 	elif not boss_definition.is_empty():
-		run.begin_campaign_boss(preview_id, float(boss_definition.get("hp", ChargeState.BOSS_MAX_HP)), false, preview_id == "arch_singularity")
+		if preview_id in StageCatalog.final_boss_ids():
+			run.begin_final_boss_form(preview_id, float(boss_definition.get("hp", ChargeState.BOSS_MAX_HP)), int(boss_definition.get("form", 1)))
+		else:
+			run.begin_campaign_boss(preview_id, float(boss_definition.get("hp", ChargeState.BOSS_MAX_HP)), false, preview_id == "arch_singularity")
 	else:
 		run.begin_stage("gearmaw", "manual", 1.0, ChargeState.BOSS_MAX_HP, 0)
 	run.boss_hp = run.boss_max_hp * 0.62
@@ -577,6 +629,10 @@ func _process(delta: float) -> void:
 	if achievement_notice_time > 0.0:
 		achievement_notice_time -= delta
 	update_comms(delta)
+	if epilogue_open:
+		epilogue_scene_time += delta
+		queue_redraw()
+		return
 	if achievements_open:
 		queue_redraw()
 		return
@@ -593,7 +649,7 @@ func _process(delta: float) -> void:
 		update_effects(delta)
 		queue_redraw()
 		return
-	if campaign_route.phase not in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+	if campaign_route.phase not in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 		run.advance_session_time(delta)
 	if not campaign_gameplay_active():
 		if autosave_timer <= 0.0:
@@ -628,22 +684,25 @@ func campaign_gameplay_active() -> bool:
 		return true
 	if campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
 		return run.stage_phase not in [ChargeState.StagePhase.REWARD, ChargeState.StagePhase.CLEAR]
-	if campaign_route.phase in [CampaignRoute.RoutePhase.BOSS, CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.INFINITE]:
+	if campaign_route.phase in [CampaignRoute.RoutePhase.BOSS, CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.FINAL_BOSS, CampaignRoute.RoutePhase.INFINITE]:
 		return run.stage_phase == ChargeState.StagePhase.BOSS
 	return false
 
 func campaign_screen_visible() -> bool:
 	if campaign_route == null or (art_preview_enabled and campaign_preview_screen.is_empty()):
 		return false
-	if campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP, CampaignRoute.RoutePhase.BOSS_SELECT, CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+	if campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP, CampaignRoute.RoutePhase.BOSS_SELECT, CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 		return true
-	return campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY] and run.stage_phase == ChargeState.StagePhase.CLEAR
+	return campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.FINAL_BOSS] and run.stage_phase == ChargeState.StagePhase.CLEAR
 
 func _unhandled_input(event: InputEvent) -> void:
 	# PROJECT CHARGE owns its input while mounted in the shared launcher. Without
 	# consuming it here, a click/confirm that closes the game can also activate a
 	# launcher card in the same frame.
 	get_viewport().set_input_as_handled()
+	if epilogue_open:
+		handle_epilogue_input(event)
+		return
 	if achievements_open:
 		handle_achievements_input(event)
 		return
@@ -820,9 +879,10 @@ func handle_achievements_input(event: InputEvent) -> void:
 		if event.button_index in [controller_button("back"), controller_button("primary")]:
 			close_achievements()
 
-func open_credits(from_title: bool) -> void:
+func open_credits(from_title: bool, context: String = "") -> void:
 	credits_open = true
 	credits_return_to_title = from_title
+	credits_context = context if not context.is_empty() else "title" if from_title else "normal"
 	credits_scroll = 0.0
 	settings_open = false
 	end_charge()
@@ -834,10 +894,67 @@ func open_credits(from_title: bool) -> void:
 func close_credits() -> void:
 	credits_open = false
 	credits_scroll = 0.0
+	if credits_context == "world":
+		title_screen_open = true
+		title_has_saved_campaign = true
+	elif credits_context == "final":
+		campaign_route.complete_final_credits()
+		title_screen_open = true
+		title_has_saved_campaign = true
+	save_progress()
 	bgm_key = ""
 	refresh_music()
 	synth.click()
 	queue_redraw()
+
+func open_true_epilogue() -> void:
+	epilogue_open = true
+	epilogue_scene = 0
+	epilogue_scene_time = 0.0
+	end_charge()
+	bgm_key = ""
+	refresh_music()
+	queue_redraw()
+
+func advance_true_epilogue() -> void:
+	if not epilogue_open:
+		return
+	if epilogue_scene < 7:
+		epilogue_scene += 1
+		epilogue_scene_time = 0.0
+		synth.confirm()
+	else:
+		finish_true_epilogue()
+	queue_redraw()
+
+func finish_true_epilogue() -> void:
+	epilogue_open = false
+	open_credits(false, "final")
+
+func handle_epilogue_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if epilogue_skip_rect.has_point(event.position):
+			finish_true_epilogue()
+		else:
+			advance_true_epilogue()
+	elif event is InputEventScreenTouch and event.pressed:
+		if epilogue_skip_rect.has_point(event.position):
+			finish_true_epilogue()
+		else:
+			advance_true_epilogue()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			finish_true_epilogue()
+		elif event.keycode in [KEY_ENTER, KEY_SPACE, KEY_RIGHT]:
+			advance_true_epilogue()
+		elif event.keycode == KEY_LEFT and epilogue_scene > 0:
+			epilogue_scene -= 1
+			epilogue_scene_time = 0.0
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("back"):
+			finish_true_epilogue()
+		elif event.button_index == controller_button("primary"):
+			advance_true_epilogue()
 
 func handle_credits_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -992,10 +1109,13 @@ func handle_campaign_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_L:
 			toggle_language()
-		elif event.keycode == KEY_C and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+		elif event.keycode == KEY_C and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 			copy_campaign_result()
-		elif event.keycode == KEY_E and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
-			open_credits(false)
+		elif event.keycode == KEY_E and campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END:
+			open_credits(false, "normal")
+		elif event.keycode == KEY_T and campaign_route.phase in [CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.POSTGAME]:
+			selected_tree_tier = 4
+			open_gear_tree(0)
 		elif event.keycode == KEY_H:
 			open_achievements()
 		elif event.keycode == KEY_R:
@@ -1027,9 +1147,9 @@ func handle_campaign_input(event: InputEvent) -> void:
 			_:
 				if event.button_index == controller_button("primary"):
 					activate_campaign_selection()
-				elif event.button_index == controller_button("secondary") and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
-					open_credits(false)
-				elif event.button_index == controller_button("combat_action") and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+				elif event.button_index == controller_button("secondary") and campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END:
+					open_credits(false, "normal")
+				elif event.button_index == controller_button("combat_action") and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 					copy_campaign_result()
 				elif event.button_index == controller_button("language"):
 					toggle_language()
@@ -1046,13 +1166,21 @@ func handle_campaign_point(point: Vector2) -> void:
 	if menu_rect.has_point(point):
 		return_to_menu.emit()
 		return
-	if campaign_ending_return_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
-		return_to_menu.emit()
+	if campaign_ending_return_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
+		if campaign_route.phase in [CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
+			title_screen_open = true
+			title_has_saved_campaign = true
+			save_progress()
+		else:
+			return_to_menu.emit()
 		return
-	if campaign_credits_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
-		open_credits(false)
+	if campaign_credits_rect.has_point(point) and campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END:
+		open_credits(false, "normal")
 		return
-	if campaign_achievement_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+	if campaign_credits_rect.has_point(point) and campaign_route.phase == CampaignRoute.RoutePhase.POSTGAME:
+		open_true_epilogue()
+		return
+	if campaign_achievement_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 		open_achievements()
 		return
 	if campaign_secondary_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY]:
@@ -1067,7 +1195,11 @@ func handle_campaign_point(point: Vector2) -> void:
 	if respec_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
 		open_gear_tree(0)
 		return
-	if campaign_copy_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+	if respec_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.POSTGAME]:
+		selected_tree_tier = 4
+		open_gear_tree(0)
+		return
+	if campaign_copy_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 		copy_campaign_result()
 		return
 	var index := campaign_index_at(point)
@@ -1075,7 +1207,15 @@ func handle_campaign_point(point: Vector2) -> void:
 		campaign_selected = index
 		activate_campaign_selection()
 		return
-	if campaign_primary_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END, CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY]:
+	if campaign_route.phase == CampaignRoute.RoutePhase.POST_TRUE_CHOICE and campaign_primary_rect.has_point(point):
+		campaign_selected = 0
+		activate_campaign_selection()
+		return
+	if campaign_route.phase == CampaignRoute.RoutePhase.POST_TRUE_CHOICE and campaign_secondary_rect.has_point(point):
+		campaign_selected = 1
+		activate_campaign_selection()
+		return
+	if campaign_primary_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.FINAL_BOSS, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 		activate_campaign_selection()
 
 func campaign_index_at(point: Vector2) -> int:
@@ -1103,6 +1243,8 @@ func navigate_campaign_selection(direction: Vector2i) -> void:
 			campaign_selected = wrapi(campaign_selected + (1 if direction.x >= 0 and direction.y >= 0 else -1), 0, 6)
 	elif campaign_route.phase == CampaignRoute.RoutePhase.BOSS_SELECT:
 		campaign_selected = wrapi(campaign_selected + (1 if direction.x > 0 or direction.y > 0 else -1), 0, 2)
+	elif campaign_route.phase == CampaignRoute.RoutePhase.POST_TRUE_CHOICE:
+		campaign_selected = wrapi(campaign_selected + (1 if direction.x > 0 or direction.y > 0 else -1), 0, 2)
 	synth.click()
 	queue_redraw()
 
@@ -1118,9 +1260,22 @@ func activate_campaign_selection() -> void:
 				show_message(loc("真ルート解放 — 残り3体の機械魔獣を討て", "TRUE ROUTE OPEN — HUNT THE REMAINING THREE BEASTS"), 3.0)
 				synth.play_chord([196.0, 293.66, 440.0, 587.33], 0.5, -20.0)
 				save_progress()
-		CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY:
+		CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.FINAL_BOSS:
 			launch_current_campaign_boss()
-		CampaignRoute.RoutePhase.TRUE_END:
+		CampaignRoute.RoutePhase.POST_TRUE_CHOICE:
+			if campaign_selected == 0:
+				if campaign_route.choose_world_engine_credits():
+					open_credits(true, "world")
+			else:
+				if run.overlimit_count() <= 0:
+					selected_tree_tier = 4
+					open_gear_tree(0)
+					show_message(loc("本当のラスボスへ挑むには、まずOVERLIMITを1つ復旧", "RESTORE AT LEAST ONE OVERLIMIT BEFORE ANSWERING THE SIGNAL"), 3.2)
+				elif campaign_route.answer_deep_signal():
+					launch_current_campaign_boss()
+		CampaignRoute.RoutePhase.FINAL_END:
+			open_true_epilogue()
+		CampaignRoute.RoutePhase.POSTGAME:
 			start_infinite_mode()
 	queue_redraw()
 
@@ -1164,11 +1319,15 @@ func launch_current_campaign_boss() -> bool:
 		return false
 	var enhanced: bool = campaign_route.phase == CampaignRoute.RoutePhase.ENHANCED_BOSS
 	var singularity: bool = campaign_route.phase == CampaignRoute.RoutePhase.SINGULARITY
+	var final_encounter: bool = campaign_route.phase == CampaignRoute.RoutePhase.FINAL_BOSS
 	var hp := float(definition.get("hp", ChargeState.BOSS_MAX_HP))
 	if enhanced:
 		hp = float(definition.get("enhanced_hp", hp * 1.65))
-	run.begin_campaign_boss(str(definition.id), hp, enhanced, singularity)
-	show_message(loc("深層主獣との戦闘開始", "ABYSSAL BOSS ENGAGED"), 2.4)
+	if final_encounter:
+		run.begin_final_boss_form(str(definition.id), hp, int(definition.get("form", campaign_route.final_boss_form)))
+	else:
+		run.begin_campaign_boss(str(definition.id), hp, enhanced, singularity)
+	show_message(loc("原初電流との最終戦闘開始", "PRIME CURRENT ENGAGED") if final_encounter else loc("深層主獣との戦闘開始", "ABYSSAL BOSS ENGAGED"), 2.4)
 	queue_encounter_intro(str(definition.id))
 	screen_flash = 0.8
 	screen_shake = 0.35
@@ -1235,6 +1394,8 @@ func complete_campaign_boss() -> bool:
 	var defeated_definition := StageCatalog.boss(campaign_route.current_boss_id)
 	if not defeated_definition.is_empty() and defeated_definition.has("core_id"):
 		run.grant_boss_core(str(defeated_definition.core_id))
+	if campaign_route.current_boss_id == str(StageCatalog.TRUE_BOSS.id):
+		run.unlock_overlimit_system()
 	if not campaign_route.defeat_current_boss():
 		return false
 	run.stage_phase = ChargeState.StagePhase.CLEAR
@@ -1242,11 +1403,15 @@ func complete_campaign_boss() -> bool:
 	screen_shake = 0.75
 	synth.play_chord([130.81, 196.0, 261.63, 392.0, 523.25], 0.75, -17.0)
 	record_campaign_result_if_needed()
+	if campaign_route.phase == CampaignRoute.RoutePhase.FINAL_END:
+		open_true_epilogue()
 	save_progress()
 	return true
 
 func campaign_ending_key() -> String:
-	return "true" if campaign_route.phase == CampaignRoute.RoutePhase.TRUE_END else "normal"
+	if campaign_route.phase in [CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
+		return "prime_current"
+	return "world_engine" if campaign_route.true_end_seen else "normal"
 
 func current_playtest_report() -> Dictionary:
 	return run.build_playtest_report(campaign_route.snapshot(), campaign_ending_key())
@@ -1255,7 +1420,7 @@ func campaign_result_json() -> String:
 	return JSON.stringify(current_playtest_report(), "  ")
 
 func record_campaign_result_if_needed() -> bool:
-	if campaign_route.phase not in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+	if campaign_route.phase not in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END]:
 		return false
 	var ending := campaign_ending_key()
 	if run.ending_exported(ending):
@@ -1581,7 +1746,7 @@ func navigate_upgrade(direction: Vector2i) -> void:
 func open_gear_tree(index: int) -> void:
 	selected_gear_index = clampi(index, 0, GearCatalog.GEARS.size() - 1)
 	gear_tree_open = true
-	selected_tree_tier = clampi(selected_tree_tier, 1, 3)
+	selected_tree_tier = clampi(selected_tree_tier, 1, 4)
 	controller_upgrade_selected = 0
 	end_charge()
 	synth.play_tone(392.0, 0.08, -24.0, 2)
@@ -1599,15 +1764,15 @@ func selected_tree_skills() -> Array[Dictionary]:
 	return GearCatalog.skills_for_gear_tier(selected_gear_id(), selected_tree_tier)
 
 func set_tree_tier(tier: int) -> void:
-	selected_tree_tier = clampi(tier, 1, 3)
+	selected_tree_tier = clampi(tier, 1, 4)
 	controller_upgrade_selected = 0
-	var label := loc("基礎機構", "FOUNDATION") if selected_tree_tier == 1 else loc("主獣オーバークロック", "BOSS OVERCLOCK") if selected_tree_tier == 2 else loc("六核特異改造", "SIX-CORE SINGULARITY")
+	var label := loc("基礎機構", "FOUNDATION") if selected_tree_tier == 1 else loc("主獣オーバークロック", "BOSS OVERCLOCK") if selected_tree_tier == 2 else loc("六核特異改造", "SIX-CORE SINGULARITY") if selected_tree_tier == 3 else "OVERLIMIT"
 	show_message("TIER %s // %s" % [roman_tier(selected_tree_tier), label], 1.2)
 	synth.click()
 	queue_redraw()
 
 func roman_tier(tier: int) -> String:
-	return "I" if tier == 1 else "II" if tier == 2 else "III"
+	return "I" if tier == 1 else "II" if tier == 2 else "III" if tier == 3 else "IV"
 
 func selected_skill_definition() -> Dictionary:
 	var skills := selected_tree_skills()
@@ -1691,9 +1856,9 @@ func handle_gear_tree_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_E:
 			open_gear_tree(wrapi(selected_gear_index + 1, 0, GearCatalog.GEARS.size()))
 		elif event.keycode == KEY_Z:
-			set_tree_tier(wrapi(selected_tree_tier - 2, 0, 3) + 1)
+			set_tree_tier(wrapi(selected_tree_tier - 2, 0, 4) + 1)
 		elif event.keycode == KEY_X:
-			set_tree_tier(selected_tree_tier % 3 + 1)
+			set_tree_tier(selected_tree_tier % 4 + 1)
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
 			open_gear_tree(int(event.keycode - KEY_1))
 	elif event is InputEventJoypadButton and event.pressed:
@@ -1718,7 +1883,7 @@ func handle_gear_tree_input(event: InputEvent) -> void:
 				elif event.button_index == controller_button("combat_action"):
 					purchase_selected_tree_node()
 				elif event.button_index == controller_button("language"):
-					set_tree_tier(selected_tree_tier % 3 + 1)
+					set_tree_tier(selected_tree_tier % 4 + 1)
 	elif event is InputEventJoypadMotion:
 		var direction := controller_motion_direction(event)
 		if direction != Vector2i.ZERO:
@@ -2060,6 +2225,9 @@ func build_tag_label(id: String) -> String:
 	return str(copy[0] if is_japanese else copy[1])
 
 func current_rule_copy() -> String:
+	if run.final_boss:
+		var definition := StageCatalog.boss(run.current_boss_id)
+		return str(definition.get("rule_ja" if is_japanese else "rule_en", "OVERLIMIT CONVERGENCE"))
 	if run.singularity_boss:
 		if run.singularity_phase == 1:
 			var source_ja := "クリック" if run.singularity_seal % 2 == 0 else "AUTO"
@@ -2123,6 +2291,10 @@ func skill_lock_text(id: String) -> String:
 		return loc("通常ボス撃破後にTIER II解禁", "TIER II UNLOCKS AFTER THE NORMAL BOSS")
 	if reason == "tier:3":
 		return loc("六体の機械魔獣撃破後にTIER III解禁", "TIER III UNLOCKS AFTER ALL SIX BEASTS")
+	if reason == "tier:4":
+		return loc("地核機神アーク・シンギュラリティ撃破後に解禁", "TIER IV UNLOCKS AFTER ARCH SINGULARITY")
+	if reason.begins_with("gear_max:"):
+		return loc("このギアのTIER I〜IIIをすべて最大強化すると復旧可能", "MAX EVERY TIER I-III NODE IN THIS GEAR TO RESTORE IT")
 	return loc("このノードはまだロックされています", "THIS NODE IS STILL LOCKED")
 
 func add_floating(position: Vector2, text: String, color: Color, size: int) -> void:
@@ -2170,6 +2342,8 @@ func update_effects(delta: float) -> void:
 			resource_packets.remove_at(index)
 
 func format_number(value: float) -> String:
+	if value >= 1000000000.0:
+		return "%.2fB" % (value / 1000000000.0)
 	if value >= 1000000.0:
 		return "%.2fM" % (value / 1000000.0)
 	if value >= 1000.0:
@@ -2199,6 +2373,9 @@ func tutorial_hint() -> String:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color("060b16"))
 	draw_background()
+	if epilogue_open:
+		draw_true_epilogue()
+		return
 	if credits_open:
 		draw_credits_roll()
 		return
@@ -2311,6 +2488,54 @@ func draw_credits_roll() -> void:
 	draw_rect(Rect2(0, 624, 1280, 96), Color(0.004, 0.01, 0.025, 0.94))
 	draw_string(Palette.UI_FONT, Vector2(48, 675), loc("自動スクロール　上下キーで調整", "AUTO SCROLL · UP/DOWN TO ADJUST"), HORIZONTAL_ALIGNMENT_LEFT, 500, 11, Palette.MUTED)
 	draw_campaign_button(credits_close_rect, loc("結果へ戻る", "RETURN"), Palette.MINT, false)
+
+func draw_true_epilogue() -> void:
+	var scenes := [
+		{"title_ja":"地核の沈黙","title_en":"SILENCE BELOW","text_ja":"アーク・シンギュラリティが止まり、千年続いた機械の鼓動が途絶えた。","text_en":"ARCH SINGULARITY STOPPED. A MECHANICAL HEARTBEAT A THOUSAND YEARS OLD FELL SILENT.","texture":MechanicalBeastTextures["arch_singularity"],"accent":Palette.PAPER},
+		{"title_ja":"第六適合個体","title_en":"UNIT SIX","text_ja":"帰還命令を受けたヴォルト・ノマドは、なお深部から届く微かな電流へ振り返る。","text_en":"ORDERED TO ASCEND, VOLT NOMAD TURNED TOWARD A CURRENT STILL WHISPERING FROM BELOW.","texture":ProtagonistTexture,"accent":Palette.CYAN},
+		{"title_ja":"奪ったのではない","title_en":"NOT STOLEN","text_ja":"六体の魔獣核は武器ではなかった。地底世界が残した、六つの生存記録だった。","text_en":"THE SIX BEAST CORES WERE NOT WEAPONS. THEY WERE SIX SURVIVAL RECORDS LEFT BY THE WORLD BELOW.","texture":MechanicalBeastTextures["relay_hydra"],"accent":Palette.VIOLET},
+		{"title_ja":"主獣たちの記憶","title_en":"MEMORY OF COLOSSI","text_ja":"グリッド・リーチも、サーマル・タイタンも、原初電流から世界を守るため壊れ続けていた。","text_en":"GRID LEECH AND THERMAL TITAN HAD BEEN BREAKING THEMSELVES TO HOLD BACK THE FIRST CURRENT.","texture":MechanicalBeastTextures["prime_current_form_2"],"accent":Palette.CORAL},
+		{"title_ja":"無冠機神","title_en":"THE CROWNLESS ENGINE","text_ja":"王冠を持たぬ機神は支配者ではない。停止することを許されなかった、最初の動力炉だった。","text_en":"THE CROWNLESS ENGINE WAS NO RULER — ONLY THE FIRST REACTOR, NEVER PERMITTED TO STOP.","texture":MechanicalBeastTextures["prime_current_form_1"],"accent":Palette.MINT},
+		{"title_ja":"五つのOVERLIMIT","title_en":"FIVE OVERLIMITS","text_ja":"撃鉄、太陽炉、事象砲、主権群体、六核神化。選ばれた装備ではなく、すべてが一つの意志となった。","text_en":"STRIKER, SUN, HORIZON, SWARM, APOTHEOSIS — NOT EQUIPPED PARTS, BUT ONE CONVERGENT WILL.","texture":ProtagonistTexture,"accent":Palette.AMBER},
+		{"title_ja":"原初電流の終わり","title_en":"THE CURRENT REMEMBERS","text_ja":"最後の電流は消滅しなかった。機械と獣と狩人の記憶へ分かれ、地上へ昇っていった。","text_en":"THE LAST CURRENT DID NOT VANISH. IT BECAME THE MEMORIES OF MACHINE, BEAST, AND HUNTER — RISING.","texture":MechanicalBeastTextures["prime_current_form_3"],"accent":Palette.PAPER},
+		{"title_ja":"夜明けの機核","title_en":"CORE OF DAWN","text_ja":"任務完了。だが今度の沈黙は終わりではない。誰かが選び取った、休息だった。","text_en":"MISSION COMPLETE. THIS SILENCE WAS NOT AN END, BUT A REST SOMEONE FINALLY CHOSE.","texture":ProtagonistTexture,"accent":Palette.CYAN},
+	]
+	var scene: Dictionary = scenes[clampi(epilogue_scene, 0, scenes.size() - 1)]
+	var accent: Color = scene.accent
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.006, 0.017, 0.94))
+	for index in range(9):
+		var radius := 95.0 + float(index) * 34.0 + sin(animation_time * 0.35 + index) * 8.0
+		draw_arc(Vector2(640, 315), radius, -PI * 0.72, PI * 1.28, 72, Palette.with_alpha(accent, 0.15 - float(index) * 0.012), 2.0)
+	var image_rect := Rect2(118, 96, 504, 504)
+	draw_machine_plate(image_rect, Palette.with_alpha(Palette.INK, 0.92), Palette.with_alpha(accent, 0.72), 22.0, 2.0)
+	draw_texture_rect(scene.texture, Rect2(154, 126, 432, 432), false, Color(0.96, 0.98, 1.0, 0.96))
+	draw_string(Palette.UI_FONT, Vector2(674, 142), "TRUE ENDING // %02d / %02d" % [epilogue_scene + 1, scenes.size()], HORIZONTAL_ALIGNMENT_LEFT, 500, 12, accent)
+	draw_string(DisplayFont, Vector2(668, 214), str(scene.get("title_ja" if is_japanese else "title_en")), HORIZONTAL_ALIGNMENT_LEFT, 500, 31, Palette.PAPER)
+	draw_line(Vector2(668, 240), Vector2(1162, 240), Palette.with_alpha(accent, 0.42), 2.0)
+	var body := str(scene.get("text_ja" if is_japanese else "text_en"))
+	var lines := wrap_text_simple(body, 26 if is_japanese else 42)
+	for line_index in range(lines.size()):
+		draw_string(Palette.UI_FONT, Vector2(668, 296 + line_index * 34), str(lines[line_index]), HORIZONTAL_ALIGNMENT_LEFT, 500, 15, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(668, 566), loc("クリック / ENTER：次へ", "CLICK / ENTER: NEXT"), HORIZONTAL_ALIGNMENT_LEFT, 300, 12, Palette.MUTED)
+	draw_campaign_button(epilogue_skip_rect, loc("スキップ", "SKIP"), Palette.MUTED, false)
+	var progress_width := 494.0 / float(scenes.size())
+	for index in range(scenes.size()):
+		draw_rect(Rect2(668 + index * progress_width, 612, progress_width - 6, 5), accent if index <= epilogue_scene else Palette.with_alpha(Palette.MUTED, 0.2))
+
+func wrap_text_simple(text: String, max_chars: int) -> Array[String]:
+	var lines: Array[String] = []
+	var remaining := text
+	while remaining.length() > max_chars:
+		var split_at := max_chars
+		if not is_japanese:
+			var candidate := remaining.substr(0, max_chars + 1).rfind(" ")
+			if candidate > max_chars / 2:
+				split_at = candidate
+		lines.append(remaining.substr(0, split_at).strip_edges())
+		remaining = remaining.substr(split_at).strip_edges()
+	if not remaining.is_empty():
+		lines.append(remaining)
+	return lines
 
 func draw_audio_settings_overlay() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.004, 0.01, 0.025, 0.92))
@@ -2457,9 +2682,13 @@ func draw_campaign_screen() -> void:
 			draw_boss_selection()
 		CampaignRoute.RoutePhase.NORMAL_END:
 			draw_campaign_ending(false)
-		CampaignRoute.RoutePhase.TRUE_END:
-			draw_campaign_ending(true)
-		CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY:
+		CampaignRoute.RoutePhase.POST_TRUE_CHOICE:
+			draw_post_true_choice()
+		CampaignRoute.RoutePhase.FINAL_END:
+			draw_final_ending_gate()
+		CampaignRoute.RoutePhase.POSTGAME:
+			draw_postgame_terminal()
+		CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.FINAL_BOSS:
 			draw_boss_briefing()
 
 func draw_campaign_map() -> void:
@@ -2535,8 +2764,9 @@ func draw_boss_choice_card(index: int, definition: Dictionary) -> void:
 func draw_boss_briefing() -> void:
 	var definition := StageCatalog.boss(campaign_route.current_boss_id)
 	var singularity: bool = campaign_route.phase == CampaignRoute.RoutePhase.SINGULARITY
+	var final_encounter: bool = campaign_route.phase == CampaignRoute.RoutePhase.FINAL_BOSS
 	var accent := Color(str(definition.get("accent", "f5f0db")))
-	var label := loc("真の地核機神", "TRUE WORLD ENGINE") if singularity else loc("強化深層主獣", "ENHANCED ABYSSAL BOSS")
+	var label := loc("本当のラスボス・第%d形態" % campaign_route.final_boss_form, "THE FINAL ADVERSARY · FORM %d" % campaign_route.final_boss_form) if final_encounter else loc("真の地核機神", "TRUE WORLD ENGINE") if singularity else loc("強化深層主獣", "ENHANCED ABYSSAL BOSS")
 	draw_string(DisplayFont, Vector2(0, 156), label, HORIZONTAL_ALIGNMENT_CENTER, 1280, 18, accent)
 	draw_string(DisplayFont, Vector2(0, 220), str(definition.get("name_ja" if is_japanese else "name_en", campaign_route.current_boss_id)), HORIZONTAL_ALIGNMENT_CENTER, 1280, 38, Palette.PAPER)
 	var center := Vector2(640, 340)
@@ -2545,8 +2775,48 @@ func draw_boss_briefing() -> void:
 	var portrait: Texture2D = MechanicalBeastTextures.get(str(definition.id), grid_wraith_texture)
 	draw_texture_rect(portrait, Rect2(center - Vector2(116, 116), Vector2(232, 232)), false, Color(0.96, 0.97, 1.0, 1.0))
 	draw_string(Palette.UI_FONT, Vector2(350, 470), str(definition.get("rule_ja" if is_japanese else "rule_en", "")), HORIZONTAL_ALIGNMENT_CENTER, 580, 15, Palette.MUTED)
-	draw_campaign_button(campaign_primary_rect, loc("地核決戦を開始", "ENGAGE THE WORLD ENGINE") if singularity else loc("強化ボス戦を開始", "ENGAGE ENHANCED BOSS"), accent, true)
+	draw_campaign_button(campaign_primary_rect, loc("第%d形態へ接続" % campaign_route.final_boss_form, "ENGAGE FORM %d" % campaign_route.final_boss_form) if final_encounter else loc("地核決戦を開始", "ENGAGE THE WORLD ENGINE") if singularity else loc("強化ボス戦を開始", "ENGAGE ENHANCED BOSS"), accent, true)
 	draw_campaign_button(campaign_secondary_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
+
+func draw_post_true_choice() -> void:
+	var accent := Palette.PAPER
+	draw_string(DisplayFont, Vector2(0, 136), loc("地核機神、停止", "WORLD ENGINE SILENCED"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 30, accent)
+	draw_string(Palette.UI_FONT, Vector2(0, 168), loc("だが、破壊したはずの機核から未知の電流が呼びかけている", "YET AN UNKNOWN CURRENT CALLS FROM THE CORE YOU DESTROYED"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 14, Palette.MUTED)
+	var panel := Rect2(226, 204, 828, 300)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(Palette.VIOLET, 0.48), 20.0, 2.0)
+	draw_texture_rect(ProtagonistTexture, Rect2(256, 226, 238, 238), false, Color(0.92, 0.97, 1.0, 0.94))
+	draw_string(Palette.UI_FONT, Vector2(526, 252), "VOLT NOMAD // INTERNAL LOG", HORIZONTAL_ALIGNMENT_LEFT, 470, 11, Palette.CYAN)
+	draw_string(DisplayFont, Vector2(526, 294), loc("『任務は終わった。帰還経路は開いている』", "“THE MISSION IS COMPLETE. THE ASCENT PATH IS OPEN.”"), HORIZONTAL_ALIGNMENT_LEFT, 470, 17, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(526, 342), loc("『……それでも、深部から私を呼ぶ信号がある』", "“...AND STILL, SOMETHING BELOW IS CALLING ME.”"), HORIZONTAL_ALIGNMENT_LEFT, 470, 17, Palette.AMBER)
+	draw_string(Palette.UI_FONT, Vector2(526, 390), loc("帰還すれば通常エンドロール。本当の敵へ応答するならOVERLIMITが1つ必要。", "ASCEND FOR THE WORLD-ENGINE CREDITS. ANSWERING THE SIGNAL REQUIRES ONE OVERLIMIT."), HORIZONTAL_ALIGNMENT_LEFT, 470, 12, Palette.MUTED)
+	draw_string(DisplayFont, Vector2(526, 438), "OVERLIMIT  %d / 5    ·    RESIDUE  %d" % [run.overlimit_count(), run.singularity_residue], HORIZONTAL_ALIGNMENT_LEFT, 470, 15, Palette.MINT if run.overlimit_count() > 0 else Palette.AMBER)
+	draw_campaign_button(campaign_primary_rect, loc("地上へ帰還する・エンドロール", "ASCEND · WORLD-ENGINE CREDITS"), Palette.CYAN, campaign_selected == 0)
+	draw_campaign_button(campaign_secondary_rect, loc("深部信号へ応答する", "ANSWER THE DEEP SIGNAL"), Palette.VIOLET, campaign_selected == 1)
+	draw_campaign_button(respec_rect, "T  OVERLIMIT", Palette.AMBER, false)
+
+func draw_final_ending_gate() -> void:
+	draw_string(DisplayFont, Vector2(0, 156), loc("原初電流、終息", "THE FIRST CURRENT ENDS"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 36, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(0, 194), loc("機械魔獣、地核機神、そして狩人。そのすべての記憶が夜明けへ流れ出す。", "BEASTS, WORLD ENGINE, AND HUNTER — ALL THEIR MEMORIES FLOW TOWARD DAWN."), HORIZONTAL_ALIGNMENT_CENTER, 1280, 14, Palette.MUTED)
+	for index in range(5):
+		var color := gear_color(str(GearCatalog.GEARS[index].id))
+		var center := Vector2(430 + index * 105, 354)
+		draw_circle(center, 40, Palette.with_alpha(color, 0.15))
+		draw_texture_rect(GearTextures[str(GearCatalog.GEARS[index].id)], Rect2(center - Vector2(32, 32), Vector2(64, 64)), false)
+		draw_string(DisplayFont, center + Vector2(-28, 64), "IV", HORIZONTAL_ALIGNMENT_CENTER, 56, 16, color)
+	draw_campaign_button(campaign_primary_rect, loc("真エンディングを見る", "VIEW THE TRUE ENDING"), Palette.PAPER, true)
+	draw_campaign_button(campaign_ending_return_rect, loc("タイトルへ", "RETURN TO TITLE"), Palette.MUTED, false)
+
+func draw_postgame_terminal() -> void:
+	draw_string(DisplayFont, Vector2(0, 156), "PROJECT CHARGE // COMPLETE", HORIZONTAL_ALIGNMENT_CENTER, 1280, 34, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(0, 194), loc("真エンディング記録済み。Infinite Modeは強化を完成させるためだけの任意モードです。", "TRUE ENDING RECORDED. INFINITE MODE REMAINS AN OPTIONAL SPACE TO FINISH STANDARD SKILLS."), HORIZONTAL_ALIGNMENT_CENTER, 1280, 14, Palette.MUTED)
+	var panel := Rect2(300, 240, 680, 246)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.95), Palette.with_alpha(Palette.CYAN, 0.4), 18.0, 2.0)
+	draw_string(DisplayFont, Vector2(0, 302), loc("本当のラスボス撃破", "PRIME CURRENT DEFEATED"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 22, Palette.MINT)
+	draw_string(DisplayFont, Vector2(0, 354), "OVERLIMIT %d / 5   ·   SKILLS %d / %d" % [run.overlimit_count(), run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_CENTER, 1280, 18, Palette.AMBER)
+	draw_string(Palette.UI_FONT, Vector2(0, 408), loc("Infinite WAVEに固有実績・装備枠解禁はありません", "INFINITE WAVES HAVE NO EXCLUSIVE RECORDS OR EQUIPMENT-SLOT UNLOCKS"), HORIZONTAL_ALIGNMENT_CENTER, 1280, 12, Palette.MUTED)
+	draw_campaign_button(campaign_primary_rect, loc("Infinite Modeへ", "ENTER INFINITE MODE"), Palette.VIOLET, true)
+	draw_campaign_button(campaign_credits_rect, loc("真エンディングを再生", "REPLAY TRUE ENDING"), Palette.PAPER, false)
+	draw_campaign_button(campaign_ending_return_rect, loc("タイトルへ", "RETURN TO TITLE"), Palette.MUTED, false)
 
 func draw_campaign_ending(true_end: bool) -> void:
 	var accent := Palette.PAPER if true_end else Palette.AMBER
@@ -2615,7 +2885,7 @@ func campaign_header_context() -> String:
 		return loc("深層討伐地図", "ABYSSAL HUNT MAP") + " · %d/6" % campaign_route.completed_stage_ids.size()
 	if campaign_route.phase == CampaignRoute.RoutePhase.BOSS_SELECT:
 		return loc("通常ボスを選択", "SELECT NORMAL BOSS")
-	if campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.TRUE_END]:
+	if campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 		return loc("討伐記録", "HUNT RECORD")
 	if campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
 		return "INFINITE MODE // WAVE %d" % maxi(1, run.infinite_wave)
@@ -3039,7 +3309,7 @@ func draw_gear_tree_overlay() -> void:
 	var accent := Color(str(current_gear.accent))
 	draw_string(DisplayFont, Vector2(66, 198), gear_name(current_gear), HORIZONTAL_ALIGNMENT_LEFT, 176, 18, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(250, 196), str(current_gear.get("desc_ja" if is_japanese else "desc_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 272, 12, Palette.MUTED)
-	for tier_index in range(3):
+	for tier_index in range(4):
 		var tier := tier_index + 1
 		var tier_rect := tree_tier_rects[tier_index]
 		var tier_selected := selected_tree_tier == tier
@@ -3049,6 +3319,8 @@ func draw_gear_tree_overlay() -> void:
 		draw_string(DisplayFont, tier_rect.position + Vector2(0, 22), "TIER %s" % roman_tier(tier), HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 11, Palette.PAPER if tier_selected else tier_color)
 		if not tier_unlocked:
 			draw_string(Palette.UI_FONT, tier_rect.position + Vector2(0, 31), "LOCK", HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 8, Palette.CORAL)
+		elif tier == 4:
+			draw_string(Palette.UI_FONT, tier_rect.position + Vector2(0, 31), "ALL ACTIVE", HORIZONTAL_ALIGNMENT_CENTER, tier_rect.size.x, 7, Palette.AMBER)
 	var skills := selected_tree_skills()
 	for definition in skills:
 		var parent_id := str(definition.get("parent", ""))
@@ -3084,7 +3356,8 @@ func draw_tree_node(index: int, definition: Dictionary, accent: Color) -> void:
 	elif not unlocked:
 		draw_string(DisplayFont, rect.position + Vector2(108, 48), "LOCK", HORIZONTAL_ALIGNMENT_RIGHT, 88, 10, Palette.CORAL)
 	else:
-		draw_string(Palette.UI_FONT, rect.position + Vector2(108, 48), "%d CHARGE" % run.upgrade_cost(id), HORIZONTAL_ALIGNMENT_RIGHT, 88, 11, Palette.AMBER if affordable else Palette.MUTED)
+		var cost_label := "RESIDUE" if bool(definition.get("overlimit", false)) and run.singularity_residue > 0 else "%d CHARGE" % run.upgrade_cost(id)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(96, 48), cost_label, HORIZONTAL_ALIGNMENT_RIGHT, 100, 10, Palette.AMBER if affordable else Palette.MUTED)
 	var progress := float(level) / float(maxi(1, maximum))
 	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176, 5)), Palette.with_alpha(border, 0.10))
 	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176 * progress, 5)), border)
@@ -3112,7 +3385,8 @@ func draw_tree_detail_panel(accent: Color) -> void:
 	elif run.upgrade_level(id) >= run.skill_max_rank(id):
 		draw_string(Palette.UI_FONT, Vector2(842, 510), loc("このノードは最大強化済み", "THIS NODE IS FULLY UPGRADED"), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.MINT)
 	else:
-		draw_string(Palette.UI_FONT, Vector2(842, 510), loc("次ランク費用：%d CHARGE" % run.upgrade_cost(id), "NEXT RANK: %d CHARGE" % run.upgrade_cost(id)), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.AMBER if run.can_purchase(id) else Palette.MUTED)
+		var next_cost_text := loc("特異点残滓で無料復旧", "RESTORE FREE WITH SINGULARITY RESIDUE") if bool(definition.get("overlimit", false)) and run.singularity_residue > 0 else loc("次ランク費用：%d CHARGE" % run.upgrade_cost(id), "NEXT RANK: %d CHARGE" % run.upgrade_cost(id))
+		draw_string(Palette.UI_FONT, Vector2(842, 510), next_cost_text, HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.AMBER if run.can_purchase(id) else Palette.MUTED)
 	var purchasable: bool = run.can_purchase(id)
 	draw_campaign_button(tree_purchase_rect, loc("購入 / 強化", "PURCHASE / UPGRADE") if run.upgrade_level(id) < run.skill_max_rank(id) else "MAX", accent if purchasable else Palette.MUTED, purchasable)
 	if campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:

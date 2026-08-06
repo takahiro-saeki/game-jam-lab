@@ -157,3 +157,25 @@ Suno v5.5 / Advanced / Instrumentalに加えて、長さを`Custom 3:00`へ固�
 | スウォーム・マトリアーク | [Hive Command Lattice 3M Loop A — 3:00](https://suno.com/song/856931c9-15fa-40c3-bb29-ff656d3c99b8) | [Hive Command Lattice 3M Loop B — 2:58](https://suno.com/song/ac0e9945-68a2-43e8-aa7c-44fa97503785) |
 | フェイズ・マンティス | [Critical Parallax 3M Loop A — 3:00](https://suno.com/song/1fb0ce55-ef2b-43ba-85b9-625d87116664) | [Critical Parallax 3M Loop B — 3:00](https://suno.com/song/f968b738-6e79-4a72-a712-d5544c2628d9) |
 | グリッド・リーチ | [Siphon Breakpoint 3M Loop A — 3:00](https://suno.com/song/357a05b0-1683-4638-9e86-e253e9e92123) | [Siphon Breakpoint 3M Loop B — 3:00](https://suno.com/song/e6534aad-95b6-48e5-9a5b-04373f72b450) |
+
+## v8追加曲 — PRIME CURRENT / 2つのエンディング
+
+実装側には `prime_current`, `ending_world`, `ending_true` の独立スロットを追加済み。マスター確定までは既存曲を仮配置する。
+
+### 本当のラスボス3形態 — `Prime Current: The Current Remembers`
+
+Custom 3:00、Instrumental。3形態を1曲で連続させ、各区間を切り出してもループできる構成。
+
+> Instrumental three-form ultimate boss suite for PRIME CURRENT, the first machine consciousness buried beneath a defeated world-engine. Exactly three minutes, 158 BPM, F sharp minor moving toward an unresolved luminous mode, begin the main combat pulse within four seconds. Form one: colossal crownless industrial footsteps, low piston polyrhythm and a wounded six-note machine motif. Form two: the body unfolds into a null cathedral, circular broken-beat percussion, phase-cancelled synthesizers and three rotating attack voices. Form three: armor disappears, leaving white-cyan current, exposed machine bones and five colored OVERLIMIT themes converging into a clear heroic counter-melody. Futuristic sacred machinery without choir or vocals, frightening then tragic, precise transients and open midrange for rapid clicks and alarms. Use repeating eight-to-sixteen-bar cells, no long breakdown, no fade-out, no final cadence; last bar must reconnect harmonically and rhythmically to the first.
+
+### 地核機神エンド — `After the World Engine`
+
+通常帰還を選んだ際の約3分エンドロール。達成感はあるが、深部信号がまだ残っている。
+
+> Instrumental ending-credits piece after the defeat of ARCH SINGULARITY. Exactly three minutes, 82 BPM, D major shaded by B minor, warm analog pads, intimate synthetic piano, soft struck metal and a slow electrical heartbeat. Resolve the established PROJECT CHARGE four-note motif with dignity, but leave a faint low six-note signal unanswered beneath the final section, suggesting something deeper still lives. Reflective mechanical dawn, earned relief rather than triumph, spacious mix, no vocals, no trailer orchestra, no fade-out. Build from sparse memory fragments to a warm full statement, then return to the opening heartbeat so the credits can loop seamlessly.
+
+### 真エンディング — `The Current Remembers`
+
+8枚の紙芝居と真エンドロール用。多少長く聴けるようCustom 3:00。通常エンドとは明確に別曲。
+
+> Instrumental true-ending music for a lone automaton who learns that the defeated beasts, world-engine and final current were all fragments of one surviving memory. Exactly three minutes, 76 BPM, begin with solitary ivory-piano notes and quiet cable resonance, gradually introduce warm analog strings, glass harmonics and five gentle colored synth voices that weave into one transformed PROJECT CHARGE motif. Bittersweet, humane and luminous; grief becoming chosen rest, never sentimental or grandiose. The last minute should feel like first daylight reaching an underground machine for the first time. No vocals, no choir, no cinematic boom, no fade-out; sustain a soft electrical pulse that can loop back into the first piano note for long illustrated credits.

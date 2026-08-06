@@ -1,5 +1,13 @@
 # PROJECT CHARGE Art Review
 
+## v8 本当のラスボス
+
+- `http://127.0.0.1:6670/?batch=v8-final-boss-form-1`
+- `http://127.0.0.1:6670/?batch=v8-final-boss-form-2`
+- `http://127.0.0.1:6670/?batch=v8-final-boss-form-3`
+
+各形態3案を生成済み。Codex暫定本命は順に B / A / C で、Godot版にも仮採用済みです。Human Reviewで別案を承認した場合は、ゲーム側の3つのテクスチャ参照だけを交換します。
+
 PixelLabで生成した候補を、ファイル一覧ではなく「制作意図と比較理由が付いた提案」として確認するためのローカル専用レビュー画面です。
 
 ## 起動
