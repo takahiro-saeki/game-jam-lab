@@ -14,6 +14,8 @@
 
 v9では「人型1体」から脱却し、細い王体を巨大な背後機構が包む3方向を384pxで生成しました。Human Reviewで `Fallen Machine Seraph / 闇堕機天使` が評価5・正式採用され、Godot第3形態へ統合済みです。高解像度アートリファレンスは `docs/art-direction/` に保存しています。
 
+AUTO攻撃3案とOVERLIMIT復旧UI3案は `http://127.0.0.1:6670/?batch=v10-auto-vfx-overlimit-ui` で確認できます。AUTO弾は武器変異別に3案すべてを統合し、OVERLIMITはC「機天封印器」を共通紋章として仮採用しています。
+
 PixelLabで生成した候補を、ファイル一覧ではなく「制作意図と比較理由が付いた提案」として確認するためのローカル専用レビュー画面です。
 
 ## 起動

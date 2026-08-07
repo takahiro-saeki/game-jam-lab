@@ -468,6 +468,8 @@ func test_charge_clicker_v5() -> void:
 		"prime_current_form_3": "prime_current",
 	}
 	check(game.EncounterBGMKeys == expected_encounter_music, "selected Suno masters are assigned to the intended enemy identities")
+	check(game.AutoProjectileTextures.size() == 3 and game.AutoProjectileTextures["standard"].resource_path.ends_with("auto-vfx-arc-lance-v10-a.png"), "PixelLab AUTO projectiles are integrated for standard, gatling and rail weapon forms")
+	check(game.OverlimitSocketTexture.resource_path.ends_with("overlimit-socket-seraph-lock-v10-c.png"), "the selected seraph-lock emblem distinguishes OVERLIMIT nodes")
 	check(game.MechanicalBeastTextures["prime_current_form_3"].resource_path.ends_with("final-fallen-machine-seraph-v9-c-cutout.png"), "the transparent cutout of the human-selected Fallen Machine Seraph is integrated into final form three")
 	check(str(ChargeStageCatalog.boss("prime_current_form_3").name_en) == "PRIME CURRENT — FALLEN MACHINE SERAPH", "final form three uses the selected Fallen Machine Seraph identity")
 	var music_test_phases := {
@@ -526,10 +528,14 @@ func test_charge_clicker_v5() -> void:
 		overlimit_run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
 	overlimit_run.refresh_stats()
 	check(overlimit_run.unlock_overlimit_system() and overlimit_run.singularity_residue == 1 and overlimit_run.technology_tier() == 4, "ARCH residue unlocks Tier IV and grants one free permanent restoration")
+	check(overlimit_run.upgrade_cost("heavenbreaker_command") == 0, "the recovered residue makes the first OVERLIMIT restoration free")
 	overlimit_run.credits = 5000000000
 	var bought_every_overlimit := true
-	for definition in ChargeGearCatalog.OVERLIMITS:
+	for index in range(ChargeGearCatalog.OVERLIMITS.size()):
+		var definition: Dictionary = ChargeGearCatalog.OVERLIMITS[index]
 		bought_every_overlimit = bought_every_overlimit and overlimit_run.purchase_upgrade(str(definition.id))
+		if index == 0:
+			check(overlimit_run.upgrade_cost("perpetual_sun") == 20000000, "later OVERLIMIT restorations expose the intended escalating CHARGE economy")
 	check(bought_every_overlimit and overlimit_run.overlimit_count() == 5 and overlimit_run.skill_points_bought() == 317, "all five OVERLIMITS remain simultaneously active outside the standard 317 ranks")
 	overlimit_run.respec_skills()
 	check(overlimit_run.overlimit_count() == 5, "standard free respec never removes permanent OVERLIMIT restorations")

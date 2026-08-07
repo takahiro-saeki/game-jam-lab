@@ -11,13 +11,20 @@
 - さらに単体人型のスケール不足を解決するため、OpenAI built-in image generationで「日蝕王」「無限王座」「闇堕機天使」の高解像度アートリファレンス3枚を生成し、`docs/art-direction/` に保存。その方向をPixelLab `pixen` の384px透過素材3案 `v9-final-boss-scale-concepts` へ翻訳した。
 - PRIME CURRENTのPixelLab候補は初回9枚、細身闇王3枚、スケール再設計3枚の合計15枚。Human Reviewで `final-fallen-machine-seraph-v9-c.png` が評価5・正式採用され、灰色生成背景だけを除いた `final-fallen-machine-seraph-v9-c-cutout.png` を第3形態と真エンディング紙芝居へ統合済み。
 
+## 2026-08-07 — AUTO VFX / OVERLIMIT UI v10
+
+- PixelLab API (`pixen`) でAUTO攻撃3案（192×96）とOVERLIMIT復旧UI3案（256×128）を生成。
+- `auto-vfx-arc-lance-v10-a.png`, `auto-vfx-gatling-packet-v10-b.png`, `auto-vfx-horizon-spike-v10-c.png` は標準 / GATLING / RAILの各射撃としてGodotへ統合。
+- 復旧UIは `overlimit-socket-seraph-lock-v10-c.png` を共通紋章へ採用。残る2案は未加工API出力のまま比較履歴に保持。
+- バッチ、プロンプト、API usage、Codex選考、Human Review欄は `v10-auto-vfx-overlimit-ui` に保存。
+
 Generated with OpenAI's built-in image generation tool on August 1, 2026. The outputs were resized to 1280px-wide JPEGs for the Godot Web build. Generated images contain no requested text, logos, trademarks, or franchise elements.
 
 The Japanese and Latin body UI typeface is [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp). Device labels and display headings use [DotGothic16](https://github.com/google/fonts/tree/main/ofl/dotgothic16). Both are distributed through Google Fonts under the SIL Open Font License 1.1; font files and license copies are stored in `godot/assets/fonts/`.
 
 ## PROJECT CHARGE — PixelLab exploration and mechanical-beast production pass
 
-Eighty-three original pixel-art candidates were generated through PixelLab API v2 on August 2–5, 2026. The first 26 consist of five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, three 64×64 transparent energy-shard icons, and nine 64×64 transparent control emblems for CHARGE, DISCHARGE, and AUTO OFF. The UI Identity pass added 18 transparent machine-housing candidates: three 384×128 upgrade racks, three 384×128 three-part control kits, six 320×80 GRID WRAITH gauge attempts, and six 192×96 shard-accumulator attempts. The v3 hunt pass added one 256×256 transparent first-pass sprite for each of six mechanical beasts, two normal bosses, and the true boss. The v5 visual-identity pass added three 192×192 protagonist concepts, fifteen 96×96 five-gear emblems, and nine 320×180 region backgrounds. The v6 refinement pass added three slimmer 192×192 protagonist candidates. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
+Eighty-nine original pixel-art candidates were generated through PixelLab API v2 on August 2–7, 2026. The first 26 consist of five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, three 64×64 transparent energy-shard icons, and nine 64×64 transparent control emblems for CHARGE, DISCHARGE, and AUTO OFF. The UI Identity pass added 18 transparent machine-housing candidates: three 384×128 upgrade racks, three 384×128 three-part control kits, six 320×80 GRID WRAITH gauge attempts, and six 192×96 shard-accumulator attempts. The v3 hunt pass added one 256×256 transparent first-pass sprite for each of six mechanical beasts, two normal bosses, and the true boss. The v5 visual-identity pass added three 192×192 protagonist concepts, fifteen 96×96 five-gear emblems, and nine 320×180 region backgrounds. The v6 refinement pass added three slimmer 192×192 protagonist candidates. The v10 combat polish pass added three 192×96 AUTO projectile effects and three 256×128 OVERLIMIT UI concepts. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
 
 - Untouched API outputs: `godot/assets/charge_clicker/pixellab/source/`
 - Full prompts, settings, usage, scores, and review decisions: `tools/art-review/data/review-manifest.json`

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-06T23:50:09.457Z",
+  "updatedAt": "2026-08-07T06:40:36.585Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -33,7 +33,11 @@
       "v8FinalBossForm1": "final-crownless-reliquary-v8-b",
       "v8FinalBossForm2": "final-null-cathedral-radial-v8-a",
       "v8FinalBossForm3": "final-first-current-singular-v8-c",
-      "v9FinalBossForm3": "final-fallen-machine-seraph-v9-c"
+      "v9FinalBossForm3": "final-fallen-machine-seraph-v9-c",
+      "v10AutoStandard": "auto-vfx-arc-lance-v10-a",
+      "v10AutoGatling": "auto-vfx-gatling-packet-v10-b",
+      "v10AutoRail": "auto-vfx-horizon-spike-v10-c",
+      "v10OverlimitEmblem": "overlimit-socket-seraph-lock-v10-c"
     },
     "palette": [
       "#09111F",
@@ -4703,6 +4707,282 @@
             "rating": 5,
             "note": "これで行こう！！！",
             "reviewedAt": "2026-08-06T23:50:09.457Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v10-auto-vfx-overlimit-ui",
+      "order": 29,
+      "title": "AUTO weapon VFX and OVERLIMIT restoration UI",
+      "titleJa": "AUTO攻撃演出・OVERLIMIT復旧UI",
+      "objective": "細い線と点だけのAUTO射撃を明確な武器攻撃へ変え、最終強化を通常ノードではなく恒久機構の復旧として視覚化する。",
+      "gate": "AUTO弾は72×28px前後のゲーム表示で進行方向と威力が読める。復旧ソケットは216×72px表示で中央に日本語と費用を重ねても輪郭が残り、偽文字を含まない。",
+      "status": "ready",
+      "candidates": [
+        {
+          "id": "auto-vfx-arc-lance-v10-a",
+          "title": "Arc Lance Packet",
+          "titleJa": "弧光槍弾",
+          "variation": "標準AUTO砲向け。電磁槍と圧縮環が一発の攻撃として明瞭。",
+          "prompt": "One single horizontal automatic-cannon projectile effect traveling strictly from left to right, an elongated cyan-white plasma lance with a sharp ivory leading tip, two small mechanical compression rings, a compact violet ion tail and sparse amber ignition pixels, strong readable forward motion, the entire projectile fully contained with generous transparent space, no gun, no target, no explosion. Premium authored 16-bit pixel art game asset, crisp deliberate pixel clusters, hard one-to-two pixel outline, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/vfx/auto-vfx-arc-lance-v10-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-07T06:32:44.224Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 96,
+            "summary": "標準AUTO砲へ採用。白い穿孔端、シアンの長い出力体、圧縮環が72〜88px表示でも一発の武器攻撃として読めます。",
+            "strengths": [
+              "既存の線と点より攻撃方向と質量が明快",
+              "標準砲の工業的な機構と合う"
+            ],
+            "concerns": [
+              "生成方向が左向きなのでGodot側で水平反転して使用"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "auto-vfx-gatling-packet-v10-b",
+          "title": "Gatling Burst Packet",
+          "titleJa": "連装徹甲弾群",
+          "variation": "GATLING向け。三発を一まとまりにして連射力を表現。",
+          "prompt": "Exactly three small horizontal automatic-cannon penetrator rounds traveling left to right in a tight staggered formation, each with an amber-hot core, navy mechanical jacket and short cyan electrical wake, together reading as one rapid-fire burst packet, all three projectiles fully contained and clearly separated, generous transparent margin, no gun, no target, no explosion, no additional bullets. Premium authored 16-bit pixel art game asset, crisp deliberate pixel clusters, hard one-to-two pixel outline, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/vfx/auto-vfx-gatling-packet-v10-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-07T06:33:35.708Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 95,
+            "summary": "GATLING変異へ採用。正確な三連弾が高速連射と弾幕の成長を一目で伝えます。",
+            "strengths": [
+              "三発が完全に分離し、小表示でも連射と分かる",
+              "アンバー噴炎とシアン弾頭の方向が正しい"
+            ],
+            "concerns": [
+              "標準砲で常用すると密度が高いためGATLING専用に限定"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "auto-vfx-horizon-spike-v10-c",
+          "title": "Event-Horizon Spike",
+          "titleJa": "事象地平穿孔弾",
+          "variation": "RAIL・終盤向け。黒い針と空間破断環で高出力を表現。",
+          "prompt": "One single horizontal endgame rail-cannon projectile traveling strictly left to right, a long thin near-black singularity spike with an ivory-cyan cutting edge, broken violet gravitational rings around its middle, cyan distortion pixels pulled into the tail and one restrained coral warning spark, elegant and dangerous rather than a generic laser, fully contained with transparent margin, no gun, no target, no explosion. Premium authored 16-bit pixel art game asset, crisp deliberate pixel clusters, hard one-to-two pixel outline, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 192,
+          "height": 96,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/vfx/auto-vfx-horizon-spike-v10-c.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-07T06:34:14.131Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 97,
+            "summary": "RAIL変異へ採用。黒い穿孔軸と紫・シアンの空間破断環が終盤火力を固有化します。",
+            "strengths": [
+              "通常レーザーではない事象兵器の印象",
+              "弾体が細く敵画像とHP表示を隠さない"
+            ],
+            "concerns": [
+              "生成方向が左向きなのでGodot側で水平反転して使用"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "overlimit-socket-five-bus-v10-a",
+          "title": "Five-Bus Restoration Socket",
+          "titleJa": "五系統復旧ソケット",
+          "variation": "既存スイッチボード系。5ギアの接続と恒久復旧が読みやすい。",
+          "prompt": "One wide empty OVERLIMIT restoration node housing for a skill tree, heavy asymmetrical navy switchboard metal with exactly five small differently colored conduit terminals feeding a large calm dark central inscription area, a broken safety seal on one corner and cyan repaired wiring, designed as an empty frame with no embedded icon or writing, fully contained orthographic front view. Premium authored 16-bit pixel art game asset, crisp deliberate pixel clusters, hard one-to-two pixel outline, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 128,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/overlimit-socket-five-bus-v10-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-07T06:35:01.513Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "not_recommended",
+            "rank": 3,
+            "score": 74,
+            "summary": "単体装置としては魅力的ですが、横長の空欄ノードではなく斜視の基板になり、文字を重ねる領域が不足しています。",
+            "strengths": [
+              "五色端子と修復配線はOVERLIMITの概念に合う"
+            ],
+            "concerns": [
+              "斜視で既存の正投影UIと不一致",
+              "中央空欄が小さく日本語と価格を置けない"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "overlimit-socket-black-sun-v10-b",
+          "title": "Black-Sun Relay",
+          "titleJa": "黒陽継電環",
+          "variation": "真ボス系。日蝕環の中央へ情報を重ねる静かな構成。",
+          "prompt": "One wide empty OVERLIMIT restoration node housing shaped as a broken black-sun relay, a thin incomplete antique-gold eclipse ring behind a dark rectangular information cavity, exactly five restrained colored contact jewels around the outer rim, two cyan current bridges and hard navy mounting brackets, no filled center, no embedded icon, fully contained orthographic front view. Premium authored 16-bit pixel art game asset, crisp deliberate pixel clusters, hard one-to-two pixel outline, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 128,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/overlimit-socket-black-sun-v10-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-07T06:36:22.394Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 2,
+            "score": 87,
+            "summary": "日蝕継電器の意匠は強く、事象地平砲の専用エンブレム候補。ただし横長フレームではなく円形アイコンになりました。",
+            "strengths": [
+              "黒陽と五色接点が真ボス系統へ自然に接続",
+              "小型アイコンとして読みやすい"
+            ],
+            "concerns": [
+              "全OVERLIMIT共通枠としてはAUTOGUN寄り",
+              "ノード背景には余白不足"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "overlimit-socket-seraph-lock-v10-c",
+          "title": "Seraph Lock",
+          "titleJa": "機天封印器",
+          "variation": "闇堕機天使系。六翼クランプで最終段階らしさを最大化。",
+          "prompt": "One wide empty OVERLIMIT restoration node housing designed as a mechanical-seraph seal, six slim asymmetric wing-like conductor clamps folding toward a quiet dark central information plate, an inverted cyan-violet halo behind the plate, five small colored core contacts integrated into the clamps, premium restrained final-tier machinery, no character, no filled center, no embedded icon, fully contained orthographic front view. Premium authored 16-bit pixel art game asset, crisp deliberate pixel clusters, hard one-to-two pixel outline, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated complete object on transparent background, no ground, no scenery, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 128,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/ui/overlimit-socket-seraph-lock-v10-c.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-07T06:38:25.746Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 94,
+            "summary": "OVERLIMIT共通紋章へ採用。六本の導体翼と五色接点が第三形態へつながり、通常ノードとの差を小面積で作れます。",
+            "strengths": [
+              "72〜90px表示で最終段階と分かる強い輪郭",
+              "通常ノードと詳細パネルの両方へ重ねられる"
+            ],
+            "concerns": [
+              "文字枠にはならないため、既存のコード描画プレートと組み合わせる"
+            ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
           }
         }
       ]

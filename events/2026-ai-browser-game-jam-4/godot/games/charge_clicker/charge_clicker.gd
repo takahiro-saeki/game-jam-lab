@@ -112,6 +112,12 @@ const GearTextures := {
 	"drone": preload("res://assets/charge_clicker/pixellab/source/gear/gear-drone-crown-a.png"),
 	"core": preload("res://assets/charge_clicker/pixellab/source/gear/gear-core-cradle-a.png"),
 }
+const AutoProjectileTextures := {
+	"standard": preload("res://assets/charge_clicker/pixellab/source/vfx/auto-vfx-arc-lance-v10-a.png"),
+	"gatling": preload("res://assets/charge_clicker/pixellab/source/vfx/auto-vfx-gatling-packet-v10-b.png"),
+	"rail": preload("res://assets/charge_clicker/pixellab/source/vfx/auto-vfx-horizon-spike-v10-c.png"),
+}
+const OverlimitSocketTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/overlimit-socket-seraph-lock-v10-c.png")
 const RegionBackgrounds := {
 	"scrap": preload("res://assets/charge_clicker/pixellab/source/environment/bg-scrap-ossuary-a.png"),
 	"geothermal": preload("res://assets/charge_clicker/pixellab/source/environment/bg-geo-pressure-foundry-a.png"),
@@ -2026,7 +2032,8 @@ func try_purchase_skill(id: String, effect_position: Vector2 = SHARD_SOCKET_CENT
 		elif not run.skill_unlocked(id):
 			show_message(skill_lock_text(id), 1.8)
 		else:
-			show_message(loc("CHARGEが足りません", "NOT ENOUGH CHARGE"), 1.1)
+			var missing_charge := maxf(0.0, float(run.upgrade_cost(id)) - run.credits)
+			show_message(loc("CHARGE不足 — あと%s必要" % format_number(missing_charge), "NOT ENOUGH CHARGE — NEED %s MORE" % format_number(missing_charge)), 1.8)
 		if play_sound:
 			synth.error()
 		return false
@@ -3164,7 +3171,7 @@ func draw_direct_attack_combat_panel() -> void:
 		var tracer_start := Vector2(810, 350)
 		var tracer_end := enemy_center - Vector2(88, 0)
 		draw_line(tracer_start, tracer_end, Palette.with_alpha(Palette.VIOLET, 0.12), 2.0)
-		draw_circle(tracer_start.lerp(tracer_end, tracer_progress), 4.0, Palette.VIOLET)
+		draw_auto_projectile(tracer_start, tracer_end, tracer_progress)
 
 	draw_stage_rule_indicator()
 	if message_time > 0.0:
@@ -3209,6 +3216,31 @@ func draw_prime_current_form_three_aura(center: Vector2, damage_ratio: float) ->
 		var tip := center + Vector2(side * (158.0 + pressure * 18.0 - tier * 9.0), -92.0 + tier * 88.0 + sin(animation_time * 1.1 + wing) * 7.0)
 		var bend := root.lerp(tip, 0.52) + Vector2(side * 18.0, -18.0 + tier * 8.0)
 		draw_polyline(PackedVector2Array([root, bend, tip]), Palette.with_alpha(Palette.CYAN if wing < 2 else Palette.VIOLET, 0.13 + pressure * 0.14), 3.0, true)
+
+func draw_auto_projectile(start: Vector2, target: Vector2, progress: float) -> void:
+	var has_gatling: bool = run.upgrade_level("gatling_protocol") > 0
+	var has_rail: bool = run.upgrade_level("rail_protocol") > 0
+	var projectile_key: String = "standard"
+	if has_gatling and has_rail:
+		var hybrid_cycle: int = int(floor(animation_time / maxf(0.15, run.auto_interval))) % 3
+		projectile_key = str(["gatling", "rail", "standard"][hybrid_cycle])
+	elif has_rail:
+		projectile_key = "rail"
+	elif has_gatling:
+		projectile_key = "gatling"
+	var projectile: Texture2D = AutoProjectileTextures[projectile_key]
+	var projectile_position: Vector2 = start.lerp(target, progress)
+	var angle: float = (target - start).angle()
+	var flip_x: bool = projectile_key != "gatling"
+	var projectile_size: Vector2 = Vector2(92, 46) if projectile_key == "gatling" else Vector2(88, 44)
+	draw_set_transform(projectile_position, angle, Vector2(-1.0 if flip_x else 1.0, 1.0))
+	draw_texture_rect(projectile, Rect2(-projectile_size * 0.5, projectile_size), false, Color(1.0, 1.0, 1.0, 0.96))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if progress > 0.80:
+		var impact_progress := clampf((progress - 0.80) / 0.20, 0.0, 1.0)
+		var impact_pulse := sin(impact_progress * PI)
+		draw_circle(target, 5.0 + impact_progress * 13.0, Palette.with_alpha(Palette.CYAN, impact_pulse * 0.16))
+		draw_arc(target, 7.0 + impact_progress * 20.0, -PI * 0.75, PI * 0.75, 18, Palette.with_alpha(Palette.AMBER if projectile_key == "gatling" else Palette.VIOLET, impact_pulse * 0.82), 2.0)
 
 func draw_comms_strip() -> void:
 	var rect := Rect2(438, 448, 776, 32)
@@ -3312,7 +3344,9 @@ func draw_gear_rack() -> void:
 		draw_texture_rect(gear_texture, Rect2(rect.position + Vector2(9, 16), Vector2(44, 44)), false, Color(1.0, 1.0, 1.0, 0.98 if level > 0 or selected else 0.68))
 		draw_string(Palette.UI_FONT, rect.position + Vector2(120, 25), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_RIGHT, 18, 9, color)
 		draw_string(DisplayFont, rect.position + Vector2(54, 31), gear_name(gear), HORIZONTAL_ALIGNMENT_LEFT, 68, 11, Palette.PAPER)
-		draw_string(Palette.UI_FONT, rect.position + Vector2(54, 52), str(gear.get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 82, 8, Palette.MUTED)
+		var tag_rect := Rect2(rect.position + Vector2(53, 37), Vector2(86, 22))
+		draw_machine_plate(tag_rect, Palette.with_alpha(color, 0.10), Palette.with_alpha(color, 0.34), 4.0, 1.0)
+		draw_string(DisplayFont, tag_rect.position + Vector2(6, 15), str(gear.get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, tag_rect.size.x - 10, 10, Palette.PAPER if level > 0 or selected else Palette.with_alpha(Palette.PAPER, 0.78))
 		for tier in range(1, 4):
 			var tier_level := 0
 			for skill in GearCatalog.skills_for_gear_tier(str(gear.id), tier):
@@ -3383,8 +3417,11 @@ func draw_tree_node(index: int, definition: Dictionary, accent: Color) -> void:
 	var affordable: bool = run.can_purchase(id)
 	var selected := controller_upgrade_selected == index
 	var maxed := level >= maximum
+	var is_overlimit_node: bool = bool(definition.get("overlimit", false))
 	var border := Palette.AMBER if level > 0 else accent if unlocked else Palette.MUTED
 	draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.96 if selected else 0.86), Palette.with_alpha(border, 1.0 if selected else 0.62 if level > 0 else 0.28), 10.0, 3.0 if selected else 1.0)
+	if is_overlimit_node:
+		draw_texture_rect(OverlimitSocketTexture, Rect2(rect.end.x - 78, rect.position.y + 2, 72, 68), false, Color(1.0, 1.0, 1.0, 0.34 if selected or level > 0 else 0.18))
 	draw_rect(Rect2(rect.position + Vector2(7, 7), Vector2(5, rect.size.y - 14)), Palette.with_alpha(border, 0.9 if level > 0 or selected else 0.2))
 	var copy := skill_copy(definition)
 	draw_string(DisplayFont, rect.position + Vector2(20, 25), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 184, 12, Palette.PAPER if unlocked else Palette.MUTED)
@@ -3394,8 +3431,8 @@ func draw_tree_node(index: int, definition: Dictionary, accent: Color) -> void:
 	elif not unlocked:
 		draw_string(DisplayFont, rect.position + Vector2(108, 48), "LOCK", HORIZONTAL_ALIGNMENT_RIGHT, 88, 10, Palette.CORAL)
 	else:
-		var cost_label := "RESIDUE" if bool(definition.get("overlimit", false)) and run.singularity_residue > 0 else "%d CHARGE" % run.upgrade_cost(id)
-		draw_string(Palette.UI_FONT, rect.position + Vector2(96, 48), cost_label, HORIZONTAL_ALIGNMENT_RIGHT, 100, 10, Palette.AMBER if affordable else Palette.MUTED)
+		var cost_label := "RESIDUE" if is_overlimit_node and run.singularity_residue > 0 else "%s C" % format_number(run.upgrade_cost(id))
+		draw_string(DisplayFont, rect.position + Vector2(96, 48), cost_label, HORIZONTAL_ALIGNMENT_RIGHT, 100, 10, Palette.AMBER if affordable else Palette.CORAL)
 	var progress := float(level) / float(maxi(1, maximum))
 	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176, 5)), Palette.with_alpha(border, 0.10))
 	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176 * progress, 5)), border)
@@ -3408,8 +3445,10 @@ func draw_tree_detail_panel(accent: Color) -> void:
 		return
 	var id := str(definition.id)
 	var copy := skill_copy(definition)
-	var gear_texture: Texture2D = GearTextures.get(str(definition.gear))
-	draw_texture_rect(gear_texture, Rect2(1114, 194, 78, 78), false, Color(1.0, 1.0, 1.0, 0.88))
+	var is_overlimit_node: bool = bool(definition.get("overlimit", false))
+	var detail_texture: Texture2D = OverlimitSocketTexture if is_overlimit_node else GearTextures.get(str(definition.gear))
+	var detail_texture_rect := Rect2(1108, 188, 90, 90) if is_overlimit_node else Rect2(1114, 194, 78, 78)
+	draw_texture_rect(detail_texture, detail_texture_rect, false, Color(1.0, 1.0, 1.0, 0.94 if is_overlimit_node else 0.88))
 	draw_string(Palette.UI_FONT, Vector2(842, 214), str(GearCatalog.gear(str(definition.gear)).get("tag_ja" if is_japanese else "tag_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 340, 11, accent)
 	draw_string(DisplayFont, Vector2(842, 248), str(copy.title), HORIZONTAL_ALIGNMENT_LEFT, 262, 22, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(842, 280), str(copy.desc), HORIZONTAL_ALIGNMENT_LEFT, 340, 13, Palette.MUTED)
@@ -3418,15 +3457,23 @@ func draw_tree_detail_panel(accent: Color) -> void:
 	draw_string(DisplayFont, Vector2(1010, 330), "%d / %d" % [run.upgrade_level(id), run.skill_max_rank(id)], HORIZONTAL_ALIGNMENT_RIGHT, 182, 18, accent)
 	draw_tree_gear_stats(str(definition.gear), Vector2(842, 354), accent)
 	var lock_reason: String = run.skill_lock_reason(id)
+	var upgrade_cost: int = run.upgrade_cost(id)
+	if is_overlimit_node:
+		draw_string(DisplayFont, Vector2(842, 494), loc("OVERLIMIT復旧  %d / 5　・　1個で最終戦へ挑戦可能" % run.overlimit_count(), "OVERLIMIT RESTORED  %d / 5 · ONE UNLOCKS THE FINAL BATTLE" % run.overlimit_count()), HORIZONTAL_ALIGNMENT_LEFT, 350, 10, Palette.AMBER)
+		draw_string(Palette.UI_FONT, Vector2(842, 516), loc("保有CHARGE  %s" % format_number(run.credits), "CHARGE HELD  %s" % format_number(run.credits)), HORIZONTAL_ALIGNMENT_LEFT, 350, 11, Palette.PAPER)
 	if not lock_reason.is_empty():
-		draw_string(Palette.UI_FONT, Vector2(842, 510), skill_lock_text(id), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.CORAL)
+		draw_string(Palette.UI_FONT, Vector2(842, 540 if is_overlimit_node else 510), skill_lock_text(id), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.CORAL)
 	elif run.upgrade_level(id) >= run.skill_max_rank(id):
-		draw_string(Palette.UI_FONT, Vector2(842, 510), loc("このノードは最大強化済み", "THIS NODE IS FULLY UPGRADED"), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.MINT)
+		draw_string(Palette.UI_FONT, Vector2(842, 540 if is_overlimit_node else 510), loc("このノードは最大強化済み", "THIS NODE IS FULLY UPGRADED"), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.MINT)
 	else:
-		var next_cost_text := loc("特異点残滓で無料復旧", "RESTORE FREE WITH SINGULARITY RESIDUE") if bool(definition.get("overlimit", false)) and run.singularity_residue > 0 else loc("次ランク費用：%d CHARGE" % run.upgrade_cost(id), "NEXT RANK: %d CHARGE" % run.upgrade_cost(id))
-		draw_string(Palette.UI_FONT, Vector2(842, 510), next_cost_text, HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.AMBER if run.can_purchase(id) else Palette.MUTED)
+		var next_cost_text := loc("特異点残滓で無料復旧", "RESTORE FREE WITH SINGULARITY RESIDUE") if is_overlimit_node and run.singularity_residue > 0 else loc("必要：%s CHARGE" % format_number(upgrade_cost), "COST: %s CHARGE" % format_number(upgrade_cost))
+		var cost_y := 538.0 if is_overlimit_node else 510.0
+		draw_string(DisplayFont, Vector2(842, cost_y), next_cost_text, HORIZONTAL_ALIGNMENT_LEFT, 350, 11, Palette.AMBER if run.can_purchase(id) else Palette.CORAL)
+		if is_overlimit_node and run.singularity_residue <= 0 and run.credits < float(upgrade_cost):
+			draw_string(Palette.UI_FONT, Vector2(1010, cost_y), loc("不足  %s" % format_number(float(upgrade_cost) - run.credits), "SHORT  %s" % format_number(float(upgrade_cost) - run.credits)), HORIZONTAL_ALIGNMENT_RIGHT, 182, 11, Palette.CORAL)
 	var purchasable: bool = run.can_purchase(id)
-	draw_campaign_button(tree_purchase_rect, loc("購入 / 強化", "PURCHASE / UPGRADE") if run.upgrade_level(id) < run.skill_max_rank(id) else "MAX", accent if purchasable else Palette.MUTED, purchasable)
+	var purchase_label := "MAX" if run.upgrade_level(id) >= run.skill_max_rank(id) else loc("CHARGE不足", "NOT ENOUGH CHARGE") if lock_reason.is_empty() and not purchasable else loc("購入 / 強化", "PURCHASE / UPGRADE")
+	draw_campaign_button(tree_purchase_rect, purchase_label, accent if purchasable else Palette.MUTED, purchasable)
 	if campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
 		draw_campaign_button(tree_respec_rect, loc("無料リスペック", "FREE RESPEC"), Palette.MINT, false)
 	else:
