@@ -2,6 +2,13 @@
 
 Status: **Human Review approved — all four illustrations formally adopted on 2026-08-07.**
 
+## Artwork archive
+
+- Defeating PRIME CURRENT form three permanently unlocks `ARTWORK` on the title screen. Skipping the cinematic or credits does not prevent the unlock.
+- The unlock lives in persistent hunt records rather than campaign progression, so starting a new hunt never removes it. Existing complete-clear saves migrate automatically from `final_boss_defeated`.
+- The archive presents all four approved illustrations with bilingual scene notes, fullscreen viewing, three zoom levels, optional hidden UI, keyboard/controller/touch navigation, and full true-ending replay.
+- Artwork is a post-clear reward and does not add items to upgrade, achievement, or completion-rate totals.
+
 ## Runtime structure
 
 - 8 narrative scenes, 6.5–8.0 seconds each, approximately 57 seconds total.

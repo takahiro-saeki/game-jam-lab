@@ -90,6 +90,7 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 - Every defeated beast grants a named core automatically. Its rule becomes a permanent player ability for later battles.
 - GRID LEECH opens a short eight-click shatter window. THERMAL TITAN exposes its furnace after twenty clicks. ARCH rotates through three bonus-driven trials. The optional PRIME CURRENT then fights across Crownless Engine, Null Cathedral, and First Current forms.
 - Progress, CHARGE, upgrade ranks, acquired cores, enemy HP, and the current hunt save automatically and resume after closing the browser.
+- Defeating the real final boss permanently reveals `ARTWORK` on the title screen. Its four true-ending illustrations support fullscreen viewing, three zoom levels, hidden UI, controller/touch input, and complete true-ending replay.
 - Use the arrow keys, D-pad, or left stick on maps and the skill tree. Ending results can be copied with `C` or the configured active-ability button.
 - The header tracks total session time. Normal and true endings expose a detailed JSON report and append it locally, while the deterministic benchmark runner records comparable automated clear times.
 - Human-selected Suno tracks give the original nine enemies unique battle music plus map/tree and normal-ending themes. v8 adds independent composition slots for the three-form PRIME CURRENT suite, world-engine credits, and true credits; existing masters are distinct provisional fallbacks until the new Suno selections are imported.

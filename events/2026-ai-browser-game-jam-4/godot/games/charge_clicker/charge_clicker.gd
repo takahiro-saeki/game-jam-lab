@@ -124,6 +124,12 @@ const EndingIllustrations := {
 	"current": preload("res://assets/charge_clicker/ending/ending-current-remembers-v11.png"),
 	"dawn": preload("res://assets/charge_clicker/ending/ending-core-dawn-v11.png"),
 }
+const ArtworkGallery := [
+	{"id":"silence","title_ja":"地核の沈黙","title_en":"SILENCE BELOW","desc_ja":"世界機関の停止後、静まり返った地核で帰還信号を待つヴォルト・ノマド。","desc_en":"VOLT NOMAD WAITS FOR THE ASCENT SIGNAL IN THE SILENT WORLD ENGINE.","texture":EndingIllustrations["silence"],"accent":Palette.CYAN},
+	{"id":"colossi","title_ja":"主獣たちの記憶","title_en":"MEMORY OF COLOSSI","desc_ja":"討伐した機械魔獣たちが遺した、生存と抵抗の記録。","desc_en":"A RECORD OF SURVIVAL AND RESISTANCE LEFT BY THE MECHANICAL COLOSSI.","texture":EndingIllustrations["colossi"],"accent":Palette.VIOLET},
+	{"id":"current","title_ja":"原初電流の記憶","title_en":"THE CURRENT REMEMBERS","desc_ja":"無冠機神と六つの機核が、一つの意志として最後の電流へ触れる。","desc_en":"THE CROWNLESS ENGINE AND SIX CORES MEET THE LAST CURRENT AS ONE WILL.","texture":EndingIllustrations["current"],"accent":Palette.AMBER},
+	{"id":"dawn","title_ja":"夜明けの機核","title_en":"CORE OF DAWN","desc_ja":"戦いの終わりに選び取られた、地上へ続く静かな夜明け。","desc_en":"A QUIET DAWN CHOSEN AT THE END OF THE HUNT, LEADING BACK TO THE SURFACE.","texture":EndingIllustrations["dawn"],"accent":Palette.MINT},
+]
 const RegionBackgrounds := {
 	"scrap": preload("res://assets/charge_clicker/pixellab/source/environment/bg-scrap-ossuary-a.png"),
 	"geothermal": preload("res://assets/charge_clicker/pixellab/source/environment/bg-geo-pressure-foundry-a.png"),
@@ -231,6 +237,12 @@ var credits_scroll := 0.0
 var epilogue_open := false
 var epilogue_scene := 0
 var epilogue_scene_time := 0.0
+var epilogue_return_to_artwork := false
+var artwork_open := false
+var artwork_viewer_open := false
+var artwork_selected := 0
+var artwork_zoom_level := 0
+var artwork_ui_visible := true
 var achievements_open := false
 var achievement_notice: Dictionary = {}
 var achievement_notice_time := 0.0
@@ -273,6 +285,7 @@ var title_button_rects: Array[Rect2] = [
 	Rect2(830, 448, 96, 48),
 	Rect2(934, 448, 96, 48),
 	Rect2(1038, 448, 98, 48),
+	Rect2(726, 510, 410, 48),
 ]
 var settings_row_rects: Array[Rect2] = [
 	Rect2(356, 202, 568, 52),
@@ -289,6 +302,20 @@ var credits_close_rect := Rect2(1032, 642, 190, 46)
 var achievements_close_rect := Rect2(514, 642, 252, 46)
 var campaign_achievement_rect := Rect2(34, 632, 260, 48)
 var epilogue_skip_rect := Rect2(1036, 28, 186, 44)
+var artwork_card_rects: Array[Rect2] = [
+	Rect2(42, 124, 278, 222),
+	Rect2(348, 124, 278, 222),
+	Rect2(654, 124, 278, 222),
+	Rect2(960, 124, 278, 222),
+]
+var artwork_view_rect := Rect2(674, 566, 242, 52)
+var artwork_replay_rect := Rect2(932, 566, 258, 52)
+var artwork_close_rect := Rect2(1040, 42, 176, 46)
+var artwork_full_back_rect := Rect2(28, 24, 152, 44)
+var artwork_full_zoom_rect := Rect2(930, 24, 132, 44)
+var artwork_full_ui_rect := Rect2(1074, 24, 178, 44)
+var artwork_full_previous_rect := Rect2(24, 310, 70, 100)
+var artwork_full_next_rect := Rect2(1186, 310, 70, 100)
 
 func _ready() -> void:
 	apply_web_art_preview()
@@ -350,8 +377,10 @@ func setup_music() -> void:
 func desired_bgm_key() -> String:
 	if epilogue_open:
 		return "ending_true"
+	if artwork_open:
+		return "ending_true"
 	if credits_open:
-		return "ending_true" if credits_context == "final" else "ending_world" if credits_context == "world" else "ending_normal"
+		return "ending_true" if credits_context in ["final", "artwork_replay"] else "ending_world" if credits_context == "world" else "ending_normal"
 	if title_screen_open:
 		return "map"
 	if campaign_route == null:
@@ -529,6 +558,14 @@ func configure_campaign_preview() -> void:
 			for definition in GearCatalog.OVERLIMITS:
 				run.upgrade_levels[str(definition.id)] = 1
 			run.refresh_stats()
+		"artwork_gallery":
+			campaign_route.true_end_seen = true
+			campaign_route.final_boss_defeated = true
+			campaign_route.final_credits_seen = true
+			campaign_route.phase = CampaignRoute.RoutePhase.POSTGAME
+			achievements.unlock_artwork_gallery()
+			artwork_open = true
+			title_screen_open = false
 		_:
 			campaign_selected = 0
 
@@ -649,6 +686,10 @@ func _process(delta: float) -> void:
 			advance_true_epilogue(false)
 		queue_redraw()
 		return
+	if artwork_open:
+		update_effects(delta)
+		queue_redraw()
+		return
 	if achievements_open:
 		queue_redraw()
 		return
@@ -718,6 +759,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	if epilogue_open:
 		handle_epilogue_input(event)
+		return
+	if artwork_open:
+		handle_artwork_input(event)
 		return
 	if achievements_open:
 		handle_achievements_input(event)
@@ -791,7 +835,7 @@ func handle_settings_open_input(event: InputEvent) -> bool:
 func handle_title_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		mouse_position = event.position
-		for index in range(title_button_rects.size()):
+		for index in range(title_button_count()):
 			if title_button_rects[index].has_point(event.position):
 				title_selected = index
 				break
@@ -800,7 +844,7 @@ func handle_title_input(event: InputEvent) -> void:
 		if language_rect.has_point(event.position):
 			toggle_language()
 			return
-		for index in range(title_button_rects.size()):
+		for index in range(title_button_count()):
 			if title_button_rects[index].has_point(event.position):
 				title_selected = index
 				activate_title_selection()
@@ -809,7 +853,7 @@ func handle_title_input(event: InputEvent) -> void:
 		if language_rect.has_point(event.position):
 			toggle_language()
 			return
-		for index in range(title_button_rects.size()):
+		for index in range(title_button_count()):
 			if title_button_rects[index].has_point(event.position):
 				title_selected = index
 				activate_title_selection()
@@ -822,10 +866,10 @@ func handle_title_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_M:
 			toggle_music()
 		elif event.keycode in [KEY_UP, KEY_W]:
-			title_selected = wrapi(title_selected - 1, 0, title_button_rects.size())
+			title_selected = wrapi(title_selected - 1, 0, title_button_count())
 			synth.click()
 		elif event.keycode in [KEY_DOWN, KEY_S]:
-			title_selected = wrapi(title_selected + 1, 0, title_button_rects.size())
+			title_selected = wrapi(title_selected + 1, 0, title_button_count())
 			synth.click()
 		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
 			activate_title_selection()
@@ -833,10 +877,10 @@ func handle_title_input(event: InputEvent) -> void:
 		if event.button_index == controller_button("back"):
 			return_to_menu.emit()
 		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
-			title_selected = wrapi(title_selected - 1, 0, title_button_rects.size())
+			title_selected = wrapi(title_selected - 1, 0, title_button_count())
 			synth.click()
 		elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
-			title_selected = wrapi(title_selected + 1, 0, title_button_rects.size())
+			title_selected = wrapi(title_selected + 1, 0, title_button_count())
 			synth.click()
 		elif event.button_index == controller_button("primary"):
 			activate_title_selection()
@@ -846,7 +890,7 @@ func handle_title_input(event: InputEvent) -> void:
 		var direction := controller_motion_direction(event)
 		if direction != Vector2i.ZERO:
 			var step := direction.y if direction.y != 0 else direction.x
-			title_selected = wrapi(title_selected + step, 0, title_button_rects.size())
+			title_selected = wrapi(title_selected + step, 0, title_button_count())
 			synth.click()
 	queue_redraw()
 
@@ -867,6 +911,198 @@ func activate_title_selection() -> void:
 			open_credits(true)
 		5:
 			return_to_menu.emit()
+		6:
+			open_artwork_gallery()
+
+func title_button_count() -> int:
+	return title_button_rects.size() if achievements != null and achievements.artwork_gallery_unlocked else title_button_rects.size() - 1
+
+func open_artwork_gallery() -> bool:
+	if achievements == null or not achievements.artwork_gallery_unlocked:
+		return false
+	artwork_open = true
+	artwork_viewer_open = false
+	artwork_selected = clampi(artwork_selected, 0, ArtworkGallery.size() - 1)
+	artwork_zoom_level = 0
+	artwork_ui_visible = true
+	title_screen_open = false
+	settings_open = false
+	achievements_open = false
+	end_charge()
+	bgm_key = ""
+	refresh_music()
+	synth.confirm()
+	queue_redraw()
+	return true
+
+func close_artwork_gallery() -> void:
+	artwork_open = false
+	artwork_viewer_open = false
+	artwork_zoom_level = 0
+	artwork_ui_visible = true
+	title_screen_open = true
+	title_selected = mini(6, title_button_count() - 1)
+	bgm_key = ""
+	refresh_music()
+	synth.click()
+	queue_redraw()
+
+func open_artwork_viewer(index: int = -1) -> void:
+	if index >= 0:
+		artwork_selected = wrapi(index, 0, ArtworkGallery.size())
+	artwork_viewer_open = true
+	artwork_zoom_level = 0
+	artwork_ui_visible = true
+	synth.confirm()
+	queue_redraw()
+
+func close_artwork_viewer() -> void:
+	artwork_viewer_open = false
+	artwork_zoom_level = 0
+	artwork_ui_visible = true
+	synth.click()
+	queue_redraw()
+
+func change_artwork_selection(step: int) -> void:
+	artwork_selected = wrapi(artwork_selected + step, 0, ArtworkGallery.size())
+	synth.click()
+	queue_redraw()
+
+func cycle_artwork_zoom(step: int = 1) -> void:
+	artwork_zoom_level = wrapi(artwork_zoom_level + step, 0, 3)
+	synth.click()
+	queue_redraw()
+
+func replay_true_ending_from_artwork() -> void:
+	artwork_open = false
+	artwork_viewer_open = false
+	open_true_epilogue(true)
+
+func handle_artwork_input(event: InputEvent) -> void:
+	if artwork_viewer_open:
+		handle_artwork_viewer_input(event)
+		return
+	if event is InputEventMouseMotion:
+		mouse_position = event.position
+		for index in range(artwork_card_rects.size()):
+			if artwork_card_rects[index].has_point(event.position):
+				artwork_selected = index
+				break
+		queue_redraw()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		handle_artwork_point(event.position)
+	elif event is InputEventScreenTouch and event.pressed:
+		handle_artwork_point(event.position)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			close_artwork_gallery()
+		elif event.keycode in [KEY_LEFT, KEY_A, KEY_UP, KEY_W]:
+			change_artwork_selection(-1)
+		elif event.keycode in [KEY_RIGHT, KEY_D, KEY_DOWN, KEY_S]:
+			change_artwork_selection(1)
+		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
+			open_artwork_viewer()
+		elif event.keycode == KEY_R:
+			replay_true_ending_from_artwork()
+		elif event.keycode == KEY_L:
+			toggle_language()
+		elif event.keycode == KEY_M:
+			toggle_music()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("back"):
+			close_artwork_gallery()
+		elif event.button_index in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP]:
+			change_artwork_selection(-1)
+		elif event.button_index in [JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN]:
+			change_artwork_selection(1)
+		elif event.button_index == controller_button("primary"):
+			open_artwork_viewer()
+		elif event.button_index == controller_button("combat_action"):
+			replay_true_ending_from_artwork()
+	elif event is InputEventJoypadMotion:
+		var direction := controller_motion_direction(event)
+		if direction != Vector2i.ZERO:
+			change_artwork_selection(direction.x if direction.x != 0 else direction.y)
+
+func handle_artwork_point(point: Vector2) -> void:
+	if artwork_close_rect.has_point(point):
+		close_artwork_gallery()
+		return
+	if artwork_view_rect.has_point(point):
+		open_artwork_viewer()
+		return
+	if artwork_replay_rect.has_point(point):
+		replay_true_ending_from_artwork()
+		return
+	for index in range(artwork_card_rects.size()):
+		if artwork_card_rects[index].has_point(point):
+			artwork_selected = index
+			open_artwork_viewer(index)
+			return
+
+func handle_artwork_viewer_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if not artwork_ui_visible:
+			artwork_ui_visible = true
+			queue_redraw()
+			return
+		if artwork_full_back_rect.has_point(event.position):
+			close_artwork_viewer()
+		elif artwork_full_previous_rect.has_point(event.position):
+			change_artwork_selection(-1)
+		elif artwork_full_next_rect.has_point(event.position):
+			change_artwork_selection(1)
+		elif artwork_full_zoom_rect.has_point(event.position):
+			cycle_artwork_zoom()
+		elif artwork_full_ui_rect.has_point(event.position):
+			artwork_ui_visible = false
+			queue_redraw()
+	elif event is InputEventScreenTouch and event.pressed:
+		if not artwork_ui_visible:
+			artwork_ui_visible = true
+			queue_redraw()
+			return
+		if artwork_full_back_rect.has_point(event.position):
+			close_artwork_viewer()
+		elif artwork_full_previous_rect.has_point(event.position):
+			change_artwork_selection(-1)
+		elif artwork_full_next_rect.has_point(event.position):
+			change_artwork_selection(1)
+		elif artwork_full_zoom_rect.has_point(event.position):
+			cycle_artwork_zoom()
+		elif artwork_full_ui_rect.has_point(event.position):
+			artwork_ui_visible = false
+			queue_redraw()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			close_artwork_viewer()
+		elif event.keycode in [KEY_LEFT, KEY_A]:
+			change_artwork_selection(-1)
+		elif event.keycode in [KEY_RIGHT, KEY_D]:
+			change_artwork_selection(1)
+		elif event.keycode in [KEY_UP, KEY_W, KEY_Z]:
+			cycle_artwork_zoom()
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			cycle_artwork_zoom(-1)
+		elif event.keycode in [KEY_H, KEY_TAB, KEY_ENTER, KEY_SPACE]:
+			artwork_ui_visible = not artwork_ui_visible
+			queue_redraw()
+		elif event.keycode == KEY_M:
+			toggle_music()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("back"):
+			close_artwork_viewer()
+		elif event.button_index in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_LEFT_SHOULDER]:
+			change_artwork_selection(-1)
+		elif event.button_index in [JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_RIGHT_SHOULDER]:
+			change_artwork_selection(1)
+		elif event.button_index == JOY_BUTTON_DPAD_UP:
+			cycle_artwork_zoom()
+		elif event.button_index == JOY_BUTTON_DPAD_DOWN:
+			cycle_artwork_zoom(-1)
+		elif event.button_index == controller_button("primary"):
+			artwork_ui_visible = not artwork_ui_visible
+			queue_redraw()
 
 func open_achievements() -> void:
 	achievements_open = true
@@ -917,16 +1153,21 @@ func close_credits() -> void:
 		campaign_route.complete_final_credits()
 		title_screen_open = true
 		title_has_saved_campaign = true
+	elif credits_context == "artwork_replay":
+		artwork_open = true
+		artwork_viewer_open = false
+		title_screen_open = false
 	save_progress()
 	bgm_key = ""
 	refresh_music()
 	synth.click()
 	queue_redraw()
 
-func open_true_epilogue() -> void:
+func open_true_epilogue(return_to_artwork: bool = false) -> void:
 	epilogue_open = true
 	epilogue_scene = 0
 	epilogue_scene_time = 0.0
+	epilogue_return_to_artwork = return_to_artwork
 	end_charge()
 	bgm_key = ""
 	refresh_music()
@@ -949,7 +1190,8 @@ func advance_true_epilogue(play_sound: bool = true) -> void:
 
 func finish_true_epilogue() -> void:
 	epilogue_open = false
-	open_credits(false, "final")
+	open_credits(false, "artwork_replay" if epilogue_return_to_artwork else "final")
+	epilogue_return_to_artwork = false
 
 func handle_epilogue_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -2397,6 +2639,9 @@ func _draw() -> void:
 	if epilogue_open:
 		draw_true_epilogue()
 		return
+	if artwork_open:
+		draw_artwork_gallery()
+		return
 	if credits_open:
 		draw_credits_roll()
 		return
@@ -2453,13 +2698,14 @@ func draw_title_screen() -> void:
 		loc("実績", "RECORDS"),
 		loc("制作記録", "CREDITS"),
 		loc("ゲーム選択", "GAME LAB"),
+		loc("アートワーク", "ARTWORK"),
 	]
-	for index in range(title_button_rects.size()):
+	for index in range(title_button_count()):
 		draw_title_button(index, str(labels[index]))
 	if title_has_saved_campaign:
-		draw_string(Palette.UI_FONT, Vector2(726, 538), loc("保存記録", "SAVED HUNT"), HORIZONTAL_ALIGNMENT_LEFT, 150, 11, Palette.MUTED)
-		draw_string(DisplayFont, Vector2(726, 568), "%s  ·  %d/6 CORES  ·  LV %d/%d" % [format_time(run.session_elapsed), run.beast_cores.size(), run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_LEFT, 430, 14, Palette.MINT)
-	draw_string(Palette.UI_FONT, Vector2(726, 620), loc("方向キー / 決定　L：言語　M：BGMミュート", "D-PAD / CONFIRM  ·  L: LANGUAGE  ·  M: MUTE BGM"), HORIZONTAL_ALIGNMENT_LEFT, 470, 11, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(726, 582), loc("保存記録", "SAVED HUNT"), HORIZONTAL_ALIGNMENT_LEFT, 150, 10, Palette.MUTED)
+		draw_string(DisplayFont, Vector2(820, 584), "%s  ·  %d/6 CORES  ·  LV %d/%d" % [format_time(run.session_elapsed), run.beast_cores.size(), run.skill_points_bought(), run.total_possible_ranks()], HORIZONTAL_ALIGNMENT_LEFT, 330, 12, Palette.MINT)
+	draw_string(Palette.UI_FONT, Vector2(726, 624), loc("方向キー / 決定　L：言語　M：BGMミュート", "D-PAD / CONFIRM  ·  L: LANGUAGE  ·  M: MUTE BGM"), HORIZONTAL_ALIGNMENT_LEFT, 470, 11, Palette.MUTED)
 	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
 	draw_string(DisplayFont, Vector2(88, 654), "VOLT NOMAD // UNIT 06", HORIZONTAL_ALIGNMENT_LEFT, 420, 15, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(88, 681), loc("第六機核適合個体・深層へ降下待機中", "SIX-CORE COMPATIBLE UNIT · READY TO DESCEND"), HORIZONTAL_ALIGNMENT_LEFT, 460, 11, Palette.MUTED)
@@ -2467,15 +2713,86 @@ func draw_title_screen() -> void:
 func draw_title_button(index: int, label: String) -> void:
 	var rect := title_button_rects[index]
 	var selected := title_selected == index
-	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.AMBER if index == 3 else Palette.VIOLET if index == 4 else Palette.MUTED
+	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.AMBER if index == 3 else Palette.VIOLET if index == 4 else Palette.MINT if index == 6 else Palette.MUTED
 	draw_machine_plate(rect, Palette.with_alpha(accent, 0.7 if selected and index == 0 else 0.18 if selected else 0.055), Palette.with_alpha(accent, 1.0 if selected else 0.38), 10.0, 2.0 if selected else 1.0)
 	draw_rect(Rect2(rect.position + Vector2(10, 9), Vector2(4, rect.size.y - 18)), Palette.with_alpha(accent, 0.92 if selected else 0.32))
 	draw_string(DisplayFont, rect.position + Vector2(20 if rect.size.x < 110 else 30, 39 if rect.size.y >= 60 else 33), label, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - (36 if rect.size.x < 110 else 58), 18 if rect.size.y >= 60 else 12 if rect.size.x < 110 else 14, Palette.INK if selected and index == 0 else Palette.PAPER)
 	if selected:
 		draw_string(DisplayFont, rect.position + Vector2(rect.size.x - 42, 38 if rect.size.y >= 60 else 32), ">", HORIZONTAL_ALIGNMENT_CENTER, 24, 18, Palette.INK if index == 0 else accent)
 
+func draw_artwork_gallery() -> void:
+	if artwork_viewer_open:
+		draw_artwork_viewer()
+		return
+	var selected_entry: Dictionary = ArtworkGallery[artwork_selected]
+	var selected_accent: Color = selected_entry.accent
+	draw_cinematic_illustration(selected_entry.texture, 0.24, 0.16, artwork_selected % 2 == 1)
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.008, 0.022, 0.91))
+	for index in range(12):
+		var radius := 92.0 + float(index) * 38.0 + sin(animation_time * 0.3 + index) * 7.0
+		draw_arc(Vector2(1130, 540), radius, -PI * 0.82, PI * 1.18, 72, Palette.with_alpha(selected_accent, 0.10 - float(index) * 0.006), 2.0)
+	draw_rect(Rect2(0, 0, 1280, 6), Palette.MINT)
+	draw_string(DisplayFont, Vector2(42, 58), loc("完全クリア記録", "TOTAL CLEAR RECORD"), HORIZONTAL_ALIGNMENT_LEFT, 500, 13, Palette.MINT)
+	draw_string(DisplayFont, Vector2(42, 96), loc("アートワーク", "ARTWORK ARCHIVE"), HORIZONTAL_ALIGNMENT_LEFT, 720, 30, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(454, 94), loc("原初電流停止後に回収された4つの記憶", "FOUR MEMORIES RECOVERED AFTER THE PRIME CURRENT HALTED"), HORIZONTAL_ALIGNMENT_LEFT, 560, 12, Palette.MUTED)
+	draw_campaign_button(artwork_close_rect, loc("タイトルへ", "TITLE"), Palette.MUTED, false)
+	for index in range(ArtworkGallery.size()):
+		draw_artwork_card(index)
+	var detail_rect := Rect2(42, 374, 1196, 270)
+	draw_machine_plate(detail_rect, Color(0.018, 0.042, 0.088, 0.96), Palette.with_alpha(selected_accent, 0.74), 18.0, 2.0)
+	draw_string(Palette.UI_FONT, Vector2(76, 414), "MEMORY // %02d / %02d" % [artwork_selected + 1, ArtworkGallery.size()], HORIZONTAL_ALIGNMENT_LEFT, 300, 11, selected_accent)
+	draw_string(DisplayFont, Vector2(72, 462), str(selected_entry.get("title_ja" if is_japanese else "title_en")), HORIZONTAL_ALIGNMENT_LEFT, 560, 27, Palette.PAPER)
+	draw_line(Vector2(72, 482), Vector2(620, 482), Palette.with_alpha(selected_accent, 0.46), 2.0)
+	var description_lines := wrap_text_simple(str(selected_entry.get("desc_ja" if is_japanese else "desc_en")), 36 if is_japanese else 54)
+	for line_index in range(description_lines.size()):
+		draw_string(Palette.UI_FONT, Vector2(74, 524 + line_index * 28), str(description_lines[line_index]), HORIZONTAL_ALIGNMENT_LEFT, 548, 14, Palette.PAPER)
+	draw_campaign_button(artwork_view_rect, loc("全画面で鑑賞", "FULLSCREEN VIEW"), selected_accent, true)
+	draw_campaign_button(artwork_replay_rect, loc("真エンディングを再生", "REPLAY TRUE ENDING"), Palette.AMBER, false)
+	draw_string(Palette.UI_FONT, Vector2(674, 636), loc("方向キー：選択　ENTER：鑑賞　R：真エンディング　ESC：戻る", "ARROWS: SELECT · ENTER: VIEW · R: TRUE ENDING · ESC: RETURN"), HORIZONTAL_ALIGNMENT_LEFT, 530, 11, Palette.MUTED)
+
+func draw_artwork_card(index: int) -> void:
+	var entry: Dictionary = ArtworkGallery[index]
+	var rect := artwork_card_rects[index]
+	var selected := artwork_selected == index
+	var accent: Color = entry.accent
+	draw_machine_plate(rect, Color(0.015, 0.032, 0.068, 0.98), Palette.with_alpha(accent, 0.96 if selected else 0.30), 12.0, 3.0 if selected else 1.0)
+	var image_rect := Rect2(rect.position + Vector2(12, 12), Vector2(254, 143))
+	draw_texture_rect(entry.texture, image_rect, false, Color.WHITE if selected else Color(0.72, 0.77, 0.83, 0.82))
+	draw_rect(Rect2(image_rect.position, Vector2(image_rect.size.x, 4)), accent if selected else Palette.with_alpha(accent, 0.35))
+	draw_string(Palette.UI_FONT, rect.position + Vector2(14, 178), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, 28, 10, accent)
+	draw_string(DisplayFont, rect.position + Vector2(46, 186), str(entry.get("title_ja" if is_japanese else "title_en")), HORIZONTAL_ALIGNMENT_LEFT, 214, 13, Palette.PAPER if selected else Palette.MUTED)
+	if selected:
+		draw_string(DisplayFont, rect.position + Vector2(238, 207), ">", HORIZONTAL_ALIGNMENT_CENTER, 24, 14, accent)
+
+func draw_artwork_viewer() -> void:
+	var entry: Dictionary = ArtworkGallery[artwork_selected]
+	var accent: Color = entry.accent
+	var texture: Texture2D = entry.texture
+	var zoom_levels := [1.0, 1.35, 1.7]
+	var zoom := float(zoom_levels[clampi(artwork_zoom_level, 0, zoom_levels.size() - 1)])
+	var texture_size := texture.get_size()
+	var source_size := texture_size / zoom
+	var source_rect := Rect2((texture_size - source_size) * 0.5, source_size)
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color.BLACK)
+	draw_texture_rect_region(texture, Rect2(Vector2.ZERO, VIEW), source_rect)
+	if not artwork_ui_visible:
+		return
+	draw_rect(Rect2(0, 0, 1280, 92), Color(0.002, 0.006, 0.018, 0.88))
+	draw_rect(Rect2(0, 608, 1280, 112), Color(0.002, 0.006, 0.018, 0.90))
+	draw_campaign_button(artwork_full_back_rect, loc("一覧へ", "GALLERY"), Palette.MINT, false)
+	draw_campaign_button(artwork_full_zoom_rect, "ZOOM  %.2f×" % zoom, accent, false)
+	draw_campaign_button(artwork_full_ui_rect, loc("UIを隠す", "HIDE UI"), Palette.MUTED, false)
+	draw_machine_plate(artwork_full_previous_rect, Color(0.004, 0.012, 0.03, 0.68), Palette.with_alpha(accent, 0.58), 12.0, 2.0)
+	draw_machine_plate(artwork_full_next_rect, Color(0.004, 0.012, 0.03, 0.68), Palette.with_alpha(accent, 0.58), 12.0, 2.0)
+	draw_string(DisplayFont, artwork_full_previous_rect.position + Vector2(10, 65), "<", HORIZONTAL_ALIGNMENT_CENTER, 50, 28, Palette.PAPER)
+	draw_string(DisplayFont, artwork_full_next_rect.position + Vector2(10, 65), ">", HORIZONTAL_ALIGNMENT_CENTER, 50, 28, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(206, 54), "ARTWORK // %02d / %02d" % [artwork_selected + 1, ArtworkGallery.size()], HORIZONTAL_ALIGNMENT_LEFT, 360, 12, accent)
+	draw_string(DisplayFont, Vector2(48, 650), str(entry.get("title_ja" if is_japanese else "title_en")), HORIZONTAL_ALIGNMENT_LEFT, 600, 24, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(48, 683), loc("左右：作品切替　上下 / Z：ズーム　H：UI表示　ESC：一覧", "LEFT/RIGHT: ART · UP/DOWN/Z: ZOOM · H: UI · ESC: GALLERY"), HORIZONTAL_ALIGNMENT_LEFT, 850, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(996, 680), loc("クリックでUIを再表示", "CLICK TO RESTORE UI"), HORIZONTAL_ALIGNMENT_RIGHT, 236, 10, Palette.with_alpha(accent, 0.72))
+
 func draw_credits_roll() -> void:
-	if credits_context == "final":
+	if credits_context in ["final", "artwork_replay"]:
 		var ending_cycle := [EndingIllustrations["silence"], EndingIllustrations["colossi"], EndingIllustrations["current"], EndingIllustrations["dawn"]]
 		var cycle_seconds := 14.0
 		var cycle_index := mini(ending_cycle.size() - 1, int(credits_scroll / cycle_seconds))

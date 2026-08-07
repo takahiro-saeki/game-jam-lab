@@ -20,11 +20,15 @@ const DEFINITIONS := [
 ]
 
 var unlocked_ids: Array[String] = []
+var artwork_gallery_unlocked := false
 
 func reset_for_tests() -> void:
 	unlocked_ids.clear()
+	artwork_gallery_unlocked = false
 
 func evaluate(run, route) -> Array[Dictionary]:
+	if route.final_boss_defeated:
+		unlock_artwork_gallery()
 	var newly_unlocked: Array[Dictionary] = []
 	for definition in DEFINITIONS:
 		var id := str(definition.id)
@@ -70,13 +74,24 @@ func is_unlocked(id: String) -> bool:
 func unlocked_count() -> int:
 	return unlocked_ids.size()
 
+func unlock_artwork_gallery() -> bool:
+	if artwork_gallery_unlocked:
+		return false
+	artwork_gallery_unlocked = true
+	return true
+
 func snapshot() -> Dictionary:
-	return {"version": 1, "unlocked_ids": unlocked_ids.duplicate()}
+	return {
+		"version": 1,
+		"unlocked_ids": unlocked_ids.duplicate(),
+		"artwork_gallery_unlocked": artwork_gallery_unlocked,
+	}
 
 func restore_snapshot(data: Dictionary) -> bool:
 	if int(data.get("version", 0)) != 1:
 		return false
 	unlocked_ids.clear()
+	artwork_gallery_unlocked = bool(data.get("artwork_gallery_unlocked", false))
 	for value in data.get("unlocked_ids", []):
 		var id := str(value)
 		if definition(id).is_empty() or id in unlocked_ids:
