@@ -1,5 +1,7 @@
 # PROJECT CHARGE — TRUE ENDING CINEMATIC v11
 
+Status: **Human Review approved — all four illustrations formally adopted on 2026-08-07.**
+
 ## Runtime structure
 
 - 8 narrative scenes, 6.5–8.0 seconds each, approximately 57 seconds total.

@@ -6,6 +6,7 @@
 - 主人公、ARCH SINGULARITY、GRID LEECH、THERMAL TITAN、FALLEN MACHINE SERAPHの外形・配色を参照画像から維持し、文字・ロゴ・UIを画像へ焼き込んでいない。
 - 元出力をWeb向け1280×720 PNGへ縮小し、`godot/assets/charge_clicker/ending/` に保存。元生成物はCodexの生成画像領域にも保持。
 - 採用ファイル: `ending-silence-below-v11.png`, `ending-memory-colossi-v11.png`, `ending-current-remembers-v11.png`, `ending-core-dawn-v11.png`。
+- 2026-08-07 Human Reviewで4枚すべてが正式採用。以後は真エンディングの確定アートとして扱い、候補差し替え対象から外す。
 - Godot側で緩やかなパン、ズーム、フェード、字幕、自動送りを合成するため、動画コーデックへの依存は追加していない。
 - 最終プロンプト要旨、参照素材、場面構成は [`TRUE_ENDING_CINEMATIC_V11.md`](TRUE_ENDING_CINEMATIC_V11.md) に記録。
 
