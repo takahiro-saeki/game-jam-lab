@@ -9,7 +9,7 @@
 - 生成プロンプト、Codex評価、Human Review欄は `tools/art-review/data/review-manifest.json` に保存。
 - 第3形態の再設計要望を受け、細身の闇王を軸に追加3案を `v8-final-boss-form-3-dark-king` で生成。ゲームへの差し替えはHuman Review確定後に行う。
 - さらに単体人型のスケール不足を解決するため、OpenAI built-in image generationで「日蝕王」「無限王座」「闇堕機天使」の高解像度アートリファレンス3枚を生成し、`docs/art-direction/` に保存。その方向をPixelLab `pixen` の384px透過素材3案 `v9-final-boss-scale-concepts` へ翻訳した。
-- PRIME CURRENTのPixelLab候補は初回9枚、細身闇王3枚、スケール再設計3枚の合計15枚。v9案はHuman Review確定までゲーム本体へ未統合。
+- PRIME CURRENTのPixelLab候補は初回9枚、細身闇王3枚、スケール再設計3枚の合計15枚。Human Reviewで `final-fallen-machine-seraph-v9-c.png` が評価5・正式採用され、灰色生成背景だけを除いた `final-fallen-machine-seraph-v9-c-cutout.png` を第3形態と真エンディング紙芝居へ統合済み。
 
 Generated with OpenAI's built-in image generation tool on August 1, 2026. The outputs were resized to 1280px-wide JPEGs for the Godot Web build. Generated images contain no requested text, logos, trademarks, or franchise elements.
 

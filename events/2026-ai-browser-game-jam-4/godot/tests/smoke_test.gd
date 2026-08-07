@@ -468,6 +468,8 @@ func test_charge_clicker_v5() -> void:
 		"prime_current_form_3": "prime_current",
 	}
 	check(game.EncounterBGMKeys == expected_encounter_music, "selected Suno masters are assigned to the intended enemy identities")
+	check(game.MechanicalBeastTextures["prime_current_form_3"].resource_path.ends_with("final-fallen-machine-seraph-v9-c-cutout.png"), "the transparent cutout of the human-selected Fallen Machine Seraph is integrated into final form three")
+	check(str(ChargeStageCatalog.boss("prime_current_form_3").name_en) == "PRIME CURRENT — FALLEN MACHINE SERAPH", "final form three uses the selected Fallen Machine Seraph identity")
 	var music_test_phases := {
 		game.CampaignRoute.RoutePhase.STAGE: "hunt",
 		game.CampaignRoute.RoutePhase.BOSS: "boss",

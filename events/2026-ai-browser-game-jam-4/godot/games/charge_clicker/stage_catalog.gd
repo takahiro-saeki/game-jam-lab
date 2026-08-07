@@ -185,8 +185,8 @@ const FINAL_BOSS_FORMS := [
 	{
 		"id": "prime_current_form_3",
 		"form": 3,
-		"name_ja": "原初電流 プライム・カレント",
-		"name_en": "PRIME CURRENT — THE FIRST CURRENT",
+		"name_ja": "闇堕機天使 プライム・カレント",
+		"name_en": "PRIME CURRENT — FALLEN MACHINE SERAPH",
 		"rule_ja": "損傷が進むほど原初電流が露出し、すべての攻撃出力が加速する",
 		"rule_en": "As the shell fails, the first current is exposed and all damage accelerates",
 		"hp": 14400000000.0,

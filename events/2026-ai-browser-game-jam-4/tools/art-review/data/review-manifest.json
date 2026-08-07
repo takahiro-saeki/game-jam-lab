@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-06T13:39:42.509Z",
+  "updatedAt": "2026-08-06T23:50:09.457Z",
   "project": {
     "id": "project-charge",
     "title": "PROJECT CHARGE",
@@ -32,7 +32,8 @@
       "v5BackgroundBiocrystal": "bg-biocrystal-observatory-a",
       "v8FinalBossForm1": "final-crownless-reliquary-v8-b",
       "v8FinalBossForm2": "final-null-cathedral-radial-v8-a",
-      "v8FinalBossForm3": "final-first-current-singular-v8-c"
+      "v8FinalBossForm3": "final-first-current-singular-v8-c",
+      "v9FinalBossForm3": "final-fallen-machine-seraph-v9-c"
     },
     "palette": [
       "#09111F",
@@ -4698,10 +4699,10 @@
             ]
           },
           "humanReview": {
-            "status": "unreviewed",
-            "rating": null,
-            "note": "",
-            "reviewedAt": null
+            "status": "approved",
+            "rating": 5,
+            "note": "これで行こう！！！",
+            "reviewedAt": "2026-08-06T23:50:09.457Z"
           }
         }
       ]

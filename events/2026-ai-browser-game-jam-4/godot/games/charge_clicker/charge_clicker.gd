@@ -82,7 +82,7 @@ const MechanicalBeastTextures := {
 	"arch_singularity": preload("res://assets/charge_clicker/pixellab/source/enemy/boss-arch-singularity-a.png"),
 	"prime_current_form_1": preload("res://assets/charge_clicker/pixellab/source/enemy/final-crownless-reliquary-v8-b.png"),
 	"prime_current_form_2": preload("res://assets/charge_clicker/pixellab/source/enemy/final-null-cathedral-radial-v8-a.png"),
-	"prime_current_form_3": preload("res://assets/charge_clicker/pixellab/source/enemy/final-first-current-singular-v8-c.png"),
+	"prime_current_form_3": preload("res://assets/charge_clicker/pixellab/source/enemy/final-fallen-machine-seraph-v9-c-cutout.png"),
 }
 const EnergyShardTextures := {
 	"shard-faceted-core-a": preload("res://assets/charge_clicker/pixellab/source/icon/shard-faceted-core-a.png"),
@@ -2772,9 +2772,14 @@ func draw_boss_briefing() -> void:
 	var center := Vector2(640, 340)
 	for ring in range(5):
 		draw_arc(center, 72 + ring * 22, -PI * 0.6 + animation_time * (0.15 + ring * 0.04) * (-1.0 if ring % 2 else 1.0), PI * 1.25 + animation_time * (0.15 + ring * 0.04) * (-1.0 if ring % 2 else 1.0), 48, Palette.with_alpha(accent, 0.8 - ring * 0.12), 4.0)
+	var is_fallen_seraph: bool = str(definition.get("id", "")) == "prime_current_form_3"
+	if is_fallen_seraph:
+		draw_prime_current_form_three_aura(center, 0.0)
 	var portrait: Texture2D = MechanicalBeastTextures.get(str(definition.id), grid_wraith_texture)
-	draw_texture_rect(portrait, Rect2(center - Vector2(116, 116), Vector2(232, 232)), false, Color(0.96, 0.97, 1.0, 1.0))
-	draw_string(Palette.UI_FONT, Vector2(350, 470), str(definition.get("rule_ja" if is_japanese else "rule_en", "")), HORIZONTAL_ALIGNMENT_CENTER, 580, 15, Palette.MUTED)
+	var portrait_size := Vector2(292, 292) if is_fallen_seraph else Vector2(232, 232)
+	draw_texture_rect(portrait, Rect2(center - portrait_size * 0.5, portrait_size), false, Color(0.96, 0.97, 1.0, 1.0))
+	var rule_y := 510.0 if is_fallen_seraph else 470.0
+	draw_string(Palette.UI_FONT, Vector2(350, rule_y), str(definition.get("rule_ja" if is_japanese else "rule_en", "")), HORIZONTAL_ALIGNMENT_CENTER, 580, 15, Palette.MUTED)
 	draw_campaign_button(campaign_primary_rect, loc("第%d形態へ接続" % campaign_route.final_boss_form, "ENGAGE FORM %d" % campaign_route.final_boss_form) if final_encounter else loc("地核決戦を開始", "ENGAGE THE WORLD ENGINE") if singularity else loc("強化ボス戦を開始", "ENGAGE ENHANCED BOSS"), accent, true)
 	draw_campaign_button(campaign_secondary_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
 
@@ -3144,9 +3149,15 @@ func draw_direct_attack_combat_panel() -> void:
 		var enemy_center := enemy_click_rect.get_center()
 		var enemy_pulse := 0.96 + sin(animation_time * 2.4) * 0.035
 		var hovered := enemy_click_rect.has_point(mouse_position)
-		draw_circle(enemy_center, 116.0, Palette.with_alpha(Palette.CORAL, 0.05 + (0.05 if hovered else 0.0)))
-		draw_arc(enemy_center, 120.0, -PI * 0.5, -PI * 0.5 + TAU * (1.0 - run.objective_ratio()), 56, Palette.with_alpha(Palette.CORAL, 0.48), 4.0)
-		draw_texture_rect(enemy_texture, Rect2(enemy_center - Vector2(116, 116) + Vector2(0, sin(animation_time * 1.7) * 2.0), Vector2(232, 232)), false, Color(enemy_pulse, enemy_pulse, enemy_pulse, 1.0))
+		var is_fallen_seraph: bool = run.current_boss_id == "prime_current_form_3"
+		var damage_ratio := 1.0 - clampf(run.boss_hp / maxf(1.0, run.boss_max_hp), 0.0, 1.0)
+		var enemy_radius := 146.0 if is_fallen_seraph else 116.0
+		if is_fallen_seraph:
+			draw_prime_current_form_three_aura(enemy_center, damage_ratio)
+		draw_circle(enemy_center, enemy_radius, Palette.with_alpha(Palette.CORAL, 0.05 + (0.05 if hovered else 0.0)))
+		draw_arc(enemy_center, enemy_radius + 4.0, -PI * 0.5, -PI * 0.5 + TAU * (1.0 - run.objective_ratio()), 64 if is_fallen_seraph else 56, Palette.with_alpha(Palette.CORAL, 0.58 if is_fallen_seraph else 0.48), 4.0)
+		var enemy_size := Vector2(292, 292) if is_fallen_seraph else Vector2(232, 232)
+		draw_texture_rect(enemy_texture, Rect2(enemy_center - enemy_size * 0.5 + Vector2(0, sin(animation_time * 1.7) * 2.0), enemy_size), false, Color(enemy_pulse, enemy_pulse, enemy_pulse, 1.0))
 		if hovered:
 			draw_string(DisplayFont, Vector2(enemy_click_rect.position.x, enemy_click_rect.end.y + 15), loc("クリックで攻撃", "CLICK TO ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, enemy_click_rect.size.x, 13, Palette.AMBER)
 		var tracer_progress := fmod(animation_time / maxf(0.15, run.auto_interval), 1.0)
@@ -3171,6 +3182,33 @@ func draw_direct_attack_combat_panel() -> void:
 		draw_line(Vector2(rail_x, rack_rect.position.y + 8), Vector2(rail_x + 92, rack_rect.position.y + 8), Palette.with_alpha(Palette.CYAN, 0.11), 2.0)
 		draw_circle(Vector2(rail_x, rack_rect.end.y - 9), 2.0, Palette.with_alpha(Palette.CYAN, 0.20))
 	draw_gear_rack()
+
+func draw_prime_current_form_three_aura(center: Vector2, damage_ratio: float) -> void:
+	var pressure := clampf(damage_ratio, 0.0, 1.0)
+	var void_radius := 132.0 + sin(animation_time * 0.8) * 5.0
+	draw_circle(center, void_radius, Color(0.004, 0.005, 0.018, 0.82))
+	for ring in range(3):
+		var radius := 118.0 + float(ring) * 20.0 + sin(animation_time * (0.6 + ring * 0.1) + ring) * 4.0
+		var direction := -1.0 if ring % 2 else 1.0
+		var start_angle := animation_time * (0.14 + ring * 0.045) * direction - PI * 0.5
+		var sweep := PI * (1.12 + pressure * 0.55)
+		draw_arc(center, radius, start_angle, start_angle + sweep, 54, Palette.with_alpha(Palette.VIOLET if ring == 1 else Palette.CYAN, 0.20 + pressure * 0.18 - ring * 0.035), 2.0 + float(ring))
+	var core_colors: Array[Color] = [Palette.CYAN, Palette.AMBER, Palette.VIOLET, Palette.CORAL, Palette.MINT]
+	for index in range(core_colors.size()):
+		var angle := -PI * 0.5 + TAU * float(index) / float(core_colors.size()) + animation_time * (0.075 + pressure * 0.09)
+		var orbit_radius := 138.0 + sin(animation_time * 1.4 + index) * 7.0
+		var core_position := center + Vector2.from_angle(angle) * orbit_radius
+		var core_color := core_colors[index]
+		draw_line(center.lerp(core_position, 0.42), core_position, Palette.with_alpha(core_color, 0.16 + pressure * 0.18), 2.0)
+		draw_circle(core_position, 7.0 + sin(animation_time * 3.2 + index) * 1.2, Palette.with_alpha(core_color, 0.22))
+		draw_arc(core_position, 11.0, angle + animation_time, angle + animation_time + PI * 1.35, 16, Palette.with_alpha(core_color, 0.72), 2.0)
+	for wing in range(6):
+		var side := -1.0 if wing % 2 == 0 else 1.0
+		var tier := float(wing / 2)
+		var root := center + Vector2(side * (28.0 + tier * 8.0), -28.0 + tier * 42.0)
+		var tip := center + Vector2(side * (158.0 + pressure * 18.0 - tier * 9.0), -92.0 + tier * 88.0 + sin(animation_time * 1.1 + wing) * 7.0)
+		var bend := root.lerp(tip, 0.52) + Vector2(side * 18.0, -18.0 + tier * 8.0)
+		draw_polyline(PackedVector2Array([root, bend, tip]), Palette.with_alpha(Palette.CYAN if wing < 2 else Palette.VIOLET, 0.13 + pressure * 0.14), 3.0, true)
 
 func draw_comms_strip() -> void:
 	var rect := Rect2(438, 448, 776, 32)
