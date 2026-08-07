@@ -445,6 +445,12 @@ func test_charge_clicker_v5() -> void:
 	game.open_credits(true)
 	check(game.credits_open and game.desired_bgm_key() == "ending_normal", "title and endings can open the full scrolling credits roll")
 	game.close_credits()
+	check(game.EndingIllustrations.size() == 4 and game.EndingIllustrations["dawn"].resource_path.ends_with("ending-core-dawn-v11.png"), "the true ending integrates four generated cinematic illustrations")
+	game.open_true_epilogue()
+	game.epilogue_scene_time = game.epilogue_scene_duration(0)
+	game._process(0.01)
+	check(game.epilogue_open and game.epilogue_scene == 1 and game.epilogue_scene_time == 0.0, "the true-ending cinematic advances scenes automatically")
+	game.epilogue_open = false
 	game.title_screen_open = false
 	game.queue_encounter_intro("gearmaw")
 	check(game.comms_time > 0.0 and not game.comms_text_ja.is_empty() and game.comms_queue.size() == 1, "each hunt can stage a non-blocking bilingual character exchange")
@@ -509,6 +515,7 @@ func test_charge_clicker_v5() -> void:
 		check(route.select_stage(id), "route can select beast %s" % id)
 		check(route.complete_current_stage(str(ChargeStageCatalog.stage(id).core_id)), "route records defeated beast %s" % id)
 	check(route.phase == route.RoutePhase.BOSS_SELECT, "any three beast defeats unlock normal boss selection")
+	check(ChargeStageCatalog.stage_hp("gearmaw", 0) == 12000.0 and ChargeStageCatalog.stage_hp("vaultback", 1) == 43750.0 and ChargeStageCatalog.stage_hp("phase_mantis", 5) == 5900000000.0, "encounter-order HP inflation preserves the first hunt and prevents late-route instant clears")
 	check(route.choose_first_boss("grid_leech") and route.defeat_current_boss(), "one normal boss produces a complete normal ending")
 	check(route.continue_true_route(), "normal ending can continue into the true route")
 	for id in route.available_stage_ids():
@@ -527,15 +534,15 @@ func test_charge_clicker_v5() -> void:
 	for definition in ChargeGearCatalog.SKILLS:
 		overlimit_run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
 	overlimit_run.refresh_stats()
-	check(overlimit_run.unlock_overlimit_system() and overlimit_run.singularity_residue == 1 and overlimit_run.technology_tier() == 4, "ARCH residue unlocks Tier IV and grants one free permanent restoration")
-	check(overlimit_run.upgrade_cost("heavenbreaker_command") == 0, "the recovered residue makes the first OVERLIMIT restoration free")
+	check(overlimit_run.unlock_overlimit_system() and overlimit_run.singularity_residue == 0 and overlimit_run.technology_tier() == 4, "ARCH residue unlocks Tier IV without becoming a free-purchase token")
+	check(overlimit_run.upgrade_cost("heavenbreaker_command") == 40000000, "every OVERLIMIT restoration uses the same readable 40M CHARGE price")
 	overlimit_run.credits = 5000000000
 	var bought_every_overlimit := true
 	for index in range(ChargeGearCatalog.OVERLIMITS.size()):
 		var definition: Dictionary = ChargeGearCatalog.OVERLIMITS[index]
 		bought_every_overlimit = bought_every_overlimit and overlimit_run.purchase_upgrade(str(definition.id))
 		if index == 0:
-			check(overlimit_run.upgrade_cost("perpetual_sun") == 20000000, "later OVERLIMIT restorations expose the intended escalating CHARGE economy")
+			check(overlimit_run.upgrade_cost("perpetual_sun") == 40000000, "later OVERLIMIT restorations retain the same 40M CHARGE price")
 	check(bought_every_overlimit and overlimit_run.overlimit_count() == 5 and overlimit_run.skill_points_bought() == 317, "all five OVERLIMITS remain simultaneously active outside the standard 317 ranks")
 	overlimit_run.respec_skills()
 	check(overlimit_run.overlimit_count() == 5, "standard free respec never removes permanent OVERLIMIT restorations")

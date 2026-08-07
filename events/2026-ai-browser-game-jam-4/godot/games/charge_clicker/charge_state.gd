@@ -11,7 +11,8 @@ const GearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const BOSS_MAX_HP := 6200.0
 const MAX_SKILL_RANK := 10
 const RESTORE_GOAL := 1.0
-const BUILD_ID := "v8-overlimit-prime-current"
+const BUILD_ID := "v11-cinematic-balance"
+const OVERLIMIT_RESTORATION_COST := 40000000
 
 enum StagePhase { RESTORE, BOSS, REWARD, CLEAR }
 
@@ -452,7 +453,9 @@ func unlock_overlimit_system() -> bool:
 	if overlimit_system_unlocked:
 		return false
 	overlimit_system_unlocked = true
-	singularity_residue = 1
+	# The recovered residue is now the narrative key that unlocks Tier IV.
+	# Every permanent OVERLIMIT restoration uses the same readable CHARGE price.
+	singularity_residue = 0
 	return true
 
 func overlimit_count() -> int:
@@ -480,10 +483,7 @@ func upgrade_cost(id: String) -> int:
 	if definition.is_empty() or level >= int(definition.get("max_rank", MAX_SKILL_RANK)):
 		return 0
 	if bool(definition.get("overlimit", false)):
-		if singularity_residue > 0:
-			return 0
-		var restoration_costs := [20000000, 60000000, 180000000, 540000000]
-		return int(restoration_costs[clampi(overlimit_count() - 1, 0, restoration_costs.size() - 1)])
+		return OVERLIMIT_RESTORATION_COST
 	var raw_cost := float(definition.base_cost) * pow(float(definition.growth), level)
 	var discount := minf(0.48, float(upgrade_level("purchase_optimizer")) * 0.06 + float(upgrade_level("cost_compressor")) * 0.05)
 	return maxi(1, int(round(raw_cost * (1.0 - discount))))
@@ -548,8 +548,6 @@ func purchase_upgrade(id: String) -> bool:
 	var paid := upgrade_cost(id)
 	credits -= paid
 	if is_overlimit(id):
-		if singularity_residue > 0:
-			singularity_residue -= 1
 		overlimit_invested_charge += paid
 	else:
 		invested_charge += paid
@@ -1360,7 +1358,9 @@ func restore_snapshot(data: Dictionary) -> bool:
 	support_counter = maxi(0, int(data.get("support_counter", 0)))
 	world_hive_counter = maxi(0, int(data.get("world_hive_counter", 0)))
 	overlimit_system_unlocked = bool(data.get("overlimit_system_unlocked", false))
-	singularity_residue = clampi(int(data.get("singularity_residue", 0)), 0, 1)
+	# v11 retires residue as a spendable token. Preserve the serialized field for
+	# backward compatibility, but normalize every restored campaign to zero.
+	singularity_residue = 0
 	overlimit_invested_charge = maxi(0, int(data.get("overlimit_invested_charge", 0)))
 	overlimit_trigger_counter = clampi(int(data.get("overlimit_trigger_counter", 0)), 0, 4)
 	perpetual_sun_meter = maxf(0.0, float(data.get("perpetual_sun_meter", 0.0)))

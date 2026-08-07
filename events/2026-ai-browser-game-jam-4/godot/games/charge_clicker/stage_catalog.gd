@@ -194,7 +194,10 @@ const FINAL_BOSS_FORMS := [
 	},
 ]
 
-const ENCOUNTER_SCALING := [1.0, 1.62, 2.55, 35.0, 180.0, 1000.0]
+# Encounter-order inflation deliberately outruns the build's multiplicative
+# Tier/core growth. The first hunt remains the onboarding baseline; later hunts
+# stay alive long enough for their unique mechanics to matter.
+const ENCOUNTER_SCALING := [1.0, 3.5, 7.5, 250.0, 40000.0, 500000.0]
 
 static func stage(id: String) -> Dictionary:
 	for definition in STAGES:

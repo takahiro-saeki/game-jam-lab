@@ -1,5 +1,14 @@
 # Asset provenance
 
+## 2026-08-07 — TRUE ENDING CINEMATIC v11
+
+- OpenAI built-in image generationで、既存PixelLab素材をキャラクター参照にした16:9の真エンディング用イラスト4枚を生成。
+- 主人公、ARCH SINGULARITY、GRID LEECH、THERMAL TITAN、FALLEN MACHINE SERAPHの外形・配色を参照画像から維持し、文字・ロゴ・UIを画像へ焼き込んでいない。
+- 元出力をWeb向け1280×720 PNGへ縮小し、`godot/assets/charge_clicker/ending/` に保存。元生成物はCodexの生成画像領域にも保持。
+- 採用ファイル: `ending-silence-below-v11.png`, `ending-memory-colossi-v11.png`, `ending-current-remembers-v11.png`, `ending-core-dawn-v11.png`。
+- Godot側で緩やかなパン、ズーム、フェード、字幕、自動送りを合成するため、動画コーデックへの依存は追加していない。
+- 最終プロンプト要旨、参照素材、場面構成は [`TRUE_ENDING_CINEMATIC_V11.md`](TRUE_ENDING_CINEMATIC_V11.md) に記録。
+
 ## 2026-08-06 — PRIME CURRENT v8
 
 - PixelLab API (`pixen`) で本当のラスボス3形態を各3案、合計9枚を生成。第3形態の闇王再設計3案を追加し、最終ボス候補は合計12枚。

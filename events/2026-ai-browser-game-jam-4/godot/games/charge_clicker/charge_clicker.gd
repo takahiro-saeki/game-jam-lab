@@ -118,6 +118,12 @@ const AutoProjectileTextures := {
 	"rail": preload("res://assets/charge_clicker/pixellab/source/vfx/auto-vfx-horizon-spike-v10-c.png"),
 }
 const OverlimitSocketTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/overlimit-socket-seraph-lock-v10-c.png")
+const EndingIllustrations := {
+	"silence": preload("res://assets/charge_clicker/ending/ending-silence-below-v11.png"),
+	"colossi": preload("res://assets/charge_clicker/ending/ending-memory-colossi-v11.png"),
+	"current": preload("res://assets/charge_clicker/ending/ending-current-remembers-v11.png"),
+	"dawn": preload("res://assets/charge_clicker/ending/ending-core-dawn-v11.png"),
+}
 const RegionBackgrounds := {
 	"scrap": preload("res://assets/charge_clicker/pixellab/source/environment/bg-scrap-ossuary-a.png"),
 	"geothermal": preload("res://assets/charge_clicker/pixellab/source/environment/bg-geo-pressure-foundry-a.png"),
@@ -146,6 +152,8 @@ const VIEW := Vector2(1280, 720)
 const BGM_VOLUME_DB := -10.0
 const BGM_SILENT_DB := -60.0
 const BGM_CROSSFADE_SECONDS := 0.85
+const EPILOGUE_SCENE_SECONDS := [6.5, 7.0, 7.0, 7.5, 7.0, 7.0, 7.5, 8.0]
+const EPILOGUE_FADE_SECONDS := 0.85
 const REACTOR_CENTER := Vector2(212, 286)
 const SHARD_ACCUMULATOR_RECT := Rect2(524, 5, 196, 78)
 const SHARD_SOCKET_CENTER := Vector2(575, 44)
@@ -507,7 +515,7 @@ func configure_campaign_preview() -> void:
 			campaign_route.true_end_seen = true
 			campaign_route.phase = CampaignRoute.RoutePhase.POST_TRUE_CHOICE
 			run.overlimit_system_unlocked = true
-			run.singularity_residue = 1
+			run.singularity_residue = 0
 			for definition in GearCatalog.SKILLS:
 				run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
 			run.refresh_stats()
@@ -637,6 +645,8 @@ func _process(delta: float) -> void:
 	update_comms(delta)
 	if epilogue_open:
 		epilogue_scene_time += delta
+		if epilogue_scene_time >= epilogue_scene_duration(epilogue_scene):
+			advance_true_epilogue(false)
 		queue_redraw()
 		return
 	if achievements_open:
@@ -922,13 +932,17 @@ func open_true_epilogue() -> void:
 	refresh_music()
 	queue_redraw()
 
-func advance_true_epilogue() -> void:
+func epilogue_scene_duration(scene_index: int) -> float:
+	return float(EPILOGUE_SCENE_SECONDS[clampi(scene_index, 0, EPILOGUE_SCENE_SECONDS.size() - 1)])
+
+func advance_true_epilogue(play_sound: bool = true) -> void:
 	if not epilogue_open:
 		return
 	if epilogue_scene < 7:
 		epilogue_scene += 1
 		epilogue_scene_time = 0.0
-		synth.confirm()
+		if play_sound:
+			synth.confirm()
 	else:
 		finish_true_epilogue()
 	queue_redraw()
@@ -2461,7 +2475,15 @@ func draw_title_button(index: int, label: String) -> void:
 		draw_string(DisplayFont, rect.position + Vector2(rect.size.x - 42, 38 if rect.size.y >= 60 else 32), ">", HORIZONTAL_ALIGNMENT_CENTER, 24, 18, Palette.INK if index == 0 else accent)
 
 func draw_credits_roll() -> void:
-	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.006, 0.018, 0.92))
+	if credits_context == "final":
+		var ending_cycle := [EndingIllustrations["silence"], EndingIllustrations["colossi"], EndingIllustrations["current"], EndingIllustrations["dawn"]]
+		var cycle_seconds := 14.0
+		var cycle_index := mini(ending_cycle.size() - 1, int(credits_scroll / cycle_seconds))
+		var cycle_progress := clampf(fmod(credits_scroll, cycle_seconds) / cycle_seconds, 0.0, 1.0)
+		draw_cinematic_illustration(ending_cycle[cycle_index], cycle_progress, 0.42, cycle_index % 2 == 1)
+		draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.006, 0.018, 0.79))
+	else:
+		draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.006, 0.018, 0.92))
 	for index in range(28):
 		var point := Vector2(fmod(float(index * 211), 1280.0), fmod(float(index * 127) + animation_time * 8.0, 720.0))
 		draw_circle(point, 1.0 + float(index % 3) * 0.4, Palette.with_alpha(Palette.CYAN, 0.16 + float(index % 4) * 0.04))
@@ -2498,36 +2520,58 @@ func draw_credits_roll() -> void:
 
 func draw_true_epilogue() -> void:
 	var scenes := [
-		{"title_ja":"地核の沈黙","title_en":"SILENCE BELOW","text_ja":"アーク・シンギュラリティが止まり、千年続いた機械の鼓動が途絶えた。","text_en":"ARCH SINGULARITY STOPPED. A MECHANICAL HEARTBEAT A THOUSAND YEARS OLD FELL SILENT.","texture":MechanicalBeastTextures["arch_singularity"],"accent":Palette.PAPER},
-		{"title_ja":"第六適合個体","title_en":"UNIT SIX","text_ja":"帰還命令を受けたヴォルト・ノマドは、なお深部から届く微かな電流へ振り返る。","text_en":"ORDERED TO ASCEND, VOLT NOMAD TURNED TOWARD A CURRENT STILL WHISPERING FROM BELOW.","texture":ProtagonistTexture,"accent":Palette.CYAN},
-		{"title_ja":"奪ったのではない","title_en":"NOT STOLEN","text_ja":"六体の魔獣核は武器ではなかった。地底世界が残した、六つの生存記録だった。","text_en":"THE SIX BEAST CORES WERE NOT WEAPONS. THEY WERE SIX SURVIVAL RECORDS LEFT BY THE WORLD BELOW.","texture":MechanicalBeastTextures["relay_hydra"],"accent":Palette.VIOLET},
-		{"title_ja":"主獣たちの記憶","title_en":"MEMORY OF COLOSSI","text_ja":"グリッド・リーチも、サーマル・タイタンも、原初電流から世界を守るため壊れ続けていた。","text_en":"GRID LEECH AND THERMAL TITAN HAD BEEN BREAKING THEMSELVES TO HOLD BACK THE FIRST CURRENT.","texture":MechanicalBeastTextures["prime_current_form_2"],"accent":Palette.CORAL},
-		{"title_ja":"無冠機神","title_en":"THE CROWNLESS ENGINE","text_ja":"王冠を持たぬ機神は支配者ではない。停止することを許されなかった、最初の動力炉だった。","text_en":"THE CROWNLESS ENGINE WAS NO RULER — ONLY THE FIRST REACTOR, NEVER PERMITTED TO STOP.","texture":MechanicalBeastTextures["prime_current_form_1"],"accent":Palette.MINT},
-		{"title_ja":"五つのOVERLIMIT","title_en":"FIVE OVERLIMITS","text_ja":"撃鉄、太陽炉、事象砲、主権群体、六核神化。選ばれた装備ではなく、すべてが一つの意志となった。","text_en":"STRIKER, SUN, HORIZON, SWARM, APOTHEOSIS — NOT EQUIPPED PARTS, BUT ONE CONVERGENT WILL.","texture":ProtagonistTexture,"accent":Palette.AMBER},
-		{"title_ja":"原初電流の終わり","title_en":"THE CURRENT REMEMBERS","text_ja":"最後の電流は消滅しなかった。機械と獣と狩人の記憶へ分かれ、地上へ昇っていった。","text_en":"THE LAST CURRENT DID NOT VANISH. IT BECAME THE MEMORIES OF MACHINE, BEAST, AND HUNTER — RISING.","texture":MechanicalBeastTextures["prime_current_form_3"],"accent":Palette.PAPER},
-		{"title_ja":"夜明けの機核","title_en":"CORE OF DAWN","text_ja":"任務完了。だが今度の沈黙は終わりではない。誰かが選び取った、休息だった。","text_en":"MISSION COMPLETE. THIS SILENCE WAS NOT AN END, BUT A REST SOMEONE FINALLY CHOSE.","texture":ProtagonistTexture,"accent":Palette.CYAN},
+		{"title_ja":"地核の沈黙","title_en":"SILENCE BELOW","text_ja":"アーク・シンギュラリティが止まり、千年続いた機械の鼓動が途絶えた。","text_en":"ARCH SINGULARITY STOPPED. A MECHANICAL HEARTBEAT A THOUSAND YEARS OLD FELL SILENT.","illustration":EndingIllustrations["silence"],"accent":Palette.PAPER},
+		{"title_ja":"第六適合個体","title_en":"UNIT SIX","text_ja":"帰還命令を受けたヴォルト・ノマドは、なお深部から届く微かな電流へ振り返る。","text_en":"ORDERED TO ASCEND, VOLT NOMAD TURNED TOWARD A CURRENT STILL WHISPERING FROM BELOW.","illustration":EndingIllustrations["silence"],"accent":Palette.CYAN},
+		{"title_ja":"奪ったのではない","title_en":"NOT STOLEN","text_ja":"六体の魔獣核は武器ではなかった。地底世界が残した、六つの生存記録だった。","text_en":"THE SIX BEAST CORES WERE NOT WEAPONS. THEY WERE SIX SURVIVAL RECORDS LEFT BY THE WORLD BELOW.","illustration":EndingIllustrations["colossi"],"accent":Palette.VIOLET},
+		{"title_ja":"主獣たちの記憶","title_en":"MEMORY OF COLOSSI","text_ja":"グリッド・リーチも、サーマル・タイタンも、原初電流から世界を守るため壊れ続けていた。","text_en":"GRID LEECH AND THERMAL TITAN HAD BEEN BREAKING THEMSELVES TO HOLD BACK THE FIRST CURRENT.","illustration":EndingIllustrations["colossi"],"accent":Palette.CORAL},
+		{"title_ja":"無冠機神","title_en":"THE CROWNLESS ENGINE","text_ja":"王冠を持たぬ機神は支配者ではない。停止することを許されなかった、最初の動力炉だった。","text_en":"THE CROWNLESS ENGINE WAS NO RULER — ONLY THE FIRST REACTOR, NEVER PERMITTED TO STOP.","illustration":EndingIllustrations["current"],"accent":Palette.MINT},
+		{"title_ja":"五つのOVERLIMIT","title_en":"FIVE OVERLIMITS","text_ja":"撃鉄、太陽炉、事象砲、主権群体、六核神化。選ばれた装備ではなく、すべてが一つの意志となった。","text_en":"STRIKER, SUN, HORIZON, SWARM, APOTHEOSIS — NOT EQUIPPED PARTS, BUT ONE CONVERGENT WILL.","illustration":EndingIllustrations["current"],"accent":Palette.AMBER},
+		{"title_ja":"原初電流の終わり","title_en":"THE CURRENT REMEMBERS","text_ja":"最後の電流は消滅しなかった。機械と獣と狩人の記憶へ分かれ、地上へ昇っていった。","text_en":"THE LAST CURRENT DID NOT VANISH. IT BECAME THE MEMORIES OF MACHINE, BEAST, AND HUNTER — RISING.","illustration":EndingIllustrations["current"],"accent":Palette.PAPER},
+		{"title_ja":"夜明けの機核","title_en":"CORE OF DAWN","text_ja":"任務完了。だが今度の沈黙は終わりではない。誰かが選び取った、休息だった。","text_en":"MISSION COMPLETE. THIS SILENCE WAS NOT AN END, BUT A REST SOMEONE FINALLY CHOSE.","illustration":EndingIllustrations["dawn"],"accent":Palette.CYAN},
 	]
 	var scene: Dictionary = scenes[clampi(epilogue_scene, 0, scenes.size() - 1)]
 	var accent: Color = scene.accent
-	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.006, 0.017, 0.94))
+	var scene_duration := epilogue_scene_duration(epilogue_scene)
+	var scene_progress := clampf(epilogue_scene_time / maxf(0.001, scene_duration), 0.0, 1.0)
+	var fade_in := clampf(epilogue_scene_time / EPILOGUE_FADE_SECONDS, 0.0, 1.0)
+	var fade_out := clampf((scene_duration - epilogue_scene_time) / EPILOGUE_FADE_SECONDS, 0.0, 1.0)
+	var cinematic_alpha := minf(fade_in, fade_out)
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.006, 0.017, 1.0))
+	draw_cinematic_illustration(scene.illustration, scene_progress, cinematic_alpha, epilogue_scene % 2 == 1)
+	for shade_index in range(10):
+		var shade_x := 470.0 + float(shade_index) * 81.0
+		draw_rect(Rect2(shade_x, 0, 82, 720), Color(0.002, 0.006, 0.017, 0.045 + float(shade_index) * 0.075))
+	draw_rect(Rect2(0, 0, 1280, 62), Color(0.002, 0.006, 0.017, 0.74))
+	draw_rect(Rect2(0, 650, 1280, 70), Color(0.002, 0.006, 0.017, 0.82))
 	for index in range(9):
-		var radius := 95.0 + float(index) * 34.0 + sin(animation_time * 0.35 + index) * 8.0
-		draw_arc(Vector2(640, 315), radius, -PI * 0.72, PI * 1.28, 72, Palette.with_alpha(accent, 0.15 - float(index) * 0.012), 2.0)
-	var image_rect := Rect2(118, 96, 504, 504)
-	draw_machine_plate(image_rect, Palette.with_alpha(Palette.INK, 0.92), Palette.with_alpha(accent, 0.72), 22.0, 2.0)
-	draw_texture_rect(scene.texture, Rect2(154, 126, 432, 432), false, Color(0.96, 0.98, 1.0, 0.96))
-	draw_string(Palette.UI_FONT, Vector2(674, 142), "TRUE ENDING // %02d / %02d" % [epilogue_scene + 1, scenes.size()], HORIZONTAL_ALIGNMENT_LEFT, 500, 12, accent)
-	draw_string(DisplayFont, Vector2(668, 214), str(scene.get("title_ja" if is_japanese else "title_en")), HORIZONTAL_ALIGNMENT_LEFT, 500, 31, Palette.PAPER)
-	draw_line(Vector2(668, 240), Vector2(1162, 240), Palette.with_alpha(accent, 0.42), 2.0)
+		var radius := 95.0 + float(index) * 34.0 + sin(animation_time * 0.35 + index) * 8.0 + scene_progress * 16.0
+		draw_arc(Vector2(1080, 310), radius, -PI * 0.72, PI * 1.28, 72, Palette.with_alpha(accent, (0.10 - float(index) * 0.008) * cinematic_alpha), 2.0)
+	draw_string(Palette.UI_FONT, Vector2(684, 128), "TRUE ENDING // %02d / %02d  ·  AUTO PLAY" % [epilogue_scene + 1, scenes.size()], HORIZONTAL_ALIGNMENT_LEFT, 490, 12, Palette.with_alpha(accent, cinematic_alpha))
+	draw_string(DisplayFont, Vector2(678, 204), str(scene.get("title_ja" if is_japanese else "title_en")), HORIZONTAL_ALIGNMENT_LEFT, 500, 31, Palette.with_alpha(Palette.PAPER, cinematic_alpha))
+	draw_line(Vector2(678, 232), Vector2(1172, 232), Palette.with_alpha(accent, 0.52 * cinematic_alpha), 2.0)
 	var body := str(scene.get("text_ja" if is_japanese else "text_en"))
 	var lines := wrap_text_simple(body, 26 if is_japanese else 42)
 	for line_index in range(lines.size()):
-		draw_string(Palette.UI_FONT, Vector2(668, 296 + line_index * 34), str(lines[line_index]), HORIZONTAL_ALIGNMENT_LEFT, 500, 15, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(668, 566), loc("クリック / ENTER：次へ", "CLICK / ENTER: NEXT"), HORIZONTAL_ALIGNMENT_LEFT, 300, 12, Palette.MUTED)
+		draw_string(Palette.UI_FONT, Vector2(678, 286 + line_index * 34), str(lines[line_index]), HORIZONTAL_ALIGNMENT_LEFT, 480, 15, Palette.with_alpha(Palette.PAPER, cinematic_alpha))
+	draw_string(Palette.UI_FONT, Vector2(678, 574), loc("自動再生中　クリック / ENTER：次の場面", "AUTO PLAYING · CLICK / ENTER: NEXT SCENE"), HORIZONTAL_ALIGNMENT_LEFT, 330, 12, Palette.with_alpha(Palette.MUTED, cinematic_alpha))
 	draw_campaign_button(epilogue_skip_rect, loc("スキップ", "SKIP"), Palette.MUTED, false)
 	var progress_width := 494.0 / float(scenes.size())
 	for index in range(scenes.size()):
-		draw_rect(Rect2(668 + index * progress_width, 612, progress_width - 6, 5), accent if index <= epilogue_scene else Palette.with_alpha(Palette.MUTED, 0.2))
+		var segment_fill := 1.0 if index < epilogue_scene else scene_progress if index == epilogue_scene else 0.0
+		draw_rect(Rect2(678 + index * progress_width, 620, progress_width - 6, 5), Palette.with_alpha(Palette.MUTED, 0.2))
+		draw_rect(Rect2(678 + index * progress_width, 620, (progress_width - 6) * segment_fill, 5), accent)
+	if cinematic_alpha < 1.0:
+		draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.0, 0.0, 0.0, 1.0 - cinematic_alpha))
+
+func draw_cinematic_illustration(texture: Texture2D, progress: float, alpha: float, reverse_pan: bool) -> void:
+	var texture_size := texture.get_size()
+	var zoom := 1.0 + progress * 0.055
+	var source_size := texture_size / zoom
+	var travel := texture_size - source_size
+	var travel_progress := 1.0 - progress if reverse_pan else progress
+	var source_position := Vector2(travel.x * travel_progress, travel.y * (0.25 + progress * 0.35))
+	var source_rect := Rect2(source_position, source_size)
+	draw_texture_rect_region(texture, Rect2(Vector2.ZERO, VIEW), source_rect, Color(1.0, 1.0, 1.0, alpha))
 
 func wrap_text_simple(text: String, max_chars: int) -> Array[String]:
 	var lines: Array[String] = []
@@ -2801,7 +2845,7 @@ func draw_post_true_choice() -> void:
 	draw_string(DisplayFont, Vector2(526, 294), loc("『任務は終わった。帰還経路は開いている』", "“THE MISSION IS COMPLETE. THE ASCENT PATH IS OPEN.”"), HORIZONTAL_ALIGNMENT_LEFT, 470, 17, Palette.PAPER)
 	draw_string(DisplayFont, Vector2(526, 342), loc("『……それでも、深部から私を呼ぶ信号がある』", "“...AND STILL, SOMETHING BELOW IS CALLING ME.”"), HORIZONTAL_ALIGNMENT_LEFT, 470, 17, Palette.AMBER)
 	draw_string(Palette.UI_FONT, Vector2(526, 390), loc("帰還すれば通常エンドロール。本当の敵へ応答するならOVERLIMITが1つ必要。", "ASCEND FOR THE WORLD-ENGINE CREDITS. ANSWERING THE SIGNAL REQUIRES ONE OVERLIMIT."), HORIZONTAL_ALIGNMENT_LEFT, 470, 12, Palette.MUTED)
-	draw_string(DisplayFont, Vector2(526, 438), "OVERLIMIT  %d / 5    ·    RESIDUE  %d" % [run.overlimit_count(), run.singularity_residue], HORIZONTAL_ALIGNMENT_LEFT, 470, 15, Palette.MINT if run.overlimit_count() > 0 else Palette.AMBER)
+	draw_string(DisplayFont, Vector2(526, 438), loc("OVERLIMIT  %d / 5    ·    TIER IV 接続済み" % run.overlimit_count(), "OVERLIMIT  %d / 5    ·    TIER IV ONLINE" % run.overlimit_count()), HORIZONTAL_ALIGNMENT_LEFT, 470, 15, Palette.MINT if run.overlimit_count() > 0 else Palette.AMBER)
 	draw_campaign_button(campaign_primary_rect, loc("地上へ帰還する・エンドロール", "ASCEND · WORLD-ENGINE CREDITS"), Palette.CYAN, campaign_selected == 0)
 	draw_campaign_button(campaign_secondary_rect, loc("深部信号へ応答する", "ANSWER THE DEEP SIGNAL"), Palette.VIOLET, campaign_selected == 1)
 	draw_campaign_button(respec_rect, "T  OVERLIMIT", Palette.AMBER, false)
@@ -3431,7 +3475,7 @@ func draw_tree_node(index: int, definition: Dictionary, accent: Color) -> void:
 	elif not unlocked:
 		draw_string(DisplayFont, rect.position + Vector2(108, 48), "LOCK", HORIZONTAL_ALIGNMENT_RIGHT, 88, 10, Palette.CORAL)
 	else:
-		var cost_label := "RESIDUE" if is_overlimit_node and run.singularity_residue > 0 else "%s C" % format_number(run.upgrade_cost(id))
+		var cost_label := "%s C" % format_number(run.upgrade_cost(id))
 		draw_string(DisplayFont, rect.position + Vector2(96, 48), cost_label, HORIZONTAL_ALIGNMENT_RIGHT, 100, 10, Palette.AMBER if affordable else Palette.CORAL)
 	var progress := float(level) / float(maxi(1, maximum))
 	draw_rect(Rect2(rect.position + Vector2(20, 61), Vector2(176, 5)), Palette.with_alpha(border, 0.10))
@@ -3466,10 +3510,10 @@ func draw_tree_detail_panel(accent: Color) -> void:
 	elif run.upgrade_level(id) >= run.skill_max_rank(id):
 		draw_string(Palette.UI_FONT, Vector2(842, 540 if is_overlimit_node else 510), loc("このノードは最大強化済み", "THIS NODE IS FULLY UPGRADED"), HORIZONTAL_ALIGNMENT_LEFT, 350, 12, Palette.MINT)
 	else:
-		var next_cost_text := loc("特異点残滓で無料復旧", "RESTORE FREE WITH SINGULARITY RESIDUE") if is_overlimit_node and run.singularity_residue > 0 else loc("必要：%s CHARGE" % format_number(upgrade_cost), "COST: %s CHARGE" % format_number(upgrade_cost))
+		var next_cost_text := loc("必要：%s CHARGE" % format_number(upgrade_cost), "COST: %s CHARGE" % format_number(upgrade_cost))
 		var cost_y := 538.0 if is_overlimit_node else 510.0
 		draw_string(DisplayFont, Vector2(842, cost_y), next_cost_text, HORIZONTAL_ALIGNMENT_LEFT, 350, 11, Palette.AMBER if run.can_purchase(id) else Palette.CORAL)
-		if is_overlimit_node and run.singularity_residue <= 0 and run.credits < float(upgrade_cost):
+		if is_overlimit_node and run.credits < float(upgrade_cost):
 			draw_string(Palette.UI_FONT, Vector2(1010, cost_y), loc("不足  %s" % format_number(float(upgrade_cost) - run.credits), "SHORT  %s" % format_number(float(upgrade_cost) - run.credits)), HORIZONTAL_ALIGNMENT_RIGHT, 182, 11, Palette.CORAL)
 	var purchasable: bool = run.can_purchase(id)
 	var purchase_label := "MAX" if run.upgrade_level(id) >= run.skill_max_rank(id) else loc("CHARGE不足", "NOT ENOUGH CHARGE") if lock_reason.is_empty() and not purchasable else loc("購入 / 強化", "PURCHASE / UPGRADE")
