@@ -179,3 +179,14 @@ Custom 3:00、Instrumental。3形態を1曲で連続させ、各区間を切り�
 8枚の紙芝居と真エンドロール用。多少長く聴けるようCustom 3:00。通常エンドとは明確に別曲。
 
 > Instrumental true-ending music for a lone automaton who learns that the defeated beasts, world-engine and final current were all fragments of one surviving memory. Exactly three minutes, 76 BPM, begin with solitary ivory-piano notes and quiet cable resonance, gradually introduce warm analog strings, glass harmonics and five gentle colored synth voices that weave into one transformed PROJECT CHARGE motif. Bittersweet, humane and luminous; grief becoming chosen rest, never sentimental or grandiose. The last minute should feel like first daylight reaching an underground machine for the first time. No vocals, no choir, no cinematic boom, no fade-out; sustain a soft electrical pulse that can loop back into the first piano note for long illustrated credits.
+
+### 真エンディング正式採用（2026-08-08）
+
+Suno v5.5 / Advanced / Instrumental / Custom 3:00で生成。ユーザーレビューによりBを正式採用し、`the_current_remembers.mp3`として独立した`ending_true`スロットへ実装した。通常エンディング曲とは共有しない。
+
+| 候補 | 尺 | Suno |
+|---|---:|---|
+| A | 3:00 | [The Current Remembers — True Ending 3M A](https://suno.com/song/6917c795-70b8-4074-9f42-5a3641ad37cc) |
+| **B（正式採用）** | **3:00** | [The Current Remembers — True Ending 3M R2 B](https://suno.com/song/41766ea9-2ffe-489d-9daf-e723c62806c2) |
+
+予備として[R2 A（2:59）](https://suno.com/song/9c5f48f1-9e20-4df5-930a-29a5428d85ed)も保持する。初回抽選B（2:34）は尺要件を満たさないため選考対象外。

@@ -26,10 +26,10 @@ const BGMStreams := {
 	"boss": preload("res://assets/audio/project_charge/forge_of_breakpoints.ogg"),
 	"singularity": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
 	"ending_normal": preload("res://assets/audio/project_charge/core_of_dawn.ogg"),
-	# Dedicated composition slots. These provisional masters are deliberately
-	# distinct until the two approved Suno ending masters are imported.
+	# Dedicated composition slots. The true-ending master is the approved
+	# three-minute Suno B arrangement; the remaining v8 slots stay independent.
 	"ending_world": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
-	"ending_true": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
+	"ending_true": preload("res://assets/audio/project_charge/the_current_remembers.mp3"),
 	"prime_current": preload("res://assets/audio/project_charge/critical_parallax.ogg"),
 }
 # Every enemy encounter has its own mastered track. The generic keys remain the
@@ -124,12 +124,35 @@ const EndingIllustrations := {
 	"current": preload("res://assets/charge_clicker/ending/ending-current-remembers-v11.png"),
 	"dawn": preload("res://assets/charge_clicker/ending/ending-core-dawn-v11.png"),
 }
+const BossArtwork := {
+	"gearmaw": preload("res://assets/charge_clicker/ending/art-gearmaw-v12.png"),
+	"vaultback": preload("res://assets/charge_clicker/ending/art-vaultback-v12.png"),
+	"pyre_wyrm": preload("res://assets/charge_clicker/ending/art-pyre-wyrm-v12.png"),
+	"relay_hydra": preload("res://assets/charge_clicker/ending/art-relay-hydra-v12.png"),
+	"swarm_matriarch": preload("res://assets/charge_clicker/ending/art-swarm-matriarch-v12.png"),
+	"phase_mantis": preload("res://assets/charge_clicker/ending/art-phase-mantis-v12.png"),
+	"grid_leech": preload("res://assets/charge_clicker/ending/art-grid-leech-v12.png"),
+	"thermal_titan": preload("res://assets/charge_clicker/ending/art-thermal-titan-v12.png"),
+	"arch_singularity": preload("res://assets/charge_clicker/ending/art-arch-singularity-v12.png"),
+	"prime_current": preload("res://assets/charge_clicker/ending/art-prime-current-v12.png"),
+}
 const ArtworkGallery := [
 	{"id":"silence","title_ja":"地核の沈黙","title_en":"SILENCE BELOW","desc_ja":"世界機関の停止後、静まり返った地核で帰還信号を待つヴォルト・ノマド。","desc_en":"VOLT NOMAD WAITS FOR THE ASCENT SIGNAL IN THE SILENT WORLD ENGINE.","texture":EndingIllustrations["silence"],"accent":Palette.CYAN},
 	{"id":"colossi","title_ja":"主獣たちの記憶","title_en":"MEMORY OF COLOSSI","desc_ja":"討伐した機械魔獣たちが遺した、生存と抵抗の記録。","desc_en":"A RECORD OF SURVIVAL AND RESISTANCE LEFT BY THE MECHANICAL COLOSSI.","texture":EndingIllustrations["colossi"],"accent":Palette.VIOLET},
 	{"id":"current","title_ja":"原初電流の記憶","title_en":"THE CURRENT REMEMBERS","desc_ja":"無冠機神と六つの機核が、一つの意志として最後の電流へ触れる。","desc_en":"THE CROWNLESS ENGINE AND SIX CORES MEET THE LAST CURRENT AS ONE WILL.","texture":EndingIllustrations["current"],"accent":Palette.AMBER},
 	{"id":"dawn","title_ja":"夜明けの機核","title_en":"CORE OF DAWN","desc_ja":"戦いの終わりに選び取られた、地上へ続く静かな夜明け。","desc_en":"A QUIET DAWN CHOSEN AT THE END OF THE HUNT, LEADING BACK TO THE SURFACE.","texture":EndingIllustrations["dawn"],"accent":Palette.MINT},
+	{"id":"gearmaw","title_ja":"鉄殻を穿つもの","title_en":"THE IRON BORER","desc_ja":"廃棄坑道を砕くギアモウ。その衝撃核は、第六適合個体の最初の力となった。","desc_en":"GEARMAW BORES THROUGH THE SCRAP OSSUARY — THE FIRST CORE CLAIMED BY UNIT SIX.","texture":BossArtwork["gearmaw"],"accent":Palette.AMBER},
+	{"id":"vaultback","title_ja":"青雷の開殻","title_en":"THUNDER SHELL OPEN","desc_ja":"ヴォルトバックの蓄雷甲が開き、数世紀分の電流が深層を昼へ変える。","desc_en":"VAULTBACK OPENS ITS THUNDER SHELL, TURNING THE DEPTHS TO DAY WITH CENTURIES OF CHARGE.","texture":BossArtwork["vaultback"],"accent":Palette.CYAN},
+	{"id":"pyre_wyrm","title_ja":"灼炉の蛇行","title_en":"FURNACE SERPENT","desc_ja":"強化のたびに赤熱するパイア・ワーム。地熱炉心層そのものが、長い身体へ組み替わる。","desc_en":"PYRE WYRM REWRITES THE GEOTHERMAL FOUNDRY INTO ONE ENDLESS OVERDRIVE.","texture":BossArtwork["pyre_wyrm"],"accent":Palette.CORAL},
+	{"id":"relay_hydra","title_ja":"三頭継電","title_en":"CASCADE TRINITY","desc_ja":"三つの頭部を渡る電流。手動とAUTOの一撃だけが、その継電律を断ち切れる。","desc_en":"CURRENT PASSES BETWEEN THREE HEADS; ONLY A PERFECT MANUAL/AUTO RELAY CAN BREAK IT.","texture":BossArtwork["relay_hydra"],"accent":Palette.VIOLET},
+	{"id":"swarm_matriarch","title_ja":"群制の月","title_en":"THE SWARM MOON","desc_ja":"無数の子機を一つの意志として操る母機。標識された一点へ、群れの夜が収束する。","desc_en":"THE MATRIARCH COMMANDS A THOUSAND DRONES AS ONE WILL, CONVERGING ON A SINGLE MARK.","texture":BossArtwork["swarm_matriarch"],"accent":Palette.MINT},
+	{"id":"phase_mantis","title_ja":"臨界の一瞬","title_en":"CRITICAL PARALLAX","desc_ja":"位相の狭間に残る唯一の実体。フェイズ・マンティスを捉える、一度きりの臨界窓。","desc_en":"ONE PHYSICAL BODY REMAINS BETWEEN PHASES — A SINGLE CRITICAL WINDOW.","texture":BossArtwork["phase_mantis"],"accent":Palette.VIOLET},
+	{"id":"grid_leech","title_ja":"深淵の吸収核","title_en":"ABYSSAL SIPHON","desc_ja":"崩壊した送電網を喰らうグリッド・リーチ。開いた吸収核へ、八つの指令が届く。","desc_en":"GRID LEECH FEEDS ON A RUINED POWER NETWORK UNTIL EIGHT COMMANDS REACH ITS OPEN CORE.","texture":BossArtwork["grid_leech"],"accent":Palette.CYAN},
+	{"id":"thermal_titan","title_ja":"炉皇の露出","title_en":"FORGE COLOSSUS","desc_ja":"サーマル・タイタンの炉心が露出する六秒間。巨獣よりも大きな好機が、熱波の奥で脈打つ。","desc_en":"FOR SIX SECONDS THE TITAN'S FURNACE LIES OPEN — AN OPPORTUNITY LARGER THAN THE COLOSSUS.","texture":BossArtwork["thermal_titan"],"accent":Palette.CORAL},
+	{"id":"arch_singularity","title_ja":"世界機関の覚醒","title_en":"THE WORLD ENGINE","desc_ja":"六つの共鳴核を掲げ、ヴォルト・ノマドは地底世界そのものへ最後の停止命令を送る。","desc_en":"WITH SIX RESONANCE CORES, VOLT NOMAD SENDS A FINAL HALT COMMAND TO THE WORLD BELOW.","texture":BossArtwork["arch_singularity"],"accent":Palette.PAPER},
+	{"id":"prime_current","title_ja":"原初電流・三相記憶","title_en":"PRIME CURRENT","desc_ja":"無冠機神、零相聖堂、闇堕機天使。三つの器を捨てても、最初の電流は停止を拒んだ。","desc_en":"CROWNLESS ENGINE, NULL CATHEDRAL, FALLEN SERAPH — THREE VESSELS FOR THE FIRST CURRENT.","texture":BossArtwork["prime_current"],"accent":Palette.PAPER},
 ]
+const ARTWORK_PAGE_SIZE := 4
 const RegionBackgrounds := {
 	"scrap": preload("res://assets/charge_clicker/pixellab/source/environment/bg-scrap-ossuary-a.png"),
 	"geothermal": preload("res://assets/charge_clicker/pixellab/source/environment/bg-geo-pressure-foundry-a.png"),
@@ -194,6 +217,8 @@ var discharge_control_texture: Texture2D = DischargeControlTextures["discharge-w
 var auto_control_texture: Texture2D = AutoControlTextures["auto-stopped-rotor-a"]
 var art_preview_enabled := false
 var art_preview_encounter := ""
+var art_preview_tree_gear := ""
+var art_preview_tree_tier := 3
 var campaign_preview_screen := ""
 
 var animation_time := 0.0
@@ -349,6 +374,7 @@ func _ready() -> void:
 			configure_art_preview_state()
 		else:
 			configure_campaign_preview()
+		configure_art_preview_tree()
 	if campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
 		campaign_selected = first_available_stage_index()
 	elif campaign_route.phase == CampaignRoute.RoutePhase.BOSS_SELECT:
@@ -412,10 +438,13 @@ func refresh_music(force := false) -> void:
 	bgm_key = next_key
 	if bgm_players.is_empty() or not music_enabled:
 		return
-	var next_stream := BGMStreams.get(next_key) as AudioStreamOggVorbis
+	var next_stream := BGMStreams.get(next_key) as AudioStream
 	if next_stream == null:
 		return
-	next_stream.loop = true
+	if next_stream is AudioStreamOggVorbis:
+		(next_stream as AudioStreamOggVorbis).loop = true
+	elif next_stream is AudioStreamMP3:
+		(next_stream as AudioStreamMP3).loop = true
 	if bgm_crossfade != null and bgm_crossfade.is_valid():
 		bgm_crossfade.kill()
 	var previous_index := bgm_active_index
@@ -481,6 +510,10 @@ func apply_web_art_preview() -> void:
 	var values := parse_query_string(str(window.location.search))
 	campaign_preview_screen = str(values.get("campaign_preview", ""))
 	art_preview_encounter = str(values.get("encounter", ""))
+	art_preview_tree_gear = str(values.get("tree", ""))
+	art_preview_tree_tier = clampi(int(str(values.get("tier", "3"))), 1, 4)
+	if values.has("artwork_index"):
+		artwork_selected = clampi(int(str(values.get("artwork_index", "0"))), 0, ArtworkGallery.size() - 1)
 	if str(values.get("art_preview", "")) != "1" and campaign_preview_screen.is_empty():
 		return
 	art_preview_enabled = true
@@ -514,6 +547,10 @@ func configure_campaign_preview() -> void:
 	run.reset()
 	campaign_route.reset()
 	match campaign_preview_screen:
+		"title":
+			title_screen_open = true
+			title_has_saved_campaign = false
+			campaign_route.phase = CampaignRoute.RoutePhase.MAP
 		"boss_select":
 			for id in ["gearmaw", "vaultback", "pyre_wyrm"]:
 				campaign_route.select_stage(id)
@@ -595,6 +632,26 @@ func configure_art_preview_state() -> void:
 	run.upgrade_levels["charge_generator"] = 3
 	run.upgrade_levels["drone_bay"] = 2
 	run.refresh_stats()
+
+func configure_art_preview_tree() -> void:
+	if art_preview_tree_gear.is_empty():
+		return
+	for definition in StageCatalog.STAGES:
+		run.grant_beast_core(str(definition.core_id))
+	for definition in StageCatalog.BOSSES:
+		run.grant_boss_core(str(definition.core_id))
+	run.unlock_overlimit_system()
+	for definition in GearCatalog.SKILLS:
+		run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
+	run.credits = 240000000.0
+	run.refresh_stats()
+	selected_tree_tier = art_preview_tree_tier
+	for index in range(GearCatalog.GEARS.size()):
+		if str(GearCatalog.GEARS[index].id) == art_preview_tree_gear:
+			selected_gear_index = index
+			break
+	gear_tree_open = true
+	controller_upgrade_selected = 0
 
 func parse_query_string(raw_query: String) -> Dictionary:
 	var values := {}
@@ -723,7 +780,7 @@ func _process(delta: float) -> void:
 			auto_effect_timer = 0.10
 			spawn_sparks(Vector2(1030, 248), Palette.VIOLET, 3, 75.0)
 			add_floating(Vector2(1030, 230), "-%s" % format_number(float(tick_result.auto_damage)), Palette.VIOLET, 13)
-			synth.auto_shot()
+			synth.auto_shot(auto_mutation_key())
 	if bool(tick_result.opportunity_opened):
 		show_message(loc("吸収核が開いた — 3.5秒以内に8クリック！", "SIPHON OPEN — LAND EIGHT CLICKS IN 3.5 SECONDS!"), 2.0)
 		synth.play_tone(659.25, 0.16, -19.0, 2)
@@ -968,6 +1025,13 @@ func change_artwork_selection(step: int) -> void:
 	synth.click()
 	queue_redraw()
 
+func artwork_page_start() -> int:
+	return floori(float(artwork_selected) / float(ARTWORK_PAGE_SIZE)) * ARTWORK_PAGE_SIZE
+
+func artwork_index_for_slot(slot: int) -> int:
+	var index := artwork_page_start() + slot
+	return index if index < ArtworkGallery.size() else -1
+
 func cycle_artwork_zoom(step: int = 1) -> void:
 	artwork_zoom_level = wrapi(artwork_zoom_level + step, 0, 3)
 	synth.click()
@@ -984,9 +1048,11 @@ func handle_artwork_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseMotion:
 		mouse_position = event.position
-		for index in range(artwork_card_rects.size()):
-			if artwork_card_rects[index].has_point(event.position):
-				artwork_selected = index
+		for slot in range(artwork_card_rects.size()):
+			if artwork_card_rects[slot].has_point(event.position):
+				var index := artwork_index_for_slot(slot)
+				if index >= 0:
+					artwork_selected = index
 				break
 		queue_redraw()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -1034,8 +1100,11 @@ func handle_artwork_point(point: Vector2) -> void:
 	if artwork_replay_rect.has_point(point):
 		replay_true_ending_from_artwork()
 		return
-	for index in range(artwork_card_rects.size()):
-		if artwork_card_rects[index].has_point(point):
+	for slot in range(artwork_card_rects.size()):
+		if artwork_card_rects[slot].has_point(point):
+			var index := artwork_index_for_slot(slot)
+			if index < 0:
+				return
 			artwork_selected = index
 			open_artwork_viewer(index)
 			return
@@ -1648,12 +1717,13 @@ func complete_stage_and_return_to_route() -> bool:
 		return false
 	campaign_selected = 0 if campaign_route.phase == CampaignRoute.RoutePhase.BOSS_SELECT else first_available_stage_index()
 	show_message(loc("機械核を統合 — 討伐地図へ帰還", "MECHANICAL CORE INTEGRATED — RETURNING TO THE HUNT MAP"), 2.0)
-	synth.confirm()
+	synth.core_integrated()
 	save_progress()
 	return true
 
 func complete_campaign_boss() -> bool:
 	var defeated_definition := StageCatalog.boss(campaign_route.current_boss_id)
+	var defeated_final_form: bool = bool(run.final_boss)
 	if not defeated_definition.is_empty() and defeated_definition.has("core_id"):
 		run.grant_boss_core(str(defeated_definition.core_id))
 	if campaign_route.current_boss_id == str(StageCatalog.TRUE_BOSS.id):
@@ -1663,7 +1733,12 @@ func complete_campaign_boss() -> bool:
 	run.stage_phase = ChargeState.StagePhase.CLEAR
 	screen_flash = 1.0
 	screen_shake = 0.75
-	synth.play_chord([130.81, 196.0, 261.63, 392.0, 523.25], 0.75, -17.0)
+	if defeated_final_form and campaign_route.phase == CampaignRoute.RoutePhase.FINAL_END:
+		synth.true_clear()
+	elif defeated_final_form:
+		synth.phase_transition(campaign_route.final_boss_form)
+	else:
+		synth.play_chord([130.81, 196.0, 261.63, 392.0, 523.25], 0.75, -17.0)
 	record_campaign_result_if_needed()
 	if campaign_route.phase == CampaignRoute.RoutePhase.FINAL_END:
 		open_true_epilogue()
@@ -2211,6 +2286,9 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 		shard_pulse = 0.55
 	if play_sound:
 		synth.charge_attack(bool(result.critical), generating)
+		var mechanic_sound := str(result.get("mechanic", ""))
+		if not mechanic_sound.is_empty():
+			synth.mechanic_accent(mechanic_sound)
 	if bool(result.critical):
 		add_floating(target + Vector2(0, -62), loc("クリティカル", "CRITICAL"), Palette.AMBER, 18)
 		screen_shake = maxf(screen_shake, 0.18)
@@ -2302,7 +2380,10 @@ func try_purchase_skill(id: String, effect_position: Vector2 = SHARD_SOCKET_CENT
 	if play_sound:
 		var tier := int(definition.get("tier", 1))
 		var capstone: bool = int(definition.get("max_rank", 1)) == 1 and run.upgrade_level(id) >= run.skill_max_rank(id)
-		synth.purchase(tier, capstone)
+		if bool(definition.get("overlimit", false)):
+			synth.overlimit_restore()
+		else:
+			synth.purchase(tier, capstone)
 	save_progress()
 	return true
 
@@ -2734,10 +2815,15 @@ func draw_artwork_gallery() -> void:
 	draw_rect(Rect2(0, 0, 1280, 6), Palette.MINT)
 	draw_string(DisplayFont, Vector2(42, 58), loc("完全クリア記録", "TOTAL CLEAR RECORD"), HORIZONTAL_ALIGNMENT_LEFT, 500, 13, Palette.MINT)
 	draw_string(DisplayFont, Vector2(42, 96), loc("アートワーク", "ARTWORK ARCHIVE"), HORIZONTAL_ALIGNMENT_LEFT, 720, 30, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(454, 94), loc("原初電流停止後に回収された4つの記憶", "FOUR MEMORIES RECOVERED AFTER THE PRIME CURRENT HALTED"), HORIZONTAL_ALIGNMENT_LEFT, 560, 12, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(454, 94), loc("完全停止後に回収された%dの戦闘記憶" % ArtworkGallery.size(), "%d MEMORIES RECOVERED AFTER TOTAL HALT" % ArtworkGallery.size()), HORIZONTAL_ALIGNMENT_LEFT, 500, 12, Palette.MUTED)
+	var page_start := artwork_page_start()
+	var page_count := ceili(float(ArtworkGallery.size()) / float(ARTWORK_PAGE_SIZE))
+	var page_number := floori(float(page_start) / float(ARTWORK_PAGE_SIZE)) + 1
+	draw_string(Palette.UI_FONT, Vector2(910, 94), "PAGE %d / %d" % [page_number, page_count], HORIZONTAL_ALIGNMENT_RIGHT, 112, 11, selected_accent)
 	draw_campaign_button(artwork_close_rect, loc("タイトルへ", "TITLE"), Palette.MUTED, false)
-	for index in range(ArtworkGallery.size()):
-		draw_artwork_card(index)
+	var visible_count := mini(ARTWORK_PAGE_SIZE, ArtworkGallery.size() - page_start)
+	for slot in range(visible_count):
+		draw_artwork_card(page_start + slot, slot)
 	var detail_rect := Rect2(42, 374, 1196, 270)
 	draw_machine_plate(detail_rect, Color(0.018, 0.042, 0.088, 0.96), Palette.with_alpha(selected_accent, 0.74), 18.0, 2.0)
 	draw_string(Palette.UI_FONT, Vector2(76, 414), "MEMORY // %02d / %02d" % [artwork_selected + 1, ArtworkGallery.size()], HORIZONTAL_ALIGNMENT_LEFT, 300, 11, selected_accent)
@@ -2750,9 +2836,9 @@ func draw_artwork_gallery() -> void:
 	draw_campaign_button(artwork_replay_rect, loc("真エンディングを再生", "REPLAY TRUE ENDING"), Palette.AMBER, false)
 	draw_string(Palette.UI_FONT, Vector2(674, 636), loc("方向キー：選択　ENTER：鑑賞　R：真エンディング　ESC：戻る", "ARROWS: SELECT · ENTER: VIEW · R: TRUE ENDING · ESC: RETURN"), HORIZONTAL_ALIGNMENT_LEFT, 530, 11, Palette.MUTED)
 
-func draw_artwork_card(index: int) -> void:
+func draw_artwork_card(index: int, slot: int) -> void:
 	var entry: Dictionary = ArtworkGallery[index]
-	var rect := artwork_card_rects[index]
+	var rect := artwork_card_rects[slot]
 	var selected := artwork_selected == index
 	var accent: Color = entry.accent
 	draw_machine_plate(rect, Color(0.015, 0.032, 0.068, 0.98), Palette.with_alpha(accent, 0.96 if selected else 0.30), 12.0, 3.0 if selected else 1.0)
@@ -2813,6 +2899,7 @@ func draw_credits_roll() -> void:
 		[loc("ゲームデザイン・ディレクション", "GAME DESIGN & DIRECTION"), "TAKAHIRO SAEKI", Palette.CYAN, 15],
 		[loc("開発・ゲームデザイン支援", "DEVELOPMENT & DESIGN SUPPORT"), "OPENAI CODEX", Palette.VIOLET, 15],
 		[loc("ピクセルアート生成", "PIXEL ART GENERATION"), "PIXELLAB\nART DIRECTION & SELECTION — TAKAHIRO SAEKI", Palette.MINT, 15],
+		[loc("シネマティックアート生成", "CINEMATIC ART GENERATION"), "OPENAI IMAGE GENERATION\nART DIRECTION & SELECTION — TAKAHIRO SAEKI", Palette.CYAN, 15],
 		[loc("オリジナル音楽", "ORIGINAL MUSIC"), "NEON LAMENT / SUNO\nSUBTERRANEAN HUNT · PISTON HUNT LOOP\nFORGE OF BREAKPOINTS · ARCH SINGULARITY · CORE OF DAWN", Palette.AMBER, 15],
 		[loc("ゲームエンジン", "GAME ENGINE"), "GODOT ENGINE", Palette.CYAN, 15],
 		[loc("書体", "TYPEFACES"), "DOTGOTHIC16 · NOTO SANS JP\nSIL OPEN FONT LICENSE 1.1", Palette.MINT, 15],
@@ -3859,13 +3946,23 @@ func draw_tree_gear_stats(gear_id: String, origin: Vector2, accent: Color) -> vo
 		draw_string(Palette.UI_FONT, origin + Vector2(12, 23 + index * 43), lines[index], HORIZONTAL_ALIGNMENT_LEFT, 326, 11, Palette.PAPER)
 
 func auto_mutation_label() -> String:
-	if run.upgrade_level("gatling_protocol") > 0 and run.upgrade_level("rail_protocol") > 0:
-		return loc("複合砲身", "HYBRID")
-	if run.upgrade_level("gatling_protocol") > 0:
-		return loc("ガトリング", "GATLING")
-	if run.upgrade_level("rail_protocol") > 0:
-		return loc("レール砲", "RAIL")
+	match auto_mutation_key():
+		"hybrid":
+			return loc("複合砲身", "HYBRID")
+		"gatling":
+			return loc("ガトリング", "GATLING")
+		"rail":
+			return loc("レール砲", "RAIL")
 	return loc("標準砲", "STANDARD")
+
+func auto_mutation_key() -> String:
+	if run.upgrade_level("gatling_protocol") > 0 and run.upgrade_level("rail_protocol") > 0:
+		return "hybrid"
+	if run.upgrade_level("gatling_protocol") > 0:
+		return "gatling"
+	if run.upgrade_level("rail_protocol") > 0:
+		return "rail"
+	return "standard"
 
 func draw_upgrade(index: int) -> void:
 	var rect := upgrade_rects[index]

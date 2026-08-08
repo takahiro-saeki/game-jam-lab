@@ -449,6 +449,9 @@ func test_charge_clicker_v5() -> void:
 	check(not game.open_artwork_gallery(), "the artwork archive cannot open before the real final boss is defeated")
 	game.achievements.unlock_artwork_gallery()
 	check(game.title_button_count() == 7 and game.open_artwork_gallery() and game.artwork_open and game.desired_bgm_key() == "ending_true", "complete-clear records reveal a permanent title-screen artwork archive")
+	check(game.BossArtwork.size() == 10 and game.ArtworkGallery.size() == 14, "the complete-clear archive includes all six beasts, both abyssal bosses, ARCH and PRIME CURRENT")
+	game.artwork_selected = 13
+	check(game.artwork_page_start() == 12 and game.artwork_index_for_slot(0) == 12 and game.artwork_index_for_slot(2) == -1, "the expanded archive pages fourteen memories without exposing empty cards")
 	game.open_artwork_viewer(2)
 	game.cycle_artwork_zoom()
 	check(game.artwork_viewer_open and game.artwork_selected == 2 and game.artwork_zoom_level == 1, "the artwork viewer supports direct selection and three-step fullscreen zoom")
@@ -469,6 +472,8 @@ func test_charge_clicker_v5() -> void:
 	game.queue_encounter_intro("gearmaw")
 	check(game.comms_time > 0.0 and not game.comms_text_ja.is_empty() and game.comms_queue.size() == 1, "each hunt can stage a non-blocking bilingual character exchange")
 	check(game.BGMStreams.size() == 14 and game.desired_bgm_key() == "map", "music routing includes separate normal, world-engine and true-ending contexts")
+	var true_ending_stream := game.BGMStreams.get("ending_true") as AudioStream
+	check(true_ending_stream != null and true_ending_stream.resource_path.ends_with("the_current_remembers.mp3"), "the approved three-minute Suno B master is assigned to the true ending")
 	var unique_encounter_music := {}
 	for music_key in game.EncounterBGMKeys.values():
 		unique_encounter_music[str(music_key)] = true

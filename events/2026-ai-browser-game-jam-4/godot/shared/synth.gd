@@ -109,11 +109,23 @@ func charge_attack(critical: bool, generating: bool) -> void:
 		play_tone(659.25, 0.12, -23.0, 3)
 		play_tone(987.77, 0.10, -27.0, 3)
 
-func auto_shot() -> void:
+func auto_shot(profile: String = "standard") -> void:
 	variation_index += 1
-	var pitch := 118.0 + float(variation_index % 5) * 8.0
-	play_sweep(pitch * 1.6, pitch, 0.038, -31.0, 1)
-	play_sweep(1500.0, 520.0, 0.025, -36.0, 4)
+	var resolved_profile := profile
+	if resolved_profile == "hybrid":
+		resolved_profile = "gatling" if variation_index % 3 != 0 else "rail"
+	match resolved_profile:
+		"gatling":
+			var pitch := 152.0 + float(variation_index % 4) * 9.0
+			play_sweep(pitch * 1.45, pitch * 0.72, 0.026, -32.0, 2)
+			play_tone(1850.0 + float(variation_index % 3) * 120.0, 0.018, -39.0, 4)
+		"rail":
+			play_sweep(2100.0, 128.0, 0.072, -31.0, 4)
+			play_sweep(96.0, 54.0, 0.082, -34.0, 0)
+		_:
+			var pitch := 118.0 + float(variation_index % 5) * 8.0
+			play_sweep(pitch * 1.6, pitch, 0.038, -31.0, 1)
+			play_sweep(1500.0, 520.0, 0.025, -36.0, 4)
 
 func purchase(tier: int, capstone: bool) -> void:
 	var base := 329.63 * pow(1.25, float(maxi(0, tier - 1)))
@@ -121,6 +133,39 @@ func purchase(tier: int, capstone: bool) -> void:
 	play_tone(base * 2.0, 0.16 if capstone else 0.09, -27.0, 0)
 	if capstone:
 		play_tone(base * 3.0, 0.24, -30.0, 3)
+
+func mechanic_accent(mechanic: String) -> void:
+	match mechanic:
+		"armor_break", "impact_shockwave", "armor_punch":
+			play_sweep(84.0, 42.0, 0.16, -20.0, 4)
+			play_tone(1318.51, 0.08, -29.0, 1)
+		"siphon_break":
+			play_sweep(1320.0, 220.0, 0.20, -21.0, 4)
+			play_chord([261.63, 392.0, 523.25], 0.17, -27.0)
+		"furnace_open":
+			play_sweep(110.0, 330.0, 0.24, -22.0, 2)
+			play_tone(659.25, 0.18, -28.0, 3)
+		"singularity_burst":
+			play_sweep(55.0, 1760.0, 0.26, -21.0, 4)
+			play_chord([220.0, 329.63, 493.88, 739.99], 0.25, -28.0)
+
+func core_integrated() -> void:
+	play_sweep(196.0, 523.25, 0.20, -22.0, 3)
+	play_chord([261.63, 392.0, 523.25, 783.99], 0.28, -26.0)
+
+func overlimit_restore() -> void:
+	play_sweep(73.42, 1174.66, 0.42, -18.0, 4)
+	play_chord([146.83, 220.0, 329.63, 523.25, 783.99], 0.52, -22.0)
+	play_tone(1567.98, 0.34, -27.0, 3)
+
+func phase_transition(form: int) -> void:
+	var root := 82.41 * pow(1.25, float(maxi(1, form) - 1))
+	play_sweep(root * 4.0, root, 0.30, -19.0, 4)
+	play_chord([root, root * 1.5, root * 2.25], 0.38, -23.0)
+
+func true_clear() -> void:
+	play_sweep(65.41, 1046.5, 0.62, -19.0, 3)
+	play_chord([261.63, 329.63, 392.0, 523.25, 659.25, 783.99], 0.85, -22.0)
 
 func warning() -> void:
 	play_sweep(164.81, 123.47, 0.22, -18.0, 1)
