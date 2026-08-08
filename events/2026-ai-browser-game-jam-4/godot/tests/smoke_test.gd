@@ -448,7 +448,7 @@ func test_charge_clicker_v5() -> void:
 	check(game.EndingIllustrations.size() == 4 and game.EndingIllustrations["dawn"].resource_path.ends_with("ending-core-dawn-v11.png"), "the true ending integrates four generated cinematic illustrations")
 	check(not game.open_artwork_gallery(), "the artwork archive cannot open before the real final boss is defeated")
 	game.achievements.unlock_artwork_gallery()
-	check(game.title_button_count() == 7 and game.open_artwork_gallery() and game.artwork_open and game.desired_bgm_key() == "ending_true", "complete-clear records reveal a permanent title-screen artwork archive")
+	check(game.title_button_count() == 7 and game.open_artwork_gallery() and game.artwork_open and game.desired_bgm_key() == "artwork_gallery", "complete-clear records reveal a permanent title-screen artwork archive with independent music")
 	check(game.BossArtwork.size() == 10 and game.ArtworkGallery.size() == 14, "the complete-clear archive includes all six beasts, both abyssal bosses, ARCH and PRIME CURRENT")
 	game.artwork_selected = 13
 	check(game.artwork_page_start() == 12 and game.artwork_index_for_slot(0) == 12 and game.artwork_index_for_slot(2) == -1, "the expanded archive pages fourteen memories without exposing empty cards")
@@ -470,14 +470,25 @@ func test_charge_clicker_v5() -> void:
 	game.epilogue_open = false
 	game.title_screen_open = false
 	game.queue_encounter_intro("gearmaw")
-	check(game.comms_time > 0.0 and not game.comms_text_ja.is_empty() and game.comms_queue.size() == 1, "each hunt can stage a non-blocking bilingual character exchange")
-	check(game.BGMStreams.size() == 14 and game.desired_bgm_key() == "map", "music routing includes separate normal, world-engine and true-ending contexts")
+	check(game.comms_time > 0.0 and not game.comms_text_ja.is_empty() and game.comms_queue.size() == 2, "each hunt stages a non-blocking bilingual exchange between support, enemy and protagonist")
+	game.debug_show_dialogue("試験話者", "TEST SPEAKER", "任意本文", "ARBITRARY BODY", 8.0)
+	check(game.comms_speaker_ja == "試験話者" and game.comms_text_en == "ARBITRARY BODY" and is_equal_approx(game.comms_time, 8.0), "debug tooling can display an arbitrary localized dialogue box without mutating campaign state")
+	game.clear_comms()
+	check(game.BGMStreams.size() == 17 and game.desired_bgm_key() == "map", "music routing includes independent endings, artwork and all three PRIME CURRENT forms")
+	var final_form_stream_paths := {}
+	for final_music_key in ["prime_current_form_1", "prime_current_form_2", "prime_current_form_3"]:
+		final_form_stream_paths[(game.BGMStreams[final_music_key] as AudioStream).resource_path] = true
+	check(final_form_stream_paths.size() == 3, "all three real-final forms already play audibly different provisional masters")
+	var normal_credits_path := (game.BGMStreams["ending_normal"] as AudioStream).resource_path
+	var true_credits_path := (game.BGMStreams["ending_true"] as AudioStream).resource_path
+	var artwork_music_path := (game.BGMStreams["artwork_gallery"] as AudioStream).resource_path
+	check(normal_credits_path != true_credits_path and artwork_music_path not in [normal_credits_path, true_credits_path], "normal credits, true credits and artwork archive use three independent audio masters")
 	var true_ending_stream := game.BGMStreams.get("ending_true") as AudioStream
 	check(true_ending_stream != null and true_ending_stream.resource_path.ends_with("the_current_remembers.mp3"), "the approved three-minute Suno B master is assigned to the true ending")
 	var unique_encounter_music := {}
 	for music_key in game.EncounterBGMKeys.values():
 		unique_encounter_music[str(music_key)] = true
-	check(game.EncounterBGMKeys.size() == 12 and unique_encounter_music.size() == 10, "the original nine enemies remain unique while all three final forms share one connected suite")
+	check(game.EncounterBGMKeys.size() == 12 and unique_encounter_music.size() == 12, "all nine original enemies and all three final forms route to distinct encounter music slots")
 	var expected_encounter_music := {
 		"gearmaw": "hunt",
 		"vaultback": "vaultback",
@@ -488,9 +499,9 @@ func test_charge_clicker_v5() -> void:
 		"grid_leech": "grid_leech",
 		"thermal_titan": "boss",
 		"arch_singularity": "singularity",
-		"prime_current_form_1": "prime_current",
-		"prime_current_form_2": "prime_current",
-		"prime_current_form_3": "prime_current",
+		"prime_current_form_1": "prime_current_form_1",
+		"prime_current_form_2": "prime_current_form_2",
+		"prime_current_form_3": "prime_current_form_3",
 	}
 	check(game.EncounterBGMKeys == expected_encounter_music, "selected Suno masters are assigned to the intended enemy identities")
 	check(game.AutoProjectileTextures.size() == 3 and game.AutoProjectileTextures["standard"].resource_path.ends_with("auto-vfx-arc-lance-v10-a.png"), "PixelLab AUTO projectiles are integrated for standard, gatling and rail weapon forms")
@@ -502,15 +513,26 @@ func test_charge_clicker_v5() -> void:
 		game.CampaignRoute.RoutePhase.BOSS: "boss",
 		game.CampaignRoute.RoutePhase.SINGULARITY: "singularity",
 		game.CampaignRoute.RoutePhase.POST_TRUE_CHOICE: "ending_world",
-		game.CampaignRoute.RoutePhase.FINAL_BOSS: "prime_current",
 		game.CampaignRoute.RoutePhase.FINAL_END: "ending_true",
 	}
 	var music_routes_match := true
 	for phase in music_test_phases:
 		game.campaign_route.phase = phase
 		music_routes_match = music_routes_match and game.desired_bgm_key() == str(music_test_phases[phase])
+	var final_form_music: Array[String] = []
+	for final_form_id in game.StageCatalog.final_boss_ids():
+		game.campaign_route.phase = game.CampaignRoute.RoutePhase.FINAL_BOSS
+		game.campaign_route.current_boss_id = final_form_id
+		final_form_music.append(game.desired_bgm_key())
+	music_routes_match = music_routes_match and final_form_music == ["prime_current_form_1", "prime_current_form_2", "prime_current_form_3"]
 	game.campaign_route.phase = game.CampaignRoute.RoutePhase.MAP
-	check(music_routes_match, "campaign phases select hunt, boss, true-boss and ending music deterministically")
+	game.campaign_route.current_boss_id = ""
+	check(music_routes_match, "campaign phases select hunt, boss, three final forms and ending music deterministically")
+	game.start_final_defeat_cinematic()
+	check(game.final_defeat_cinematic_open and not game.epilogue_open and game.desired_bgm_key() == "prime_current_form_3", "real-final victory enters a timed collapse cinematic before the true ending")
+	game.finish_final_defeat_cinematic()
+	check(not game.final_defeat_cinematic_open and game.epilogue_open and game.desired_bgm_key() == "ending_true", "finishing the explosion sequence crossfades into the dedicated true-ending presentation")
+	game.epilogue_open = false
 	game.open_gear_tree(2)
 	check(game.gear_tree_open and game.selected_tree_skills().size() == 7, "combat UI opens a dedicated, navigable skill tree for the selected gear")
 	check(game.tree_node_rect(game.selected_tree_skills()[0]).size.x >= 44.0 and game.tree_node_rect(game.selected_tree_skills()[0]).size.y >= 44.0, "skill-tree nodes remain touch-sized")
@@ -559,9 +581,14 @@ func test_charge_clicker_v5() -> void:
 	var bought_every_overlimit := true
 	for index in range(ChargeGearCatalog.OVERLIMITS.size()):
 		var definition: Dictionary = ChargeGearCatalog.OVERLIMITS[index]
-		bought_every_overlimit = bought_every_overlimit and overlimit_run.purchase_upgrade(str(definition.id))
+		var manual_generation_before := overlimit_run.charge_per_click
+		var auto_generation_before := overlimit_run.auto_charge_per_shot
+		var purchased_overlimit := overlimit_run.purchase_upgrade(str(definition.id))
+		bought_every_overlimit = bought_every_overlimit and purchased_overlimit
 		if index == 0:
 			check(overlimit_run.upgrade_cost("perpetual_sun") == 40000000, "later OVERLIMIT restorations retain the same 40M CHARGE price")
+		if str(definition.id) == "perpetual_sun":
+			check(is_equal_approx(overlimit_run.charge_per_click, manual_generation_before * 12.0) and is_equal_approx(overlimit_run.auto_charge_per_shot, auto_generation_before * 12.0), "Dynamo Tier IV permanently multiplies every CHARGE source by twelve for the remaining OVERLIMIT hunt")
 	check(bought_every_overlimit and overlimit_run.overlimit_count() == 5 and overlimit_run.skill_points_bought() == 317, "all five OVERLIMITS remain simultaneously active outside the standard 317 ranks")
 	overlimit_run.respec_skills()
 	check(overlimit_run.overlimit_count() == 5, "standard free respec never removes permanent OVERLIMIT restorations")

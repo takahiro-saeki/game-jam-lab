@@ -158,15 +158,44 @@ Suno v5.5 / Advanced / Instrumentalに加えて、長さを`Custom 3:00`へ固�
 | フェイズ・マンティス | [Critical Parallax 3M Loop A — 3:00](https://suno.com/song/1fb0ce55-ef2b-43ba-85b9-625d87116664) | [Critical Parallax 3M Loop B — 3:00](https://suno.com/song/f968b738-6e79-4a72-a712-d5544c2628d9) |
 | グリッド・リーチ | [Siphon Breakpoint 3M Loop A — 3:00](https://suno.com/song/357a05b0-1683-4638-9e86-e253e9e92123) | [Siphon Breakpoint 3M Loop B — 3:00](https://suno.com/song/e6534aad-95b6-48e5-9a5b-04373f72b450) |
 
-## v8追加曲 — PRIME CURRENT / 2つのエンディング
+## v8追加曲 — PRIME CURRENT / 2つのエンディング / アートワーク
 
-実装側には `prime_current`, `ending_world`, `ending_true` の独立スロットを追加済み。マスター確定までは既存曲を仮配置する。
+実装側には `prime_current_form_1`, `prime_current_form_2`, `prime_current_form_3`, `ending_world`, `ending_true`, `artwork_gallery` の独立スロットを追加済み。マスター確定までは既存曲を別々の仮マスターとして割り当てる。
 
-### 本当のラスボス3形態 — `Prime Current: The Current Remembers`
+### 本当のラスボス第1形態 — `Crownless Protocol`
 
-Custom 3:00、Instrumental。3形態を1曲で連続させ、各区間を切り出してもループできる構成。
+Custom 3:00、Instrumental。巨大で古代的な機械王。以降2曲でも識別できる六音モチーフを提示する。
 
-> Instrumental three-form ultimate boss suite for PRIME CURRENT, the first machine consciousness buried beneath a defeated world-engine. Exactly three minutes, 158 BPM, F sharp minor moving toward an unresolved luminous mode, begin the main combat pulse within four seconds. Form one: colossal crownless industrial footsteps, low piston polyrhythm and a wounded six-note machine motif. Form two: the body unfolds into a null cathedral, circular broken-beat percussion, phase-cancelled synthesizers and three rotating attack voices. Form three: armor disappears, leaving white-cyan current, exposed machine bones and five colored OVERLIMIT themes converging into a clear heroic counter-melody. Futuristic sacred machinery without choir or vocals, frightening then tragic, precise transients and open midrange for rapid clicks and alarms. Use repeating eight-to-sixteen-bar cells, no long breakdown, no fade-out, no final cadence; last bar must reconnect harmonically and rhythmically to the first.
+> Instrumental ultimate-boss loop for PRIME CURRENT FORM ONE, THE CROWNLESS ENGINE. Exactly three minutes, 150 BPM, F sharp minor, establish a wounded six-note synthetic ritual motif within four seconds. Colossal piston footsteps, low clockwork polyrhythms, controlled hydraulic percussion, ancient world-engine brass-like synthesizers and a vast but readable sub pulse. Regal without a crown, frightening through scale rather than noise. Preserve clear midrange for rapid click and AUTO attack sounds. Repeating eight-to-sixteen-bar combat cells, continuous pressure, no choir, no vocals, no long breakdown, no fade-out or final cadence; last bar must reconnect exactly to the first.
+
+### 本当のラスボス第2形態 — `Null Cathedral Rotation`
+
+Custom 3:00、Instrumental。第一形態の六音モチーフを反転し、身体が聖堂・戦場へ変形した感触を作る。
+
+> Instrumental ultimate-boss loop for PRIME CURRENT FORM TWO, THE NULL CATHEDRAL. Exactly three minutes, 158 BPM, F sharp minor with unstable tritone gravity. Transform and invert the six-note motif from CROWNLESS PROTOCOL. Circular broken-beat percussion, phase-cancelled synthesizers, glass-metal organ attacks without church choir, three rotating rhythmic voices and sudden half-beat voids that feel like reality dropping out. Sacred futuristic machinery, cerebral and hostile, wider and stranger than form one while keeping precise transients and open space for gameplay SFX. Repeating eight-to-sixteen-bar cells, no ambient intro, no vocals, no long breakdown, no fade-out or final cadence; last bar must reconnect exactly to the first.
+
+### 本当のラスボス第3形態 — `Fallen Seraph Current`
+
+Custom 3:00、Instrumental。細身の闇堕機天使。第1・第2形態より速く、恐怖と悲哀を同時に出す。
+
+> Instrumental ultimate-boss loop for PRIME CURRENT FORM THREE, THE FALLEN MACHINE SERAPH. Exactly three minutes, 168 BPM, F sharp minor opening toward an unresolved luminous mode. A slender dark machine king sheds all armor beneath a black mechanical halo; exposed current, six shadow wings and five colored OVERLIMIT signatures converge. Transform the established six-note PRIME CURRENT motif into a fast tragic lead and a clear heroic counter-melody. Razor-precise cyber-industrial drums, black-sun bass pulses, glass harmonics and soaring high-register arpeggios, desperate and stylish rather than noisy. No vocals, no choir, no trailer boom, preserve attack-SFX space, no long breakdown, no fade-out or final cadence; last bar must reconnect exactly to the first.
+
+### アートワーク鑑賞 — `Recovered Memory Archive`
+
+Custom 3:00、Instrumental。14枚をゆっくり眺められ、真エンディング曲の感情的な結論を繰り返さない。
+
+> Instrumental gallery loop for a recovered archive of mechanical beasts, world engines and a lone robot hunter. Exactly three minutes, 92 BPM, A minor with gentle suspended major colors. Soft data pulses, restrained analog bass, glass mallets, distant machine-room ambience and fragmentary four-note PROJECT CHARGE motifs appearing in different timbres like catalogued memories. Curious, reflective and slightly mysterious, not sad, not triumphant, suitable for lingering over artwork and reading captions. No vocals, no choir, no heavy drums, no long intro, no fade-out and no final chord; use subtle eight-to-sixteen-bar variations and reconnect the last bar seamlessly to the first.
+
+### 形態別・アートワーク候補（2026-08-08）
+
+Suno v5.5 / Advanced / Instrumentalで各2案を生成。初回の第1形態2案はどちらも13秒だったため除外し、長尺R3を正式な比較対象にした。第2形態も初回Bが2:16だったため長尺R3へ統一した。ゲーム実装は選択前のため、各専用スロットに既存曲の仮マスターを割り当てている。
+
+| 用途 | A | B |
+|---|---|---|
+| 第1形態 `Crownless Protocol` | [R3 A — 2:47](https://suno.com/song/97217474-0c7b-4566-9526-6caf83a7a2e0) | [R3 B — 2:54](https://suno.com/song/392a3fe3-a0cb-4ca6-93e1-6a44bbc92c82) |
+| 第2形態 `Null Cathedral Rotation` | [R3 A — 3:33](https://suno.com/song/17d510cb-565b-4590-a0f5-810e9a3c7ea6) | [R3 B — 3:18](https://suno.com/song/cc755273-ab5e-4ca2-a528-9ef043c90c23) |
+| 第3形態 `Fallen Seraph Current` | [A — 2:59](https://suno.com/song/300a310f-b4f6-457e-856c-8062181b2da3) | [B — 2:48](https://suno.com/song/4386e19a-0903-4a89-bb57-fd45793b7d35) |
+| アートワーク `Recovered Memory Archive` | [A — 3:39](https://suno.com/song/892c19b0-3412-4d35-b3c0-4585b2647a40) | [B — 3:18](https://suno.com/song/5b19e5cd-cb65-4ecc-829e-2d350d52d40c) |
 
 ### 地核機神エンド — `After the World Engine`
 

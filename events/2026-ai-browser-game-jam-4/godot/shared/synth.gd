@@ -99,15 +99,23 @@ func error() -> void:
 func charge_attack(critical: bool, generating: bool) -> void:
 	variation_index += 1
 	if generating:
-		play_sweep(180.0, 840.0 + float(variation_index % 3) * 45.0, 0.09, -22.0, 3)
-		play_tone(1046.5, 0.07, -31.0, 0)
+		# PURE COMMAND should feel like energy being pulled into the machine rather
+		# than a weak weapon hit: a relay pickup, rising current and glassy lock.
+		var charge_pitch := 760.0 + float(variation_index % 3) * 70.0
+		play_sweep(118.0, 410.0, 0.065, -24.0, 2)
+		play_sweep(260.0, charge_pitch, 0.13, -21.5, 3)
+		play_tone(charge_pitch * 1.5, 0.10, -27.0, 0)
 		return
-	var body_pitch := 176.0 + float(variation_index % 4) * 11.0
-	play_sweep(body_pitch * 1.35, body_pitch * 0.62, 0.075, -20.0, 2)
-	play_sweep(2600.0, 620.0, 0.045, -28.0, 4)
+	# The manual attack is the player's most repeated physical action. Layer a
+	# weighty pile-driver body, a low chassis thump and a short electrical crack
+	# so it remains punchy without becoming a full-volume explosion every click.
+	var body_pitch := 132.0 + float(variation_index % 4) * 9.0
+	play_sweep(body_pitch * 1.9, body_pitch * 0.52, 0.105, -18.5, 4)
+	play_tone(body_pitch * 0.48, 0.12, -22.0, 0)
+	play_sweep(3200.0 + float(variation_index % 3) * 140.0, 760.0, 0.055, -25.0, 4)
 	if critical:
-		play_tone(659.25, 0.12, -23.0, 3)
-		play_tone(987.77, 0.10, -27.0, 3)
+		play_sweep(520.0, 1320.0, 0.14, -22.0, 3)
+		play_tone(1975.53, 0.11, -27.0, 3)
 
 func auto_shot(profile: String = "standard") -> void:
 	variation_index += 1
@@ -162,6 +170,17 @@ func phase_transition(form: int) -> void:
 	var root := 82.41 * pow(1.25, float(maxi(1, form) - 1))
 	play_sweep(root * 4.0, root, 0.30, -19.0, 4)
 	play_chord([root, root * 1.5, root * 2.25], 0.38, -23.0)
+
+func boss_collapse_burst(stage: int) -> void:
+	var depth := float(clampi(stage, 0, 4))
+	var root := 92.5 * pow(0.82, depth)
+	# Layered low implosion, tearing current and brittle core fragments. Repeated
+	# stages descend in pitch so the sequence reads as one escalating collapse.
+	play_sweep(root * 3.2, root * 0.55, 0.34 + depth * 0.035, -17.5, 4)
+	play_tone(root * 0.5, 0.24 + depth * 0.04, -19.0, 1)
+	play_sweep(root * 7.0, root * 11.0, 0.13, -23.0, 3)
+	if stage >= 3:
+		play_chord([root, root * 1.41, root * 2.0], 0.42, -23.0)
 
 func true_clear() -> void:
 	play_sweep(65.41, 1046.5, 0.62, -19.0, 3)

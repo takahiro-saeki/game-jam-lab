@@ -1,6 +1,8 @@
 class_name ChargePrototypeState
 extends RefCounted
 
+const PERPETUAL_SUN_GENERATION_MULTIPLIER := 12.0
+
 # PROJECT CHARGE v5 — five-gear build engine.
 # Manual commands generate resources, marks and firing orders while the AUTO
 # arsenal grows into the late-game damage engine. Every node belongs to one
@@ -406,6 +408,10 @@ func refresh_stats() -> void:
 		drone_count += 1 + int(upgrade_level("swarm_memory") / 3)
 	var recovered_cores := beast_cores.size() + boss_cores.size()
 	var shared_generation := pow(1.35, upgrade_level("deep_capacitor")) * pow(1.60, upgrade_level("infinite_dynamo")) * (1.0 + float(recovered_cores) * float(upgrade_level("resonance_economy")) * 0.035) * (1.0 + float(recovered_cores) * float(upgrade_level("salvage_lattice")) * 0.012)
+	# PERPETUAL SUN is the late-game economy break: restoring Dynamo first
+	# should make collecting the other four 40M OVERLIMIT rewrites practical.
+	if upgrade_level("perpetual_sun") > 0:
+		shared_generation *= PERPETUAL_SUN_GENERATION_MULTIPLIER
 	charge_per_click = pow(1.22, charge_level) * pow(1.30, upgrade_level("kinetic_recovery")) * shared_generation
 	auto_charge_per_shot = 0.16 * (1.0 + float(upgrade_level("auto_induction")) * 0.25) * (1.0 + float(upgrade_level("charge_drone")) * 0.30) * pow(1.40, upgrade_level("war_dividend")) * pow(1.32, upgrade_level("harvester_drones")) * shared_generation
 	critical_chance = minf(0.74, 0.04 + float(upgrade_level("critical_math")) * 0.04 + float(upgrade_level("phase_tracker")) * 0.03)

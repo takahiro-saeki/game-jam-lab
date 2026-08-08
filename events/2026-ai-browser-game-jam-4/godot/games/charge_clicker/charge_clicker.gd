@@ -30,7 +30,15 @@ const BGMStreams := {
 	# three-minute Suno B arrangement; the remaining v8 slots stay independent.
 	"ending_world": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
 	"ending_true": preload("res://assets/audio/project_charge/the_current_remembers.mp3"),
-	"prime_current": preload("res://assets/audio/project_charge/critical_parallax.ogg"),
+	# Independent routing slots for the three bodies of PRIME CURRENT. These
+	# provisional masters are deliberately different until their dedicated Suno
+	# tracks are selected, so every phase transition is already audible in-game.
+	"prime_current_form_1": preload("res://assets/audio/project_charge/forge_of_breakpoints.ogg"),
+	"prime_current_form_2": preload("res://assets/audio/project_charge/critical_parallax.ogg"),
+	"prime_current_form_3": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
+	# The archive has its own replaceable slot instead of borrowing true-ending
+	# music. A calm map master is used only as the provisional gallery track.
+	"artwork_gallery": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
 }
 # Every enemy encounter has its own mastered track. The generic keys remain the
 # dedicated Gearmaw and Thermal Titan tracks as well as safe fallback values.
@@ -44,9 +52,9 @@ const EncounterBGMKeys := {
 	"grid_leech": "grid_leech",
 	"thermal_titan": "boss",
 	"arch_singularity": "singularity",
-	"prime_current_form_1": "prime_current",
-	"prime_current_form_2": "prime_current",
-	"prime_current_form_3": "prime_current",
+	"prime_current_form_1": "prime_current_form_1",
+	"prime_current_form_2": "prime_current_form_2",
+	"prime_current_form_3": "prime_current_form_3",
 }
 const ReactorTextures := {
 	"reactor-turbine-a": preload("res://assets/charge_clicker/pixellab/source/reactor/reactor-turbine-a.png"),
@@ -181,6 +189,7 @@ const VIEW := Vector2(1280, 720)
 const BGM_VOLUME_DB := -10.0
 const BGM_SILENT_DB := -60.0
 const BGM_CROSSFADE_SECONDS := 0.85
+const FINAL_DEFEAT_CINEMATIC_SECONDS := 9.0
 const EPILOGUE_SCENE_SECONDS := [6.5, 7.0, 7.0, 7.5, 7.0, 7.0, 7.5, 8.0]
 const EPILOGUE_FADE_SECONDS := 0.85
 const REACTOR_CENTER := Vector2(212, 286)
@@ -263,6 +272,10 @@ var epilogue_open := false
 var epilogue_scene := 0
 var epilogue_scene_time := 0.0
 var epilogue_return_to_artwork := false
+var final_defeat_cinematic_open := false
+var final_defeat_cinematic_time := 0.0
+var final_defeat_burst_stage := 0
+var final_defeat_dialogue_started := false
 var artwork_open := false
 var artwork_viewer_open := false
 var artwork_selected := 0
@@ -277,6 +290,9 @@ var comms_speaker_en := ""
 var comms_text_ja := ""
 var comms_text_en := ""
 var comms_time := 0.0
+var comms_role := "auto"
+var debug_dialogue_requested := false
+var pending_debug_dialogue: Dictionary = {}
 
 var charge_rect := Rect2(70, 502, 284, 88)
 var mode_toggle_rect := Rect2(70, 598, 284, 44)
@@ -383,6 +399,16 @@ func _ready() -> void:
 		show_message(loc("保存したキャンペーンを再開", "CAMPAIGN RESUMED"), 3.0)
 	else:
 		show_message(loc("討伐地図から最初の機械魔獣を選択", "SELECT YOUR FIRST MECHANICAL BEAST"), 5.0)
+	if debug_dialogue_requested:
+		message_time = 0.0
+		debug_show_dialogue(
+			str(pending_debug_dialogue.get("speaker_ja", "デバッグ通信")),
+			str(pending_debug_dialogue.get("speaker_en", "DEBUG COMMS")),
+			str(pending_debug_dialogue.get("text_ja", "任意テキストボックスの表示確認。")),
+			str(pending_debug_dialogue.get("text_en", "ARBITRARY DIALOGUE BOX PREVIEW.")),
+			float(pending_debug_dialogue.get("duration", 12.0)),
+			str(pending_debug_dialogue.get("role", "support"))
+		)
 	setup_music()
 	evaluate_achievements(false)
 	refresh_music()
@@ -401,10 +427,12 @@ func setup_music() -> void:
 		bgm_players.append(player)
 
 func desired_bgm_key() -> String:
+	if final_defeat_cinematic_open:
+		return "prime_current_form_3"
 	if epilogue_open:
 		return "ending_true"
 	if artwork_open:
-		return "ending_true"
+		return "artwork_gallery"
 	if credits_open:
 		return "ending_true" if credits_context in ["final", "artwork_replay"] else "ending_world" if credits_context == "world" else "ending_normal"
 	if title_screen_open:
@@ -419,7 +447,8 @@ func desired_bgm_key() -> String:
 		CampaignRoute.RoutePhase.SINGULARITY:
 			return "singularity"
 		CampaignRoute.RoutePhase.FINAL_BOSS:
-			return "prime_current"
+			var final_encounter_id: String = campaign_route.current_boss_id if not campaign_route.current_boss_id.is_empty() else run.current_boss_id
+			return str(EncounterBGMKeys.get(final_encounter_id, "prime_current_form_1"))
 		CampaignRoute.RoutePhase.INFINITE:
 			return str(EncounterBGMKeys.get(run.current_boss_id, "hunt"))
 		CampaignRoute.RoutePhase.NORMAL_END:
@@ -509,6 +538,16 @@ func apply_web_art_preview() -> void:
 		return
 	var values := parse_query_string(str(window.location.search))
 	campaign_preview_screen = str(values.get("campaign_preview", ""))
+	debug_dialogue_requested = str(values.get("debug_dialogue", "")) == "1"
+	if debug_dialogue_requested:
+		pending_debug_dialogue = {
+			"speaker_ja": str(values.get("dialogue_speaker", "デバッグ通信")),
+			"speaker_en": str(values.get("dialogue_speaker_en", "DEBUG COMMS")),
+			"text_ja": str(values.get("dialogue_text", "任意テキストボックスの表示確認。")),
+			"text_en": str(values.get("dialogue_text_en", "ARBITRARY DIALOGUE BOX PREVIEW.")),
+			"duration": clampf(float(str(values.get("dialogue_duration", "12.0"))), 1.0, 60.0),
+			"role": str(values.get("dialogue_role", "support")),
+		}
 	art_preview_encounter = str(values.get("encounter", ""))
 	art_preview_tree_gear = str(values.get("tree", ""))
 	art_preview_tree_tier = clampi(int(str(values.get("tier", "3"))), 1, 4)
@@ -595,6 +634,15 @@ func configure_campaign_preview() -> void:
 			for definition in GearCatalog.OVERLIMITS:
 				run.upgrade_levels[str(definition.id)] = 1
 			run.refresh_stats()
+		"final_defeat":
+			campaign_route.true_end_seen = true
+			campaign_route.final_boss_defeated = true
+			campaign_route.phase = CampaignRoute.RoutePhase.FINAL_END
+			var final_definition := StageCatalog.boss("prime_current_form_3")
+			run.begin_final_boss_form("prime_current_form_3", float(final_definition.hp), 3)
+			run.boss_hp = 0.0
+			run.stage_phase = ChargeState.StagePhase.CLEAR
+			start_final_defeat_cinematic()
 		"artwork_gallery":
 			campaign_route.true_end_seen = true
 			campaign_route.final_boss_defeated = true
@@ -658,7 +706,7 @@ func parse_query_string(raw_query: String) -> Dictionary:
 	for pair in raw_query.trim_prefix("?").split("&", false):
 		var parts := pair.split("=", true, 1)
 		if parts.size() == 2:
-			values[str(parts[0])] = str(parts[1])
+			values[str(parts[0]).uri_decode()] = str(parts[1]).replace("+", " ").uri_decode()
 	return values
 
 func reset_run() -> void:
@@ -737,6 +785,11 @@ func _process(delta: float) -> void:
 	if achievement_notice_time > 0.0:
 		achievement_notice_time -= delta
 	update_comms(delta)
+	if final_defeat_cinematic_open:
+		update_final_defeat_cinematic(delta)
+		update_effects(delta)
+		queue_redraw()
+		return
 	if epilogue_open:
 		epilogue_scene_time += delta
 		if epilogue_scene_time >= epilogue_scene_duration(epilogue_scene):
@@ -814,6 +867,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	# consuming it here, a click/confirm that closes the game can also activate a
 	# launcher card in the same frame.
 	get_viewport().set_input_as_handled()
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10:
+		debug_show_dialogue(
+			"デバッグ通信", "DEBUG COMMS",
+			"任意会話ボックスの表示テスト。URLパラメータから話者と本文を差し替えられます。",
+			"ARBITRARY DIALOGUE TEST. SPEAKER AND BODY COPY CAN BE REPLACED THROUGH URL PARAMETERS.",
+			12.0
+		)
+		return
+	if final_defeat_cinematic_open:
+		handle_final_defeat_input(event)
+		return
 	if epilogue_open:
 		handle_epilogue_input(event)
 		return
@@ -1231,6 +1295,72 @@ func close_credits() -> void:
 	refresh_music()
 	synth.click()
 	queue_redraw()
+
+func start_final_defeat_cinematic() -> void:
+	final_defeat_cinematic_open = true
+	final_defeat_cinematic_time = 0.0
+	final_defeat_burst_stage = 0
+	final_defeat_dialogue_started = false
+	message_time = 0.0
+	clear_comms()
+	end_charge()
+	# Keep form-three music under the collapse. The true-ending master begins
+	# only after the enemy has visibly disintegrated and the epilogue opens.
+	bgm_key = ""
+	refresh_music()
+	synth.boss_collapse_burst(0)
+	screen_flash = 1.0
+	screen_shake = 0.95
+	queue_redraw()
+
+func update_final_defeat_cinematic(delta: float) -> void:
+	final_defeat_cinematic_time += delta
+	var next_burst_stage := mini(4, int(final_defeat_cinematic_time / 1.15))
+	while final_defeat_burst_stage < next_burst_stage:
+		final_defeat_burst_stage += 1
+		synth.boss_collapse_burst(final_defeat_burst_stage)
+		screen_flash = maxf(screen_flash, 0.78 if final_defeat_burst_stage < 4 else 1.0)
+		screen_shake = maxf(screen_shake, 0.72 + float(final_defeat_burst_stage) * 0.08)
+	if final_defeat_cinematic_time >= 3.25 and not final_defeat_dialogue_started:
+		final_defeat_dialogue_started = true
+		queue_comms(
+			"プライム・カレント", "PRIME CURRENT",
+			"停止は消滅ではない。私の記憶を……地上へ。",
+			"CESSATION IS NOT OBLIVION. CARRY MY MEMORY... TO THE SURFACE.",
+			2.55
+		)
+		queue_comms(
+			"ヴォルト・ノマド", "VOLT NOMAD",
+			"命令ではなく、遺言として受け取る。",
+			"I ACCEPT IT — NOT AS AN ORDER, BUT AS YOUR LAST WILL.",
+			2.55
+		)
+	if final_defeat_cinematic_time >= FINAL_DEFEAT_CINEMATIC_SECONDS:
+		finish_final_defeat_cinematic()
+
+func finish_final_defeat_cinematic() -> void:
+	if not final_defeat_cinematic_open:
+		return
+	final_defeat_cinematic_open = false
+	final_defeat_cinematic_time = 0.0
+	final_defeat_burst_stage = 0
+	final_defeat_dialogue_started = false
+	clear_comms()
+	synth.true_clear()
+	open_true_epilogue()
+
+func handle_final_defeat_input(event: InputEvent) -> void:
+	var skip_requested := false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		skip_requested = epilogue_skip_rect.has_point(event.position)
+	elif event is InputEventScreenTouch and event.pressed:
+		skip_requested = epilogue_skip_rect.has_point(event.position)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		skip_requested = event.keycode in [KEY_ESCAPE, KEY_ENTER, KEY_SPACE]
+	elif event is InputEventJoypadButton and event.pressed:
+		skip_requested = event.button_index in [controller_button("back"), controller_button("primary")]
+	if skip_requested and final_defeat_cinematic_time >= 1.0:
+		finish_final_defeat_cinematic()
 
 func open_true_epilogue(return_to_artwork: bool = false) -> void:
 	epilogue_open = true
@@ -1734,14 +1864,12 @@ func complete_campaign_boss() -> bool:
 	screen_flash = 1.0
 	screen_shake = 0.75
 	if defeated_final_form and campaign_route.phase == CampaignRoute.RoutePhase.FINAL_END:
-		synth.true_clear()
+		start_final_defeat_cinematic()
 	elif defeated_final_form:
 		synth.phase_transition(campaign_route.final_boss_form)
 	else:
 		synth.play_chord([130.81, 196.0, 261.63, 392.0, 523.25], 0.75, -17.0)
 	record_campaign_result_if_needed()
-	if campaign_route.phase == CampaignRoute.RoutePhase.FINAL_END:
-		open_true_epilogue()
 	save_progress()
 	return true
 
@@ -2430,13 +2558,23 @@ func show_message(text: String, duration: float) -> void:
 	message = text
 	message_time = duration
 
-func queue_comms(speaker_ja: String, speaker_en: String, text_ja: String, text_en: String, duration := 3.2) -> void:
+# Debug-facing conversation hook. It is intentionally data-only, so tests,
+# editor scripts and the web query bridge can preview any localized line
+# without changing encounter state or campaign saves.
+func debug_show_dialogue(speaker_ja: String, speaker_en: String, text_ja: String, text_en: String, duration := 12.0, role := "support") -> void:
+	clear_comms()
+	message_time = 0.0
+	queue_comms(speaker_ja, speaker_en, text_ja, text_en, clampf(duration, 1.0, 60.0), role if role in ["support", "player", "enemy"] else "support")
+	queue_redraw()
+
+func queue_comms(speaker_ja: String, speaker_en: String, text_ja: String, text_en: String, duration := 3.2, role := "auto") -> void:
 	comms_queue.append({
 		"speaker_ja": speaker_ja,
 		"speaker_en": speaker_en,
 		"text_ja": text_ja,
 		"text_en": text_en,
 		"duration": duration,
+		"role": role,
 	})
 	if comms_time <= 0.0:
 		advance_comms()
@@ -2448,6 +2586,7 @@ func advance_comms() -> void:
 		comms_text_ja = ""
 		comms_text_en = ""
 		comms_time = 0.0
+		comms_role = "auto"
 		return
 	var entry: Dictionary = comms_queue.pop_front()
 	comms_speaker_ja = str(entry.get("speaker_ja", ""))
@@ -2455,6 +2594,7 @@ func advance_comms() -> void:
 	comms_text_ja = str(entry.get("text_ja", ""))
 	comms_text_en = str(entry.get("text_en", ""))
 	comms_time = float(entry.get("duration", 3.2))
+	comms_role = str(entry.get("role", "auto"))
 
 func update_comms(delta: float) -> void:
 	if comms_time <= 0.0 or message_time > 0.0:
@@ -2475,32 +2615,49 @@ func queue_encounter_intro(encounter_id: String) -> void:
 	match encounter_id:
 		"gearmaw":
 			queue_comms(support_ja, support_en, "装甲周期を捕捉。十二打目に亀裂が同期します。", "ARMOR CYCLE ACQUIRED. THE TWELFTH HIT WILL SYNCHRONIZE THE FRACTURE.")
+			queue_comms("鉄殻穿獣 ギアモウ", "GEARMAW", "侵入個体を確認。圧砕し、坑道資材へ再利用する。", "INTRUDER CONFIRMED. CRUSH. RECYCLE AS TUNNEL STOCK.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "なら十一回は予告だ。最後の一打だけ見ていろ。", "THEN ELEVEN HITS ARE THE WARNING. WATCH THE LAST ONE.")
 		"vaultback":
 			queue_comms(support_ja, support_en, "蓄電甲殻を確認。CHARGEを与えるほど開殻へ近づきます。", "CAPACITOR SHELL CONFIRMED. EVERY CHARGE EVENT FORCES IT CLOSER TO OPENING.")
+			queue_comms("蒼雷装獣 ヴォルトバック", "VAULTBACK", "未登録電流を検出。甲殻内へ永久格納する。", "UNREGISTERED CURRENT DETECTED. PERMANENT CONTAINMENT BEGINS.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "溜め込む癖まで同じか。返してもらう。", "IT HOARDS POWER JUST LIKE WE DO. I'LL TAKE IT BACK.")
 		"pyre_wyrm":
 			queue_comms(support_ja, support_en, "購入信号が炉心へ干渉。強化直後が最大出力です。", "PURCHASE SIGNALS INTERFERE WITH ITS FURNACE. OUTPUT PEAKS AFTER EVERY UPGRADE.")
+			queue_comms("炉脈蛇 パイア・ワーム", "PYRE WYRM", "更新信号受領。炉温制限を破棄。獲物ごと焼却する。", "UPGRADE SIGNAL RECEIVED. THERMAL LIMIT DISCARDED. PREY WILL BURN WITH IT.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "完成を待つな。組み替えながら狩る。", "DON'T WAIT FOR A PERFECT BUILD. WE HUNT WHILE EVOLVING.")
 		"relay_hydra":
 			queue_comms(support_ja, support_en, "三頭の継電順序を解析。手動とAUTOを交互接続してください。", "THREE RELAY HEADS DECODED. ALTERNATE MANUAL AND AUTO CONTACT.")
+			queue_comms("継電三頭獣 リレイ・ヒドラ", "RELAY HYDRA", "第一頭、照準。第二頭、拘束。第三頭、停止を執行。", "HEAD ONE: ACQUIRE. HEAD TWO: BIND. HEAD THREE: EXECUTE CESSATION.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "こちらの二つの心拍で、向こうの三つを乱す。", "OUR TWO HEARTBEATS WILL BREAK ITS THREE.")
 		"swarm_matriarch":
 			queue_comms(support_ja, support_en, "子機群が母機を遮蔽。手動標識をAUTOへ引き渡します。", "THE BROOD IS SCREENING ITS MATRIARCH. PASS MANUAL MARKS TO AUTO FIRE.")
+			queue_comms("群制母機 スウォーム・マトリアーク", "SWARM MATRIARCH", "孤立個体へ告ぐ。群れを持たぬ機械に、生存権はない。", "LONE MACHINE: WITHOUT A SWARM, YOU POSSESS NO RIGHT TO SURVIVE.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "一機ずつ数えるな。群れごと落とす。", "DON'T COUNT THEM ONE BY ONE. DROP THE WHOLE SWARM.")
 		"phase_mantis":
 			queue_comms(support_ja, support_en, "位相ずれを観測。失敗した打撃も解析値へ変換されます。", "PHASE DISPLACEMENT OBSERVED. EVEN FAILED CRITICALS BECOME ANALYSIS.")
+			queue_comms("位相晶獣 フェイズ・マンティス", "PHASE MANTIS", "観測は遅い。刃はすでに、おまえが存在した座標を通過した。", "OBSERVATION LAGS. MY BLADE HAS CROSSED THE COORDINATE WHERE YOU EXISTED.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "外したんじゃない。次を当てるために測った。", "THAT WASN'T A MISS. IT WAS MEASUREMENT FOR THE NEXT HIT.")
 		"grid_leech":
 			queue_comms(support_ja, support_en, "吸収核の開放は三・五秒。八入力で反転できます。", "THE SIPHON OPENS FOR 3.5 SECONDS. EIGHT INPUTS WILL REVERSE IT.")
+			queue_comms("深淵吸核獣 グリッド・リーチ", "GRID LEECH", "電流は所有できない。強い吸収核へ流れ着くだけだ。", "CURRENT CANNOT BE OWNED. IT ONLY FLOWS TO THE STRONGER SIPHON.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "喰う側と喰われる側を入れ替えよう。", "LET'S SWITCH WHICH ONE OF US IS FEEDING.")
 		"thermal_titan":
 			queue_comms(support_ja, support_en, "二十入力で炉心露出。熱源そのものを撃ち抜けます。", "TWENTY INPUTS EXPOSE THE FURNACE. THEN WE CAN STRIKE THE HEAT SOURCE ITSELF.")
+			queue_comms("炉皇機獣 サーマル・タイタン", "THERMAL TITAN", "小さき炉よ。皇炉の火に戻り、燃料として完成せよ。", "LITTLE FURNACE. RETURN TO THE SOVEREIGN FLAME AND BE PERFECTED AS FUEL.")
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "炉を壊すんじゃない。その火を次の核にする。", "WE'RE NOT EXTINGUISHING THAT FIRE. WE'RE MAKING IT OUR NEXT CORE.")
 		"arch_singularity":
 			queue_comms(support_ja, support_en, "全六核、共鳴開始。地核機神がこちらを認識しました。", "ALL SIX CORES ENTERING RESONANCE. THE WORLD ENGINE HAS RECOGNIZED US.", 3.8)
 			queue_comms("アーク・シンギュラリティ", "ARCH SINGULARITY", "回収個体。おまえの進化は、私の欠損に過ぎない。", "RECOVERY UNIT. YOUR EVOLUTION IS MERELY MY MISSING COMPONENTS.", 4.0)
 			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "なら返却する。弾速で受け取れ。", "THEN I'LL RETURN THEM. RECEIVE THEM AT MUZZLE VELOCITY.", 3.5)
+		"prime_current_form_1":
+			queue_comms("無冠機神 プライム・カレント", "PRIME CURRENT — CROWNLESS", "五つの法則違反を確認。六つ目の器として、おまえを接続する。", "FIVE VIOLATIONS CONFIRMED. YOU WILL BE CONNECTED AS THE SIXTH VESSEL.", 3.8)
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "王冠のない王に、器を選ぶ権利はない。", "A KING WITHOUT A CROWN DOESN'T CHOOSE ITS VESSELS.", 3.4)
+		"prime_current_form_2":
+			queue_comms("零相聖堂 プライム・カレント", "PRIME CURRENT — NULL CATHEDRAL", "肉体を捨てた。ここでは距離も装甲も、私の祈りに従う。", "I HAVE DISCARDED THE BODY. HERE, DISTANCE AND ARMOR OBEY MY PRAYER.", 3.8)
+			queue_comms(support_ja, support_en, "零相装甲を解析。臨界打撃か六連続指令で実在を固定します。", "NULL ARMOR DECODED. CRITICALS OR A SIX-COMMAND STREAK WILL FIX IT INTO REALITY.", 3.6)
+		"prime_current_form_3":
+			queue_comms("闇堕機天使 プライム・カレント", "PRIME CURRENT — FALLEN SERAPH", "最後の外殻を捨てる。光のない地底で、私だけが夜明けだった。", "I CAST OFF THE LAST SHELL. IN THIS LIGHTLESS WORLD, I ALONE WAS DAWN.", 4.0)
+			queue_comms("ヴォルト・ノマド", "VOLT NOMAD", "夜明けは支配じゃない。誰にでも届くから、夜明けなんだ。", "DAWN ISN'T DOMINION. IT IS DAWN BECAUSE IT REACHES EVERYONE.", 3.8)
 
 func toggle_language() -> void:
 	is_japanese = not is_japanese
@@ -2717,6 +2874,9 @@ func tutorial_hint() -> String:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color("060b16"))
 	draw_background()
+	if final_defeat_cinematic_open:
+		draw_final_defeat_cinematic()
+		return
 	if epilogue_open:
 		draw_true_epilogue()
 		return
@@ -2732,6 +2892,8 @@ func _draw() -> void:
 			draw_audio_settings_overlay()
 		if achievements_open:
 			draw_achievements_overlay()
+		if comms_time > 0.0:
+			draw_comms_box(Rect2(94, 548, 1092, 126), true)
 		return
 	var shake_offset := Vector2.ZERO
 	if screen_shake > 0.0:
@@ -2743,6 +2905,8 @@ func _draw() -> void:
 	else:
 		draw_reactor_panel()
 		draw_circuit_panel()
+	if campaign_screen_visible() and comms_time > 0.0:
+		draw_comms_box(Rect2(94, 548, 1092, 126), true)
 	draw_particles_and_text()
 	draw_set_transform(Vector2.ZERO)
 	if gear_tree_open:
@@ -2921,6 +3085,47 @@ func draw_credits_roll() -> void:
 	draw_rect(Rect2(0, 624, 1280, 96), Color(0.004, 0.01, 0.025, 0.94))
 	draw_string(Palette.UI_FONT, Vector2(48, 675), loc("自動スクロール　上下キーで調整", "AUTO SCROLL · UP/DOWN TO ADJUST"), HORIZONTAL_ALIGNMENT_LEFT, 500, 11, Palette.MUTED)
 	draw_campaign_button(credits_close_rect, loc("結果へ戻る", "RETURN"), Palette.MINT, false)
+
+func draw_final_defeat_cinematic() -> void:
+	var progress := clampf(final_defeat_cinematic_time / FINAL_DEFEAT_CINEMATIC_SECONDS, 0.0, 1.0)
+	var collapse := clampf(final_defeat_cinematic_time / 6.2, 0.0, 1.0)
+	var center := Vector2(640, 310)
+	var tremor := Vector2(
+		sin(final_defeat_cinematic_time * 41.0),
+		cos(final_defeat_cinematic_time * 53.0)
+	) * (2.0 + collapse * 10.0)
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.003, 0.012, 0.88))
+	for ring in range(9):
+		var ring_progress := fmod(final_defeat_cinematic_time * (0.34 + float(ring) * 0.025) + float(ring) * 0.13, 1.0)
+		var radius := 54.0 + ring_progress * (220.0 + float(ring) * 9.0)
+		var ring_color := Palette.CYAN if ring % 3 == 0 else Palette.VIOLET if ring % 3 == 1 else Palette.CORAL
+		draw_arc(center, radius, -PI + float(ring) * 0.31, PI * (0.35 + ring_progress), 44, Palette.with_alpha(ring_color, (1.0 - ring_progress) * (0.32 + collapse * 0.3)), 2.0 + collapse * 2.0)
+	var texture: Texture2D = MechanicalBeastTextures["prime_current_form_3"]
+	var body_alpha := clampf(1.0 - maxf(0.0, collapse - 0.48) / 0.52, 0.0, 1.0)
+	var body_size := Vector2(330, 330) * (1.0 + collapse * 0.08)
+	for ghost in range(3, 0, -1):
+		var ghost_offset := Vector2(sin(final_defeat_cinematic_time * 17.0 + ghost), cos(final_defeat_cinematic_time * 19.0 + ghost)) * float(ghost) * (2.0 + collapse * 5.0)
+		draw_texture_rect(texture, Rect2(center + tremor + ghost_offset - body_size * 0.5, body_size), false, Color(0.45, 0.55, 1.0, body_alpha * 0.10))
+	draw_texture_rect(texture, Rect2(center + tremor - body_size * 0.5, body_size), false, Color(1.0, 1.0, 1.0, body_alpha))
+	var shard_count := 18 + final_defeat_burst_stage * 12
+	for index in range(shard_count):
+		var angle := float(index) * TAU / float(shard_count) + sin(float(index) * 2.17) * 0.22
+		var travel := collapse * (78.0 + float(index % 11) * 17.0)
+		var shard_origin := center + Vector2.from_angle(angle) * travel
+		var shard_color := Palette.PAPER if index % 4 == 0 else Palette.CYAN if index % 2 == 0 else Palette.VIOLET
+		draw_line(shard_origin, shard_origin + Vector2.from_angle(angle) * (7.0 + collapse * 18.0), Palette.with_alpha(shard_color, body_alpha * 0.88), 1.0 + float(index % 3))
+	var burst_phase := fmod(final_defeat_cinematic_time, 1.15) / 1.15
+	var burst_alpha := maxf(0.0, 1.0 - burst_phase * 4.0)
+	draw_circle(center + tremor, 22.0 + burst_phase * 180.0, Palette.with_alpha(Palette.PAPER, burst_alpha * 0.48))
+	draw_circle(center + tremor, 8.0 + burst_phase * 90.0, Palette.with_alpha(Palette.CYAN, burst_alpha * 0.7))
+	draw_rect(Rect2(0, 0, 1280, 78), Color(0.002, 0.005, 0.016, 0.94))
+	draw_string(DisplayFont, Vector2(44, 42), loc("原初電流・機核崩壊", "PRIME CURRENT // CORE COLLAPSE"), HORIZONTAL_ALIGNMENT_LEFT, 720, 24, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(44, 65), loc("最終形態の構造崩壊を確認 — 残留電流を記録中", "FINAL SHELL FAILURE CONFIRMED — RECORDING RESIDUAL CURRENT"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.CYAN)
+	draw_campaign_button(epilogue_skip_rect, loc("スキップ", "SKIP"), Palette.MUTED, false)
+	if comms_time > 0.0:
+		draw_comms_box(Rect2(94, 548, 1092, 126), true)
+	if progress > 0.82:
+		draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.004, 0.012, clampf((progress - 0.82) / 0.18, 0.0, 0.82)))
 
 func draw_true_epilogue() -> void:
 	var scenes := [
@@ -3691,16 +3896,43 @@ func draw_auto_projectile(start: Vector2, target: Vector2, progress: float) -> v
 		draw_arc(target, 7.0 + impact_progress * 20.0, -PI * 0.75, PI * 0.75, 18, Palette.with_alpha(Palette.AMBER if projectile_key == "gatling" else Palette.VIOLET, impact_pulse * 0.82), 2.0)
 
 func draw_comms_strip() -> void:
-	var rect := Rect2(438, 448, 776, 32)
+	draw_comms_box(Rect2(438, 438, 776, 56), false)
+
+func draw_comms_box(rect: Rect2, cinematic: bool) -> void:
 	var speaker := comms_speaker_ja if is_japanese else comms_speaker_en
 	var line := comms_text_ja if is_japanese else comms_text_en
-	var enemy_speaking := speaker == "アーク・シンギュラリティ" or speaker == "ARCH SINGULARITY"
-	var accent := Palette.CORAL if enemy_speaking else Palette.AMBER if speaker == "ヴォルト・ノマド" or speaker == "VOLT NOMAD" else Palette.CYAN
-	draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.96), Palette.with_alpha(accent, 0.68), 6.0, 1.0)
-	draw_rect(Rect2(rect.position + Vector2(6, 5), Vector2(4, rect.size.y - 10)), accent)
-	draw_string(DisplayFont, rect.position + Vector2(18, 21), speaker, HORIZONTAL_ALIGNMENT_LEFT, 142, 11, accent)
-	draw_line(rect.position + Vector2(166, 7), rect.position + Vector2(166, 25), Palette.with_alpha(accent, 0.28), 1.0)
-	draw_string(Palette.UI_FONT, rect.position + Vector2(178, 22), line, HORIZONTAL_ALIGNMENT_LEFT, 582, 11, Palette.PAPER)
+	var player_speaking := comms_role == "player" or (comms_role == "auto" and speaker in ["ヴォルト・ノマド", "VOLT NOMAD"])
+	var support_speaking := comms_role == "support" or (comms_role == "auto" and speaker in ["支援演算 C6", "C6 SUPPORT", "デバッグ通信", "DEBUG COMMS"])
+	var enemy_speaking := not player_speaking and not support_speaking
+	var accent := Palette.CORAL if enemy_speaking else Palette.AMBER if player_speaking else Palette.CYAN
+	draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.97), Palette.with_alpha(accent, 0.78), 8.0 if cinematic else 6.0, 2.0 if cinematic else 1.0)
+	draw_rect(Rect2(rect.position + Vector2(7, 7), Vector2(5, rect.size.y - 14)), accent)
+	var portrait_width := 84.0 if cinematic else 0.0
+	if cinematic:
+		var portrait_rect := Rect2(rect.position + Vector2(24, 18), Vector2(82, 82))
+		if player_speaking:
+			draw_texture_rect(ProtagonistTexture, portrait_rect, false, Color(0.94, 0.98, 1.0, 0.96))
+		elif enemy_speaking:
+			var encounter_id: String = run.current_boss_id if not run.current_boss_id.is_empty() else run.current_stage_id
+			var portrait: Texture2D = MechanicalBeastTextures.get(encounter_id, grid_wraith_texture)
+			draw_texture_rect(portrait, portrait_rect, false, Color(0.98, 0.94, 1.0, 0.96))
+		else:
+			draw_circle(portrait_rect.get_center(), 28.0, Palette.with_alpha(Palette.CYAN, 0.18))
+			draw_arc(portrait_rect.get_center(), 28.0, animation_time, animation_time + PI * 1.6, 24, accent, 3.0)
+	var text_x := rect.position.x + 24.0 + portrait_width
+	draw_string(DisplayFont, Vector2(text_x, rect.position.y + (31.0 if cinematic else 21.0)), speaker, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - portrait_width - 46.0, 14 if cinematic else 11, accent)
+	var divider_y := rect.position.y + (42.0 if cinematic else 27.0)
+	draw_line(Vector2(text_x, divider_y), Vector2(rect.end.x - 18.0, divider_y), Palette.with_alpha(accent, 0.26), 1.0)
+	draw_multiline_string(
+		Palette.UI_FONT,
+		Vector2(text_x, rect.position.y + (65.0 if cinematic else 45.0)),
+		line,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		rect.size.x - portrait_width - 48.0,
+		13 if cinematic else 11,
+		2,
+		Palette.PAPER
+	)
 
 func draw_stage_rule_indicator() -> void:
 	var rect := Rect2(452, 424, 748, 20)
