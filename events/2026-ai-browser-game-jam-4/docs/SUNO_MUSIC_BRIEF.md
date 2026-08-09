@@ -2,11 +2,12 @@
 
 ## 採用・実装結果（2026-08-09）
 
-全16曲の採用案をユーザーが試聴して確定した。六体の機械魔獣、二体の通常ボス、真ボス、PRIME CURRENTの三形態はすべて固有BGMを持ち、地図・ツリー、通常エンディング、真エンディング、アートワークにも独立した曲を割り当てている。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
+全17曲の採用案をユーザーが試聴して確定した。六体の機械魔獣、二体の通常ボス、真ボス、PRIME CURRENTの三形態はすべて固有BGMを持ち、タイトル、地図・ツリー、通常エンディング、真エンディング、アートワークにも独立した曲を割り当てている。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
 
 | 用途 | 採用曲 | 案 | Suno原曲 | ゲーム用ファイル | 長さ |
 |---|---|---:|---|---|---:|
-| 地図・ツリー・ボス選択 | Subterranean Hunt | B | [38e390e5](https://suno.com/song/38e390e5-211a-42c6-bba1-9d0bae8d8c4a) | `subterranean_hunt.ogg` | 2:18 |
+| タイトル画面 | Awakening Below | A | [1834be76](https://suno.com/song/1834be76-8b50-4502-974b-278c5b7adf7b) | `awakening_below.mp3` | 2:59 |
+| 地図・ツリー・ボス選択 | Six-Core Descent | B | [025d6f4d](https://suno.com/song/025d6f4d-5323-4494-9370-bdd7f6af6150) | `six_core_descent.mp3` | 3:00 |
 | ギアモウ | Piston Hunt Loop | A | [e8a9630a](https://suno.com/song/e8a9630a-0232-4f61-a5cb-965fa47adb97) | `piston_hunt_loop.ogg` | 2:54 |
 | ヴォルトバック | Blue Vault Pulse | A | [d4693641](https://suno.com/song/d4693641-6e67-4e0c-852e-d1eac03383e2) | `blue_vault_pulse.ogg` | 3:00 |
 | パイア・ワーム | Redline Molt | B | [059ca762](https://suno.com/song/059ca762-c4fb-4939-accd-7e44a9c617b2) | `redline_molt.ogg` | 3:00 |
@@ -23,7 +24,7 @@
 | PRIME CURRENT 第3形態 | Fallen Seraph Current | A | [300a310f](https://suno.com/song/300a310f-b4f6-457e-856c-8062181b2da3) | `prime_current_fallen_seraph.mp3` | 2:59 |
 | アートワーク | Recovered Memory Archive | A | [892c19b0](https://suno.com/song/892c19b0-3412-4d35-b3c0-4585b2647a40) | `recovered_memory_archive.mp3` | 3:39 |
 
-初期11曲は48 kHz / 16-bit / stereo WAV原音に固定ゲインを適用して約 -18 LUFSへ揃え、Vorbis quality 5へ変換した。追加5曲はSunoの正規配信元から取得した48 kHz / stereo MP3をそのまま保持し、Godot側でループを有効化している。全曲の作者名は `NeoN Lament`。元WAVはリポジトリへ含めず、曲名、Suno song ID、採用案、ランタイム割り当てを本書に記録する。
+初期11曲は48 kHz / 16-bit / stereo WAV原音に固定ゲインを適用して約 -18 LUFSへ揃え、Vorbis quality 5へ変換した。2026-08-08以降の追加7曲はSunoの正規配信元から取得した48 kHz / stereo MP3をそのまま保持し、Godot側でループを有効化している。全曲の作者名は `NeoN Lament`。元WAVはリポジトリへ含めず、曲名、Suno song ID、採用案、ランタイム割り当てを本書に記録する。
 
 ## 共通方針
 
@@ -248,3 +249,12 @@ Suno v5.5 / Advanced / Instrumental / Custom 3:00で生成。ユーザーレビ�
 共通除外:
 
 > vocals, lyrics, spoken word, choir, cinematic trailer booms, generic cyberpunk nightclub, cheerful chiptune, lo-fi hiss, constant risers, long ambient intro, long breakdown, fade-out, conclusive final chord
+
+### タイトル・地図正式採用（2026-08-09）
+
+Suno v5.5 / Advanced / Instrumentalで生成し、短尺になったAutoおよび秒数未入力の試行を除外した。Customの長さ欄へ`3:00`を明示した比較候補から、ユーザーレビューによりタイトルAと地図Bを正式採用した。
+
+| 用途 | 採用 | 尺 | Suno | 実装ファイル |
+|---|---:|---:|---|---|
+| `Awakening Below` | **A** | 2:59 | [1834be76](https://suno.com/song/1834be76-8b50-4502-974b-278c5b7adf7b) | `awakening_below.mp3` |
+| `Six-Core Descent` | **B** | 3:00 | [025d6f4d](https://suno.com/song/025d6f4d-5323-4494-9370-bdd7f6af6150) | `six_core_descent.mp3` |

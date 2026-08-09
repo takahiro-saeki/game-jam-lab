@@ -15,10 +15,10 @@ const CampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
 const BGMStreams := {
-	# Dedicated title slot. It temporarily shares the approved map master until
-	# the new title-screen Suno selection is imported.
-	"title": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
-	"map": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
+	# Human-selected standalone-product masters: Awakening Below A for the title
+	# screen and Six-Core Descent B for hunt-map planning.
+	"title": preload("res://assets/audio/project_charge/awakening_below.mp3"),
+	"map": preload("res://assets/audio/project_charge/six_core_descent.mp3"),
 	"hunt": preload("res://assets/audio/project_charge/piston_hunt_loop.ogg"),
 	"vaultback": preload("res://assets/audio/project_charge/blue_vault_pulse.ogg"),
 	"pyre_wyrm": preload("res://assets/audio/project_charge/redline_molt.ogg"),

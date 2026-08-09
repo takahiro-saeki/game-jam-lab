@@ -66,8 +66,10 @@ On August 6, 2026, twelve additional instrumental candidates were generated as A
 
 On August 8–9, 2026, the user selected five further masters: TRUE ENDING B, PRIME CURRENT form one B, form two A, form three A, and ARTWORK A. The three boss forms now change music independently and the gallery no longer borrows map or ending music. These five canonical 48 kHz stereo MP3 files bring the runtime soundtrack to sixteen unique tracks. Exact source URLs, song IDs, durations, A/B decisions, and filenames are recorded in [`SUNO_MUSIC_BRIEF.md`](SUNO_MUSIC_BRIEF.md).
 
+On August 9, 2026, the standalone VOLT NOMAD release received two final 3-minute masters: `Awakening Below` A for the title screen and `Six-Core Descent` B for the hunt map. Both were generated with an explicit 3:00 custom duration after rejecting short automatic-duration drafts. The two canonical MP3 files replace the shared provisional map music and bring the runtime soundtrack to seventeen unique tracks.
+
 - Untouched masters: 48 kHz / 16-bit / stereo WAV downloads retained outside the repository by the user.
-- Shipped derivatives: `godot/assets/audio/project_charge/*.ogg` and the five selected v8 `*.mp3` masters.
+- Shipped derivatives: `godot/assets/audio/project_charge/*.ogg` and the seven selected later-production `*.mp3` masters.
 - Processing: fixed per-track gain to approximately -18 LUFS, Ogg Vorbis quality 5, no stems, remixing, or generated vocals.
 - Runtime use: full-track looping, 0.85-second scene crossfades, and an additional -10 dB BGM playback level so synthesized attacks and alarms remain readable.
 

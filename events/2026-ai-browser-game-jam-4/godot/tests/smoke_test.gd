@@ -228,6 +228,7 @@ func test_charge_clicker_v5() -> void:
 	check(game.comms_speaker_ja == "試験話者" and game.comms_text_en == "ARBITRARY BODY" and is_equal_approx(game.comms_time, 8.0), "debug tooling can display an arbitrary localized dialogue box without mutating campaign state")
 	game.clear_comms()
 	check(game.BGMStreams.size() == 18 and game.desired_bgm_key() == "map", "music routing includes separate title/map slots, independent endings, artwork and all three PRIME CURRENT forms")
+	check(str(game.BGMStreams["title"].resource_path).ends_with("awakening_below.mp3") and str(game.BGMStreams["map"].resource_path).ends_with("six_core_descent.mp3"), "selected Awakening Below A and Six-Core Descent B masters are assigned to title and map")
 	var final_form_stream_paths := {}
 	for final_music_key in ["prime_current_form_1", "prime_current_form_2", "prime_current_form_3"]:
 		final_form_stream_paths[(game.BGMStreams[final_music_key] as AudioStream).resource_path] = true
