@@ -13,6 +13,7 @@ const ChargeSave = preload("res://games/charge_clicker/charge_save.gd")
 const AchievementState = preload("res://games/charge_clicker/charge_achievements.gd")
 const CampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
+const StoryCatalog = preload("res://games/charge_clicker/story_catalog.gd")
 const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
 const BGMStreams := {
 	# Human-selected standalone-product masters: Awakening Below A for the title
@@ -295,6 +296,14 @@ var comms_time := 0.0
 var comms_role := "auto"
 var debug_dialogue_requested := false
 var pending_debug_dialogue: Dictionary = {}
+var story_event_open := false
+var story_event_id := ""
+var story_event_definition: Dictionary = {}
+var story_event_line_index := 0
+var story_event_from_lab := false
+var story_lab_open := false
+var story_lab_selected := 0
+var story_preview_event_id := ""
 
 var charge_rect := Rect2(70, 502, 284, 88)
 var mode_toggle_rect := Rect2(70, 598, 284, 44)
@@ -358,6 +367,8 @@ var artwork_full_zoom_rect := Rect2(930, 24, 132, 44)
 var artwork_full_ui_rect := Rect2(1074, 24, 178, 44)
 var artwork_full_previous_rect := Rect2(24, 310, 70, 100)
 var artwork_full_next_rect := Rect2(1186, 310, 70, 100)
+var story_skip_rect := Rect2(1020, 28, 188, 44)
+var story_language_rect := Rect2(832, 28, 172, 44)
 
 func _ready() -> void:
 	apply_web_art_preview()
@@ -410,6 +421,9 @@ func _ready() -> void:
 			float(pending_debug_dialogue.get("duration", 12.0)),
 			str(pending_debug_dialogue.get("role", "support"))
 		)
+	if not story_preview_event_id.is_empty():
+		title_screen_open = false
+		start_story_event(story_preview_event_id, true)
 	setup_music()
 	evaluate_achievements(false)
 	refresh_music()
@@ -539,6 +553,7 @@ func apply_web_art_preview() -> void:
 		return
 	var values := parse_query_string(str(window.location.search))
 	campaign_preview_screen = str(values.get("campaign_preview", ""))
+	story_preview_event_id = str(values.get("story_preview", "")) if OS.is_debug_build() else ""
 	debug_dialogue_requested = str(values.get("debug_dialogue", "")) == "1"
 	if debug_dialogue_requested:
 		pending_debug_dialogue = {
@@ -552,6 +567,9 @@ func apply_web_art_preview() -> void:
 	art_preview_encounter = str(values.get("encounter", ""))
 	art_preview_tree_gear = str(values.get("tree", ""))
 	art_preview_tree_tier = clampi(int(str(values.get("tier", "3"))), 1, 4)
+	if not story_preview_event_id.is_empty():
+		art_preview_enabled = true
+		persistence_enabled = false
 	if values.has("artwork_index"):
 		artwork_selected = clampi(int(str(values.get("artwork_index", "0"))), 0, ArtworkGallery.size() - 1)
 	if str(values.get("art_preview", "")) != "1" and campaign_preview_screen.is_empty():
@@ -786,6 +804,10 @@ func _process(delta: float) -> void:
 	if achievement_notice_time > 0.0:
 		achievement_notice_time -= delta
 	update_comms(delta)
+	if story_event_open or story_lab_open:
+		update_effects(delta)
+		queue_redraw()
+		return
 	if final_defeat_cinematic_open:
 		update_final_defeat_cinematic(delta)
 		update_effects(delta)
@@ -867,6 +889,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Consume the event so a click/confirm that closes one screen cannot also
 	# activate a control on the next screen in the same frame.
 	get_viewport().set_input_as_handled()
+	if story_lab_available() and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F9:
+		toggle_story_lab()
+		return
+	if story_event_open:
+		handle_story_event_input(event)
+		return
+	if story_lab_open:
+		handle_story_lab_input(event)
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10:
 		debug_show_dialogue(
 			"デバッグ通信", "DEBUG COMMS",
@@ -1758,7 +1789,12 @@ func start_stage_by_index(index: int) -> bool:
 	run.begin_stage(id, str(definition.build_tag), 1.0, hp, encounter_order)
 	reward_selected = 0
 	show_message(loc("討伐開始：", "HUNT STARTED: ") + stage_name(definition), 2.2)
-	queue_encounter_intro(id)
+	# GEARMAW is the first blocking story-event vertical slice.  Other hunts
+	# keep their compact non-blocking comms until this presentation is approved.
+	if id == "gearmaw" and not start_story_event("hunt.gearmaw.encounter"):
+		queue_encounter_intro(id)
+	elif id != "gearmaw":
+		queue_encounter_intro(id)
 	synth.play_chord([164.81, 246.94, 329.63], 0.28, -22.0)
 	save_progress()
 	return true
@@ -2556,6 +2592,167 @@ func show_message(text: String, duration: float) -> void:
 	message = text
 	message_time = duration
 
+
+func story_lab_available() -> bool:
+	return OS.is_debug_build()
+
+
+func start_story_event(event_id: String, from_lab := false) -> bool:
+	var definition := StoryCatalog.event(event_id)
+	if definition.is_empty():
+		return false
+	story_event_id = event_id
+	story_event_definition = definition
+	story_event_line_index = 0
+	story_event_from_lab = from_lab
+	story_event_open = true
+	story_lab_open = false
+	message_time = 0.0
+	clear_comms()
+	end_charge()
+	queue_redraw()
+	return true
+
+
+func current_story_line() -> Dictionary:
+	var lines: Array = story_event_definition.get("lines", [])
+	if story_event_line_index < 0 or story_event_line_index >= lines.size():
+		return {}
+	return Dictionary(lines[story_event_line_index])
+
+
+func advance_story_event() -> void:
+	if not story_event_open:
+		return
+	var lines: Array = story_event_definition.get("lines", [])
+	if story_event_line_index + 1 < lines.size():
+		story_event_line_index += 1
+		synth.click()
+		queue_redraw()
+		return
+	close_story_event(false)
+
+
+func close_story_event(skipped := false) -> void:
+	if not story_event_open:
+		return
+	var return_to_lab := story_event_from_lab and story_lab_available()
+	story_event_open = false
+	story_event_id = ""
+	story_event_definition.clear()
+	story_event_line_index = 0
+	story_event_from_lab = false
+	story_lab_open = return_to_lab
+	if skipped:
+		synth.click()
+	else:
+		synth.confirm()
+	queue_redraw()
+
+
+func handle_story_event_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+		elif story_skip_rect.has_point(event.position):
+			close_story_event(true)
+		else:
+			advance_story_event()
+	elif event is InputEventScreenTouch and event.pressed:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+		elif story_skip_rect.has_point(event.position):
+			close_story_event(true)
+		else:
+			advance_story_event()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_L:
+			toggle_language()
+		elif event.keycode == KEY_ESCAPE:
+			close_story_event(true)
+		elif event.keycode in [KEY_ENTER, KEY_SPACE, KEY_X, KEY_A]:
+			advance_story_event()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("language"):
+			toggle_language()
+		elif event.button_index == controller_button("back"):
+			close_story_event(true)
+		elif event.button_index == controller_button("primary"):
+			advance_story_event()
+
+
+func toggle_story_lab() -> void:
+	if not story_lab_available():
+		return
+	if story_event_open:
+		story_event_from_lab = true
+		close_story_event(true)
+		story_lab_open = true
+	else:
+		story_lab_open = not story_lab_open
+		if story_lab_open:
+			message_time = 0.0
+			clear_comms()
+			end_charge()
+	queue_redraw()
+
+
+func story_lab_row_rect(index: int) -> Rect2:
+	return Rect2(52, 128 + index * 82, 520, 68)
+
+
+func handle_story_lab_input(event: InputEvent) -> void:
+	var event_ids := StoryCatalog.event_ids()
+	if event_ids.is_empty():
+		story_lab_open = false
+		return
+	if event is InputEventMouseMotion:
+		for index in range(event_ids.size()):
+			if story_lab_row_rect(index).has_point(event.position):
+				story_lab_selected = index
+				break
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+			return
+		if story_skip_rect.has_point(event.position):
+			story_lab_open = false
+			queue_redraw()
+			return
+		for index in range(event_ids.size()):
+			if story_lab_row_rect(index).has_point(event.position):
+				story_lab_selected = index
+				start_story_event(event_ids[index], true)
+				return
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_ESCAPE, KEY_F9]:
+			story_lab_open = false
+		elif event.keycode == KEY_L:
+			toggle_language()
+		elif event.keycode in [KEY_UP, KEY_W]:
+			story_lab_selected = wrapi(story_lab_selected - 1, 0, event_ids.size())
+			synth.click()
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			story_lab_selected = wrapi(story_lab_selected + 1, 0, event_ids.size())
+			synth.click()
+		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
+			start_story_event(event_ids[story_lab_selected], true)
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("back"):
+			story_lab_open = false
+		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
+			story_lab_selected = wrapi(story_lab_selected - 1, 0, event_ids.size())
+			synth.click()
+		elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
+			story_lab_selected = wrapi(story_lab_selected + 1, 0, event_ids.size())
+			synth.click()
+		elif event.button_index == controller_button("primary"):
+			start_story_event(event_ids[story_lab_selected], true)
+		elif event.button_index == controller_button("language"):
+			toggle_language()
+	queue_redraw()
+
+
 # Debug-facing conversation hook. It is intentionally data-only, so tests,
 # editor scripts and the web query bridge can preview any localized line
 # without changing encounter state or campaign saves.
@@ -2872,6 +3069,13 @@ func tutorial_hint() -> String:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color("060b16"))
 	draw_background()
+	if story_lab_open:
+		draw_story_lab()
+		return
+	if story_event_open and story_event_from_lab:
+		draw_story_preview_stage()
+		draw_story_event_overlay()
+		return
 	if final_defeat_cinematic_open:
 		draw_final_defeat_cinematic()
 		return
@@ -2920,6 +3124,103 @@ func _draw() -> void:
 		draw_achievements_overlay()
 	elif achievement_notice_time > 0.0 and not achievement_notice.is_empty():
 		draw_achievement_toast()
+	if story_event_open:
+		draw_story_event_overlay()
+
+
+func draw_story_lab() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.008, 0.016, 0.038, 0.97))
+	for index in range(9):
+		var radius := 110.0 + index * 42.0
+		draw_arc(Vector2(1010, 356), radius, -PI * 0.76 + animation_time * 0.03, PI * 0.72 + animation_time * 0.03, 64, Palette.with_alpha(Palette.VIOLET if index % 2 else Palette.CYAN, 0.12), 2.0)
+	draw_rect(Rect2(0, 0, 1280, 6), Palette.VIOLET)
+	draw_string(DisplayFont, Vector2(48, 52), "DEV // STORY LAB", HORIZONTAL_ALIGNMENT_LEFT, 600, 24, Palette.VIOLET)
+	draw_string(Palette.UI_FONT, Vector2(50, 84), loc("イベントを直接再生・セーブ非更新", "DIRECT EVENT PLAYBACK · SAVE DATA IS NEVER MUTATED"), HORIZONTAL_ALIGNMENT_LEFT, 740, 14, Palette.MUTED)
+	draw_campaign_button(story_language_rect, loc("日本語 / EN", "EN / 日本語"), Palette.CYAN, false)
+	draw_campaign_button(story_skip_rect, loc("閉じる  F9", "CLOSE  F9"), Palette.MUTED, false)
+	var event_ids := StoryCatalog.event_ids()
+	if event_ids.is_empty():
+		draw_string(Palette.UI_FONT, Vector2(54, 150), "NO STORY EVENTS", HORIZONTAL_ALIGNMENT_LEFT, 500, 18, Palette.CORAL)
+		return
+	story_lab_selected = clampi(story_lab_selected, 0, event_ids.size() - 1)
+	for index in range(event_ids.size()):
+		var definition := StoryCatalog.event(event_ids[index])
+		var rect := story_lab_row_rect(index)
+		var selected := index == story_lab_selected
+		var accent := Palette.VIOLET if selected else Palette.CYAN
+		draw_machine_plate(rect, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(accent, 0.82 if selected else 0.26), 7.0, 2.0 if selected else 1.0)
+		draw_string(DisplayFont, rect.position + Vector2(18, 25), str(definition.get("title_ja" if is_japanese else "title_en", event_ids[index])), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 36, 14, Palette.PAPER if selected else Palette.MUTED)
+		draw_string(DisplayFont, rect.position + Vector2(18, 49), event_ids[index], HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 36, 10, accent)
+	var selected_definition := StoryCatalog.event(event_ids[story_lab_selected])
+	var preview_rect := Rect2(602, 128, 626, 396)
+	draw_machine_plate(preview_rect, Palette.with_alpha(Palette.INK, 0.97), Palette.with_alpha(Palette.VIOLET, 0.54), 12.0, 2.0)
+	draw_string(DisplayFont, preview_rect.position + Vector2(28, 44), str(selected_definition.get("title_ja" if is_japanese else "title_en", "STORY EVENT")), HORIZONTAL_ALIGNMENT_LEFT, preview_rect.size.x - 56, 20, Palette.PAPER)
+	draw_multiline_string(Palette.UI_FONT, preview_rect.position + Vector2(28, 88), str(selected_definition.get("context_ja" if is_japanese else "context_en", "")), HORIZONTAL_ALIGNMENT_LEFT, preview_rect.size.x - 56, 16, 4, Palette.MUTED)
+	var selected_lines: Array = selected_definition.get("lines", [])
+	draw_string(DisplayFont, preview_rect.position + Vector2(28, 190), loc("会話 %d行" % selected_lines.size(), "%d DIALOGUE LINES" % selected_lines.size()), HORIZONTAL_ALIGNMENT_LEFT, preview_rect.size.x - 56, 13, Palette.CYAN)
+	if not selected_lines.is_empty():
+		var first_line: Dictionary = selected_lines[0]
+		draw_string(DisplayFont, preview_rect.position + Vector2(28, 232), str(first_line.get("speaker_ja" if is_japanese else "speaker_en", "")), HORIZONTAL_ALIGNMENT_LEFT, preview_rect.size.x - 56, 13, Palette.AMBER)
+		draw_multiline_string(Palette.UI_FONT, preview_rect.position + Vector2(28, 270), str(first_line.get("text_ja" if is_japanese else "text_en", "")), HORIZONTAL_ALIGNMENT_LEFT, preview_rect.size.x - 56, 15, 4, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(604, 560), loc("ENTER / クリック：再生    ↑↓：選択    L：言語", "ENTER / CLICK: PLAY    ↑↓: SELECT    L: LANGUAGE"), HORIZONTAL_ALIGNMENT_LEFT, 620, 12, Palette.MINT)
+
+
+func draw_story_preview_stage() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.005, 0.01, 0.025, 0.84))
+	draw_string(DisplayFont, Vector2(44, 116), "VOLT NOMAD", HORIZONTAL_ALIGNMENT_LEFT, 360, 22, Palette.AMBER)
+	draw_texture_rect(ProtagonistTexture, Rect2(62, 138, 300, 300), false, Color(0.92, 0.97, 1.0, 0.92))
+	var portrait_id := ""
+	for entry in story_event_definition.get("lines", []):
+		if str(Dictionary(entry).get("portrait_id", "")) != "":
+			portrait_id = str(Dictionary(entry).get("portrait_id", ""))
+			break
+	if MechanicalBeastTextures.has(portrait_id):
+		draw_string(DisplayFont, Vector2(824, 116), portrait_id.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 340, 22, Palette.CORAL)
+		draw_texture_rect(MechanicalBeastTextures[portrait_id], Rect2(850, 158, 290, 240), false, Color(0.98, 0.94, 1.0, 0.96))
+	draw_line(Vector2(402, 304), Vector2(810, 304), Palette.with_alpha(Palette.VIOLET, 0.36), 2.0)
+	draw_circle(Vector2(606, 304), 13.0 + sin(animation_time * 3.0) * 2.0, Palette.with_alpha(Palette.CYAN, 0.62))
+
+
+func draw_story_event_overlay() -> void:
+	var definition := story_event_definition
+	var entry := current_story_line()
+	if definition.is_empty() or entry.is_empty():
+		return
+	var role := str(entry.get("role", "support"))
+	var accent := Palette.CORAL if role == "enemy" else Palette.AMBER if role == "player" else Palette.CYAN
+	var title := str(definition.get("title_ja" if is_japanese else "title_en", "STORY EVENT"))
+	var context := str(definition.get("context_ja" if is_japanese else "context_en", ""))
+	var speaker := str(entry.get("speaker_ja" if is_japanese else "speaker_en", ""))
+	var line := str(entry.get("text_ja" if is_japanese else "text_en", ""))
+	var lines: Array = definition.get("lines", [])
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.005, 0.014, 0.58))
+	draw_rect(Rect2(0, 0, 1280, 7), accent)
+	draw_string(DisplayFont, Vector2(72, 48), title, HORIZONTAL_ALIGNMENT_LEFT, 730, 18, Palette.PAPER)
+	draw_multiline_string(Palette.UI_FONT, Vector2(74, 80), context, HORIZONTAL_ALIGNMENT_LEFT, 730, 13, 2, Palette.MUTED)
+	draw_campaign_button(story_language_rect, loc("日本語 / EN", "EN / 日本語"), Palette.CYAN, false)
+	draw_campaign_button(story_skip_rect, loc("スキップ  ESC", "SKIP  ESC"), Palette.MUTED, false)
+	var panel := Rect2(54, 414, 1172, 256)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.INK, 0.985), Palette.with_alpha(accent, 0.88), 12.0, 2.0)
+	draw_rect(Rect2(panel.position + Vector2(10, 10), Vector2(7, panel.size.y - 20)), accent)
+	var portrait_rect := Rect2(panel.position + Vector2(32, 40), Vector2(150, 150))
+	if role == "player":
+		draw_texture_rect(ProtagonistTexture, portrait_rect, false, Color(0.95, 0.98, 1.0, 1.0))
+	elif role == "enemy":
+		var portrait_id := str(entry.get("portrait_id", ""))
+		var portrait: Texture2D = MechanicalBeastTextures.get(portrait_id, current_enemy_texture())
+		draw_texture_rect(portrait, portrait_rect, false, Color(1.0, 0.96, 1.0, 1.0))
+	else:
+		draw_circle(portrait_rect.get_center(), 52.0, Palette.with_alpha(Palette.CYAN, 0.13))
+		for ring in range(3):
+			var radius := 26.0 + ring * 14.0
+			draw_arc(portrait_rect.get_center(), radius, animation_time * (0.4 + ring * 0.17), animation_time * (0.4 + ring * 0.17) + PI * 1.45, 24, Palette.with_alpha(Palette.CYAN, 0.86 - ring * 0.2), 3.0)
+		draw_string(DisplayFont, portrait_rect.position + Vector2(0, 84), "C6", HORIZONTAL_ALIGNMENT_CENTER, portrait_rect.size.x, 22, Palette.CYAN)
+	var text_x := panel.position.x + 212.0
+	draw_string(DisplayFont, Vector2(text_x, panel.position.y + 54), speaker, HORIZONTAL_ALIGNMENT_LEFT, 900, 18, accent)
+	draw_string(DisplayFont, Vector2(panel.end.x - 160, panel.position.y + 54), "%02d / %02d" % [story_event_line_index + 1, lines.size()], HORIZONTAL_ALIGNMENT_RIGHT, 116, 12, Palette.MUTED)
+	draw_line(Vector2(text_x, panel.position.y + 70), Vector2(panel.end.x - 34, panel.position.y + 70), Palette.with_alpha(accent, 0.34), 1.0)
+	draw_multiline_string(Palette.UI_FONT, Vector2(text_x, panel.position.y + 112), line, HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 252.0, 18, 4, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(text_x, panel.end.y - 28), loc("クリック / ENTER / A：次へ", "CLICK / ENTER / A: NEXT"), HORIZONTAL_ALIGNMENT_RIGHT, panel.size.x - 252.0, 12, Palette.with_alpha(Palette.MINT, 0.94))
 
 func draw_title_screen() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.01, 0.022, 0.05, 0.46))

@@ -7,6 +7,7 @@ const ChargeStageCatalog = preload("res://games/charge_clicker/stage_catalog.gd"
 const ChargeCampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const ChargeGearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const ChargeAchievements = preload("res://games/charge_clicker/charge_achievements.gd")
+const ChargeStoryCatalog = preload("res://games/charge_clicker/story_catalog.gd")
 const Launcher = preload("res://main.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 
@@ -227,6 +228,15 @@ func test_charge_clicker_v5() -> void:
 	game.debug_show_dialogue("試験話者", "TEST SPEAKER", "任意本文", "ARBITRARY BODY", 8.0)
 	check(game.comms_speaker_ja == "試験話者" and game.comms_text_en == "ARBITRARY BODY" and is_equal_approx(game.comms_time, 8.0), "debug tooling can display an arbitrary localized dialogue box without mutating campaign state")
 	game.clear_comms()
+	check(ChargeStoryCatalog.validate().is_empty() and ChargeStoryCatalog.event_ids().size() == 5, "the story vertical-slice catalog has complete bilingual metadata and dialogue")
+	var story_session_before: float = float(game.run.session_elapsed)
+	check(game.start_story_event("hunt.gearmaw.encounter") and game.story_event_open and game.current_story_line().role == "support", "the reusable story player opens GEARMAW's blocking encounter scene")
+	game._process(1.0)
+	check(is_equal_approx(game.run.session_elapsed, story_session_before), "story events pause combat, run timing and autosave progression")
+	game.advance_story_event()
+	check(game.story_event_line_index == 1 and game.current_story_line().role == "enemy", "story events advance deterministically across speaker roles")
+	game.close_story_event(true)
+	check(not game.story_event_open and game.story_event_definition.is_empty(), "story events can be skipped without mutating campaign state")
 	check(game.BGMStreams.size() == 18 and game.desired_bgm_key() == "map", "music routing includes separate title/map slots, independent endings, artwork and all three PRIME CURRENT forms")
 	check(str(game.BGMStreams["title"].resource_path).ends_with("awakening_below.mp3") and str(game.BGMStreams["map"].resource_path).ends_with("six_core_descent.mp3"), "selected Awakening Below A and Six-Core Descent B masters are assigned to title and map")
 	var final_form_stream_paths := {}
