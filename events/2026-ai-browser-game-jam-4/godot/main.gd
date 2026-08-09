@@ -51,16 +51,21 @@ func _ready() -> void:
 	for index in range(ControllerConfig.ACTIONS.size()):
 		settings_row_rects.append(Rect2(296, 168 + index * 50, 688, 44))
 	queue_redraw()
-	if should_auto_launch_art_preview():
+	if should_auto_launch_project_charge():
 		call_deferred("launch_game", 3)
 
-func should_auto_launch_art_preview() -> bool:
+func should_auto_launch_project_charge() -> bool:
+	if OS.has_feature("project_charge_submission"):
+		return true
 	if not OS.has_feature("web"):
 		return false
 	var window = JavaScriptBridge.get_interface("window")
 	if window == null:
 		return false
-	var raw_query := str(window.location.search).trim_prefix("?")
+	return query_requests_project_charge(str(window.location.search))
+
+func query_requests_project_charge(raw_query: String) -> bool:
+	raw_query = raw_query.trim_prefix("?")
 	for pair in raw_query.split("&", false):
 		var parts := pair.split("=", true, 1)
 		if parts.size() == 2 and str(parts[0]) == "game" and str(parts[1]) == "project-charge":

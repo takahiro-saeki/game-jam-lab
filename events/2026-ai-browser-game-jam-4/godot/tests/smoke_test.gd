@@ -116,6 +116,8 @@ func test_launcher() -> void:
 	check(launcher.is_japanese, "in-game language choice persists in the launcher")
 	launcher.return_to_menu()
 	check(launcher.card_rects.size() == 4, "launcher exposes all four playable concepts")
+	check(launcher.query_requests_project_charge("?game=project-charge"), "the local review URL can launch PROJECT CHARGE directly")
+	check(not launcher.query_requests_project_charge("game=chargeback"), "unrelated query values do not bypass the launcher")
 	launcher.launch_game(3)
 	check(launcher.active_game != null and launcher.active_game.get("run") != null, "fourth launcher card opens PROJECT CHARGE")
 	launcher.return_to_menu()

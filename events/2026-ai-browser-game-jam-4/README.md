@@ -125,6 +125,14 @@ godot --headless --path events/2026-ai-browser-game-jam-4/godot \
   --export-release Web "$PWD/build/web/index.html"
 ```
 
+Build the itch.io submission ZIP. This preset adds a release-only feature that
+opens PROJECT CHARGE directly while preserving the four-game launcher in the
+ordinary development build:
+
+```bash
+events/2026-ai-browser-game-jam-4/tools/build-itch-project-charge.sh
+```
+
 ## AI and asset disclosure
 
 - Game concepts, GDScript implementation, testing, balancing, and documentation were created in collaboration with OpenAI Codex.

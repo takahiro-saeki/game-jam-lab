@@ -119,7 +119,9 @@ Use screenshots 1–5 on the public page. Add screenshot 6 only if the page need
 
 ## Upload checklist
 
+- Run `tools/build-itch-project-charge.sh` to create the dedicated direct-launch build and `build/itch/project-charge-web.zip`.
 - Export the Godot Web build with `index.html` at the root of the ZIP.
+- Open the ZIP build without a `?game=project-charge` query and confirm it bypasses the internal four-game launcher.
 - Confirm the game starts in a private browser window without local saves.
 - Confirm audio is initially respectful of browser autoplay rules.
 - Confirm English is usable without reading the Japanese copy.
@@ -128,4 +130,3 @@ Use screenshots 1–5 on the public page. Add screenshot 6 only if the page need
 - Add screenshots in the order above and use `01-title-screen.png` as the initial cover source.
 - Join AI Browser Game Jam 4 and select PROJECT CHARGE as the submission.
 - Reopen the public page and complete one fresh normal-route run before the deadline.
-
