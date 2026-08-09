@@ -37,6 +37,7 @@ var final_boss_defeated := false
 var final_credits_seen := false
 var infinite_wave := 0
 var infinite_best_wave := 0
+var story_event_ids: Array[String] = []
 
 func reset() -> void:
 	phase = RoutePhase.MAP
@@ -55,6 +56,16 @@ func reset() -> void:
 	final_credits_seen = false
 	infinite_wave = 0
 	infinite_best_wave = 0
+	story_event_ids.clear()
+
+func has_seen_story_event(event_id: String) -> bool:
+	return event_id in story_event_ids
+
+func mark_story_event_seen(event_id: String) -> bool:
+	if event_id.is_empty() or event_id in story_event_ids:
+		return false
+	story_event_ids.append(event_id)
+	return true
 
 func available_stage_ids() -> Array[String]:
 	var result: Array[String] = []
@@ -208,7 +219,7 @@ func complete_final_credits() -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 4,
+		"version": 5,
 		"phase": phase,
 		"current_stage_id": current_stage_id,
 		"current_boss_id": current_boss_id,
@@ -225,11 +236,12 @@ func snapshot() -> Dictionary:
 		"final_credits_seen": final_credits_seen,
 		"infinite_wave": infinite_wave,
 		"infinite_best_wave": infinite_best_wave,
+		"story_event_ids": story_event_ids.duplicate(),
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
 	var version := int(data.get("version", 0))
-	if version not in [2, 3, 4]:
+	if version not in [2, 3, 4, 5]:
 		return false
 	reset()
 	var valid_stages := Catalog.stage_ids()
@@ -263,6 +275,10 @@ func restore_snapshot(data: Dictionary) -> bool:
 	final_credits_seen = bool(data.get("final_credits_seen", false))
 	infinite_wave = maxi(0, int(data.get("infinite_wave", 0)))
 	infinite_best_wave = maxi(0, int(data.get("infinite_best_wave", 0)))
+	for value in data.get("story_event_ids", []):
+		var event_id := str(value)
+		if not event_id.is_empty() and event_id not in story_event_ids:
+			story_event_ids.append(event_id)
 	phase = clampi(int(data.get("phase", RoutePhase.MAP)), RoutePhase.MAP, RoutePhase.POSTGAME)
 	if version <= 3 and phase == RoutePhase.TRUE_END:
 		phase = RoutePhase.POST_TRUE_CHOICE

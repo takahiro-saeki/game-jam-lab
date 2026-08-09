@@ -301,9 +301,18 @@ var story_event_id := ""
 var story_event_definition: Dictionary = {}
 var story_event_line_index := 0
 var story_event_from_lab := false
+var story_event_from_log := false
+var story_event_after_action := ""
+var story_event_queue: Array[Dictionary] = []
 var story_lab_open := false
 var story_lab_selected := 0
+var story_lab_scroll := 0
+var story_log_open := false
+var story_log_selected := 0
+var story_log_scroll := 0
+var story_log_return_to_title := false
 var story_preview_event_id := ""
+var story_singularity_phase := 1
 
 var charge_rect := Rect2(70, 502, 284, 88)
 var mode_toggle_rect := Rect2(70, 598, 284, 44)
@@ -336,6 +345,7 @@ var title_button_rects: Array[Rect2] = [
 	Rect2(726, 448, 96, 48),
 	Rect2(830, 448, 96, 48),
 	Rect2(934, 448, 96, 48),
+	Rect2(1038, 448, 98, 48),
 	Rect2(726, 510, 410, 48),
 ]
 var settings_row_rects: Array[Rect2] = [
@@ -369,6 +379,9 @@ var artwork_full_previous_rect := Rect2(24, 310, 70, 100)
 var artwork_full_next_rect := Rect2(1186, 310, 70, 100)
 var story_skip_rect := Rect2(1020, 28, 188, 44)
 var story_language_rect := Rect2(832, 28, 172, 44)
+var story_log_rect := Rect2(862, 616, 140, 42)
+var story_log_close_rect := Rect2(1034, 28, 188, 44)
+var story_log_replay_rect := Rect2(828, 598, 368, 48)
 
 func _ready() -> void:
 	apply_web_art_preview()
@@ -739,6 +752,8 @@ func reset_run() -> void:
 	particles.clear()
 	floating_texts.clear()
 	resource_packets.clear()
+	story_event_queue.clear()
+	story_log_open = false
 	shard_pulse = 0.0
 	charge_held = false
 	gear_tree_open = false
@@ -748,6 +763,7 @@ func reset_run() -> void:
 	show_message(loc("新しいキャンペーンを開始", "NEW CAMPAIGN INITIALIZED"), 1.8)
 	synth.play_chord([220.0, 329.63, 440.0], 0.22, -24.0)
 	save_progress()
+	start_story_event_once("prologue.awakening")
 	queue_redraw()
 
 func enter_campaign_from_title() -> void:
@@ -804,7 +820,7 @@ func _process(delta: float) -> void:
 	if achievement_notice_time > 0.0:
 		achievement_notice_time -= delta
 	update_comms(delta)
-	if story_event_open or story_lab_open:
+	if story_event_open or story_lab_open or story_log_open:
 		update_effects(delta)
 		queue_redraw()
 		return
@@ -850,6 +866,7 @@ func _process(delta: float) -> void:
 		return
 
 	var tick_result: Dictionary = run.tick(delta, false)
+	check_singularity_story_phase()
 	if int(tick_result.auto_hits) > 0:
 		auto_effect_timer -= delta
 		if auto_effect_timer <= 0.0:
@@ -897,6 +914,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if story_lab_open:
 		handle_story_lab_input(event)
+		return
+	if story_log_open:
+		handle_story_log_input(event)
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10:
 		debug_show_dialogue(
@@ -1062,6 +1082,8 @@ func activate_title_selection() -> void:
 		4:
 			open_credits(true)
 		5:
+			open_story_log(true)
+		6:
 			open_artwork_gallery()
 
 func title_button_count() -> int:
@@ -1352,18 +1374,6 @@ func update_final_defeat_cinematic(delta: float) -> void:
 		screen_shake = maxf(screen_shake, 0.72 + float(final_defeat_burst_stage) * 0.08)
 	if final_defeat_cinematic_time >= 3.25 and not final_defeat_dialogue_started:
 		final_defeat_dialogue_started = true
-		queue_comms(
-			"プライム・カレント", "PRIME CURRENT",
-			"停止は消滅ではない。私の記憶を……地上へ。",
-			"CESSATION IS NOT OBLIVION. CARRY MY MEMORY... TO THE SURFACE.",
-			2.55
-		)
-		queue_comms(
-			"ヴォルト・ノマド", "VOLT NOMAD",
-			"命令ではなく、遺言として受け取る。",
-			"I ACCEPT IT — NOT AS AN ORDER, BUT AS YOUR LAST WILL.",
-			2.55
-		)
 	if final_defeat_cinematic_time >= FINAL_DEFEAT_CINEMATIC_SECONDS:
 		finish_final_defeat_cinematic()
 
@@ -1376,7 +1386,8 @@ func finish_final_defeat_cinematic() -> void:
 	final_defeat_dialogue_started = false
 	clear_comms()
 	synth.true_clear()
-	open_true_epilogue()
+	queue_story_event_once("prime.defeat")
+	queue_story_event_once("ending.true_dawn", "true_epilogue")
 
 func handle_final_defeat_input(event: InputEvent) -> void:
 	var skip_requested := false
@@ -1608,6 +1619,8 @@ func handle_campaign_input(event: InputEvent) -> void:
 			open_gear_tree(0)
 		elif event.keycode == KEY_H:
 			open_achievements()
+		elif event.keycode == KEY_J:
+			open_story_log(false)
 		elif event.keycode == KEY_R:
 			request_reset()
 		elif event.keycode == KEY_T and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
@@ -1653,6 +1666,9 @@ func handle_campaign_input(event: InputEvent) -> void:
 			navigate_campaign_selection(direction)
 
 func handle_campaign_point(point: Vector2) -> void:
+	if story_log_rect.has_point(point):
+		open_story_log(false)
+		return
 	if menu_rect.has_point(point):
 		return_to_menu.emit()
 		return
@@ -1755,14 +1771,16 @@ func activate_campaign_selection() -> void:
 		CampaignRoute.RoutePhase.POST_TRUE_CHOICE:
 			if campaign_selected == 0:
 				if campaign_route.choose_world_engine_credits():
-					open_credits(true, "world")
+					if not start_story_event_once("ending.world_ascent", "world_credits"):
+						open_credits(true, "world")
 			else:
 				if run.overlimit_count() <= 0:
 					selected_tree_tier = 4
 					open_gear_tree(0)
 					show_message(loc("本当のラスボスへ挑むには、まずOVERLIMITを1つ復旧", "RESTORE AT LEAST ONE OVERLIMIT BEFORE ANSWERING THE SIGNAL"), 3.2)
 				elif campaign_route.answer_deep_signal():
-					launch_current_campaign_boss()
+					if not start_story_event_once("prime.signal_answer", "launch_campaign_boss"):
+						launch_current_campaign_boss()
 		CampaignRoute.RoutePhase.FINAL_END:
 			open_true_epilogue()
 		CampaignRoute.RoutePhase.POSTGAME:
@@ -1789,11 +1807,8 @@ func start_stage_by_index(index: int) -> bool:
 	run.begin_stage(id, str(definition.build_tag), 1.0, hp, encounter_order)
 	reward_selected = 0
 	show_message(loc("討伐開始：", "HUNT STARTED: ") + stage_name(definition), 2.2)
-	# GEARMAW is the first blocking story-event vertical slice.  Other hunts
-	# keep their compact non-blocking comms until this presentation is approved.
-	if id == "gearmaw" and not start_story_event("hunt.gearmaw.encounter"):
-		queue_encounter_intro(id)
-	elif id != "gearmaw":
+	var encounter_event_id := story_encounter_event_id(id)
+	if encounter_event_id.is_empty() or not start_story_event_once(encounter_event_id):
 		queue_encounter_intro(id)
 	synth.play_chord([164.81, 246.94, 329.63], 0.28, -22.0)
 	save_progress()
@@ -1823,7 +1838,10 @@ func launch_current_campaign_boss() -> bool:
 	else:
 		run.begin_campaign_boss(str(definition.id), hp, enhanced, singularity)
 	show_message(loc("原初電流との最終戦闘開始", "PRIME CURRENT ENGAGED") if final_encounter else loc("深層主獣との戦闘開始", "ABYSSAL BOSS ENGAGED"), 2.4)
-	queue_encounter_intro(str(definition.id))
+	story_singularity_phase = run.singularity_phase
+	var encounter_event_id := story_encounter_event_id(str(definition.id))
+	if encounter_event_id.is_empty() or not start_story_event_once(encounter_event_id):
+		queue_encounter_intro(str(definition.id))
 	screen_flash = 0.8
 	screen_shake = 0.35
 	synth.boss_engage()
@@ -1882,10 +1900,18 @@ func complete_stage_and_return_to_route() -> bool:
 	campaign_selected = 0 if campaign_route.phase == CampaignRoute.RoutePhase.BOSS_SELECT else first_available_stage_index()
 	show_message(loc("機械核を統合 — 討伐地図へ帰還", "MECHANICAL CORE INTEGRATED — RETURNING TO THE HUNT MAP"), 2.0)
 	synth.core_integrated()
+	match campaign_route.completed_stage_ids.size():
+		1:
+			queue_story_event_once("milestone.first_core")
+		3:
+			queue_story_event_once("milestone.third_core")
+		6:
+			queue_story_event_once("milestone.six_cores")
 	save_progress()
 	return true
 
 func complete_campaign_boss() -> bool:
+	var defeated_id: String = str(campaign_route.current_boss_id)
 	var defeated_definition := StageCatalog.boss(campaign_route.current_boss_id)
 	var defeated_final_form: bool = bool(run.final_boss)
 	if not defeated_definition.is_empty() and defeated_definition.has("core_id"):
@@ -1903,6 +1929,11 @@ func complete_campaign_boss() -> bool:
 		synth.phase_transition(campaign_route.final_boss_form)
 	else:
 		synth.play_chord([130.81, 196.0, 261.63, 392.0, 523.25], 0.75, -17.0)
+	var defeat_event_id := story_defeat_event_id(defeated_id)
+	if not defeated_final_form and not defeat_event_id.is_empty():
+		queue_story_event_once(defeat_event_id)
+	if campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END:
+		queue_story_event_once("ending.normal_signal")
 	record_campaign_result_if_needed()
 	save_progress()
 	return true
@@ -2474,6 +2505,7 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 			show_message(loc("炉心露出！ 6秒間すべての攻撃が2倍", "FURNACE EXPOSED! ALL DAMAGE ×2 FOR SIX SECONDS"), 2.0)
 		"singularity_burst":
 			show_message(loc("特異点バースト！", "SINGULARITY BURST!"), 1.5)
+	check_singularity_story_phase()
 	if bool(result.boss_defeated):
 		handle_enemy_defeated()
 	elif generating:
@@ -2497,6 +2529,7 @@ func toggle_auto(play_sound: bool = true) -> bool:
 func handle_enemy_defeated() -> void:
 	end_charge()
 	gear_tree_open = false
+	var defeated_stage_id: String = str(run.current_stage_id)
 	if campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
 		var completed_wave: int = int(campaign_route.infinite_wave)
 		var reward: int = infinite_reward_for_wave(completed_wave)
@@ -2505,6 +2538,9 @@ func handle_enemy_defeated() -> void:
 		show_message(loc("WAVE %d突破 — CHARGE +%s" % [completed_wave, format_number(reward)], "WAVE %d CLEARED — +%s CHARGE" % [completed_wave, format_number(reward)]), 3.0)
 	elif campaign_route.phase == CampaignRoute.RoutePhase.STAGE:
 		show_message(encounter_name() + loc("撃破 — 機械核を回収", " DEFEATED — CORE RECOVERED"), 3.0)
+		var defeat_event_id := story_defeat_event_id(defeated_stage_id)
+		if not defeat_event_id.is_empty():
+			queue_story_event_once(defeat_event_id)
 	else:
 		complete_campaign_boss()
 	screen_flash = 1.0
@@ -2597,7 +2633,7 @@ func story_lab_available() -> bool:
 	return OS.is_debug_build()
 
 
-func start_story_event(event_id: String, from_lab := false) -> bool:
+func start_story_event(event_id: String, from_lab := false, from_log := false, after_action := "") -> bool:
 	var definition := StoryCatalog.event(event_id)
 	if definition.is_empty():
 		return false
@@ -2605,13 +2641,42 @@ func start_story_event(event_id: String, from_lab := false) -> bool:
 	story_event_definition = definition
 	story_event_line_index = 0
 	story_event_from_lab = from_lab
+	story_event_from_log = from_log
+	story_event_after_action = after_action
 	story_event_open = true
 	story_lab_open = false
+	story_log_open = false
+	if not from_lab and not from_log:
+		campaign_route.mark_story_event_seen(event_id)
+		achievements.archive_story_event(event_id)
+		save_progress()
 	message_time = 0.0
 	clear_comms()
 	end_charge()
 	queue_redraw()
 	return true
+
+
+func start_story_event_once(event_id: String, after_action := "") -> bool:
+	if campaign_route.has_seen_story_event(event_id):
+		return false
+	return start_story_event(event_id, false, false, after_action)
+
+
+func queue_story_event_once(event_id: String, after_action := "") -> bool:
+	if campaign_route.has_seen_story_event(event_id):
+		if not after_action.is_empty():
+			perform_story_after_action(after_action)
+		return false
+	if story_event_id == event_id:
+		return false
+	for queued in story_event_queue:
+		if str(queued.get("id", "")) == event_id:
+			return false
+	if story_event_open:
+		story_event_queue.append({"id": event_id, "action": after_action})
+		return true
+	return start_story_event(event_id, false, false, after_action)
 
 
 func current_story_line() -> Dictionary:
@@ -2637,17 +2702,76 @@ func close_story_event(skipped := false) -> void:
 	if not story_event_open:
 		return
 	var return_to_lab := story_event_from_lab and story_lab_available()
+	var return_to_log := story_event_from_log
+	var after_action := story_event_after_action
 	story_event_open = false
 	story_event_id = ""
 	story_event_definition.clear()
 	story_event_line_index = 0
 	story_event_from_lab = false
+	story_event_from_log = false
+	story_event_after_action = ""
 	story_lab_open = return_to_lab
+	story_log_open = return_to_log
 	if skipped:
 		synth.click()
 	else:
 		synth.confirm()
+	if not return_to_lab and not return_to_log:
+		if not after_action.is_empty():
+			perform_story_after_action(after_action)
+		if not story_event_open and not story_event_queue.is_empty():
+			var next_event: Dictionary = story_event_queue.pop_front()
+			start_story_event_once(str(next_event.get("id", "")), str(next_event.get("action", "")))
 	queue_redraw()
+
+
+func perform_story_after_action(action: String) -> void:
+	match action:
+		"world_credits":
+			open_credits(true, "world")
+		"launch_campaign_boss":
+			launch_current_campaign_boss()
+		"true_epilogue":
+			open_true_epilogue()
+
+
+func story_encounter_event_id(encounter_id: String) -> String:
+	if encounter_id in StageCatalog.stage_ids():
+		return "hunt.%s.encounter" % encounter_id
+	if encounter_id in StageCatalog.boss_ids():
+		return "boss.%s.encounter" % encounter_id
+	if encounter_id == str(StageCatalog.TRUE_BOSS.id):
+		return "arch.encounter"
+	var final_forms := {
+		"prime_current_form_1": "prime.form_1",
+		"prime_current_form_2": "prime.form_2",
+		"prime_current_form_3": "prime.form_3",
+	}
+	return str(final_forms.get(encounter_id, ""))
+
+
+func story_defeat_event_id(encounter_id: String) -> String:
+	if encounter_id in StageCatalog.stage_ids():
+		return "hunt.%s.defeat" % encounter_id
+	if encounter_id in StageCatalog.boss_ids():
+		return "boss.%s.defeat" % encounter_id
+	if encounter_id == str(StageCatalog.TRUE_BOSS.id):
+		return "arch.defeat"
+	return "prime.defeat" if encounter_id == "prime_current_form_3" else ""
+
+
+func check_singularity_story_phase() -> void:
+	if not run.singularity_boss:
+		story_singularity_phase = 1
+		return
+	if run.singularity_phase == story_singularity_phase:
+		return
+	story_singularity_phase = run.singularity_phase
+	if story_singularity_phase == 2:
+		queue_story_event_once("arch.phase_2")
+	elif story_singularity_phase == 3:
+		queue_story_event_once("arch.phase_3")
 
 
 func handle_story_event_input(event: InputEvent) -> void:
@@ -2697,8 +2821,17 @@ func toggle_story_lab() -> void:
 	queue_redraw()
 
 
-func story_lab_row_rect(index: int) -> Rect2:
-	return Rect2(52, 128 + index * 82, 520, 68)
+func story_lab_row_rect(slot: int) -> Rect2:
+	return Rect2(52, 128 + slot * 68, 520, 58)
+
+
+func ensure_story_lab_selection_visible() -> void:
+	const VISIBLE_ROWS := 7
+	if story_lab_selected < story_lab_scroll:
+		story_lab_scroll = story_lab_selected
+	elif story_lab_selected >= story_lab_scroll + VISIBLE_ROWS:
+		story_lab_scroll = story_lab_selected - VISIBLE_ROWS + 1
+	story_lab_scroll = clampi(story_lab_scroll, 0, maxi(0, StoryCatalog.event_ids().size() - VISIBLE_ROWS))
 
 
 func handle_story_lab_input(event: InputEvent) -> void:
@@ -2707,8 +2840,9 @@ func handle_story_lab_input(event: InputEvent) -> void:
 		story_lab_open = false
 		return
 	if event is InputEventMouseMotion:
-		for index in range(event_ids.size()):
-			if story_lab_row_rect(index).has_point(event.position):
+		for slot in range(7):
+			var index := story_lab_scroll + slot
+			if index < event_ids.size() and story_lab_row_rect(slot).has_point(event.position):
 				story_lab_selected = index
 				break
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -2719,8 +2853,9 @@ func handle_story_lab_input(event: InputEvent) -> void:
 			story_lab_open = false
 			queue_redraw()
 			return
-		for index in range(event_ids.size()):
-			if story_lab_row_rect(index).has_point(event.position):
+		for slot in range(7):
+			var index := story_lab_scroll + slot
+			if index < event_ids.size() and story_lab_row_rect(slot).has_point(event.position):
 				story_lab_selected = index
 				start_story_event(event_ids[index], true)
 				return
@@ -2750,6 +2885,130 @@ func handle_story_lab_input(event: InputEvent) -> void:
 			start_story_event(event_ids[story_lab_selected], true)
 		elif event.button_index == controller_button("language"):
 			toggle_language()
+	ensure_story_lab_selection_visible()
+	queue_redraw()
+
+
+func open_story_log(from_title: bool) -> void:
+	story_log_open = true
+	story_log_return_to_title = from_title
+	story_log_selected = clampi(story_log_selected, 0, maxi(0, StoryCatalog.event_ids().size() - 1))
+	if not story_log_selected_unlocked():
+		var ids := StoryCatalog.event_ids()
+		for index in range(ids.size()):
+			if achievements.has_story_event(ids[index]):
+				story_log_selected = index
+				break
+	ensure_story_log_selection_visible()
+	settings_open = false
+	achievements_open = false
+	message_time = 0.0
+	clear_comms()
+	end_charge()
+	synth.confirm()
+	queue_redraw()
+
+
+func close_story_log() -> void:
+	story_log_open = false
+	story_log_return_to_title = false
+	synth.click()
+	queue_redraw()
+
+
+func story_log_row_rect(slot: int) -> Rect2:
+	return Rect2(48, 134 + slot * 66, 474, 56)
+
+
+func ensure_story_log_selection_visible() -> void:
+	const VISIBLE_ROWS := 7
+	if story_log_selected < story_log_scroll:
+		story_log_scroll = story_log_selected
+	elif story_log_selected >= story_log_scroll + VISIBLE_ROWS:
+		story_log_scroll = story_log_selected - VISIBLE_ROWS + 1
+	story_log_scroll = clampi(story_log_scroll, 0, maxi(0, StoryCatalog.event_ids().size() - VISIBLE_ROWS))
+
+
+func story_log_selected_unlocked() -> bool:
+	var ids := StoryCatalog.event_ids()
+	return not ids.is_empty() and achievements.has_story_event(ids[clampi(story_log_selected, 0, ids.size() - 1)])
+
+
+func replay_story_log_selection() -> bool:
+	var ids := StoryCatalog.event_ids()
+	if ids.is_empty() or not story_log_selected_unlocked():
+		synth.error()
+		return false
+	return start_story_event(ids[story_log_selected], false, true)
+
+
+func handle_story_log_input(event: InputEvent) -> void:
+	var ids := StoryCatalog.event_ids()
+	if ids.is_empty():
+		close_story_log()
+		return
+	if event is InputEventMouseMotion:
+		for slot in range(7):
+			var index := story_log_scroll + slot
+			if index < ids.size() and story_log_row_rect(slot).has_point(event.position):
+				story_log_selected = index
+				break
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+			return
+		if story_log_close_rect.has_point(event.position):
+			close_story_log()
+			return
+		if story_log_replay_rect.has_point(event.position):
+			replay_story_log_selection()
+			return
+		for slot in range(7):
+			var index := story_log_scroll + slot
+			if index < ids.size() and story_log_row_rect(slot).has_point(event.position):
+				story_log_selected = index
+				synth.click()
+				break
+	elif event is InputEventScreenTouch and event.pressed:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+		elif story_log_close_rect.has_point(event.position):
+			close_story_log()
+		elif story_log_replay_rect.has_point(event.position):
+			replay_story_log_selection()
+		else:
+			for slot in range(7):
+				var index := story_log_scroll + slot
+				if index < ids.size() and story_log_row_rect(slot).has_point(event.position):
+					story_log_selected = index
+					break
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_ESCAPE, KEY_J]:
+			close_story_log()
+		elif event.keycode == KEY_L:
+			toggle_language()
+		elif event.keycode in [KEY_UP, KEY_W]:
+			story_log_selected = wrapi(story_log_selected - 1, 0, ids.size())
+			synth.click()
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			story_log_selected = wrapi(story_log_selected + 1, 0, ids.size())
+			synth.click()
+		elif event.keycode in [KEY_ENTER, KEY_SPACE]:
+			replay_story_log_selection()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("back"):
+			close_story_log()
+		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
+			story_log_selected = wrapi(story_log_selected - 1, 0, ids.size())
+			synth.click()
+		elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
+			story_log_selected = wrapi(story_log_selected + 1, 0, ids.size())
+			synth.click()
+		elif event.button_index == controller_button("primary"):
+			replay_story_log_selection()
+		elif event.button_index == controller_button("language"):
+			toggle_language()
+	ensure_story_log_selection_visible()
 	queue_redraw()
 
 
@@ -3072,7 +3331,10 @@ func _draw() -> void:
 	if story_lab_open:
 		draw_story_lab()
 		return
-	if story_event_open and story_event_from_lab:
+	if story_log_open:
+		draw_story_log()
+		return
+	if story_event_open and (story_event_from_lab or story_event_from_log):
 		draw_story_preview_stage()
 		draw_story_event_overlay()
 		return
@@ -3143,9 +3405,13 @@ func draw_story_lab() -> void:
 		draw_string(Palette.UI_FONT, Vector2(54, 150), "NO STORY EVENTS", HORIZONTAL_ALIGNMENT_LEFT, 500, 18, Palette.CORAL)
 		return
 	story_lab_selected = clampi(story_lab_selected, 0, event_ids.size() - 1)
-	for index in range(event_ids.size()):
+	ensure_story_lab_selection_visible()
+	for slot in range(7):
+		var index := story_lab_scroll + slot
+		if index >= event_ids.size():
+			break
 		var definition := StoryCatalog.event(event_ids[index])
-		var rect := story_lab_row_rect(index)
+		var rect := story_lab_row_rect(slot)
 		var selected := index == story_lab_selected
 		var accent := Palette.VIOLET if selected else Palette.CYAN
 		draw_machine_plate(rect, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(accent, 0.82 if selected else 0.26), 7.0, 2.0 if selected else 1.0)
@@ -3163,6 +3429,62 @@ func draw_story_lab() -> void:
 		draw_string(DisplayFont, preview_rect.position + Vector2(28, 232), str(first_line.get("speaker_ja" if is_japanese else "speaker_en", "")), HORIZONTAL_ALIGNMENT_LEFT, preview_rect.size.x - 56, 13, Palette.AMBER)
 		draw_multiline_string(Palette.UI_FONT, preview_rect.position + Vector2(28, 270), str(first_line.get("text_ja" if is_japanese else "text_en", "")), HORIZONTAL_ALIGNMENT_LEFT, preview_rect.size.x - 56, 15, 4, Palette.PAPER)
 	draw_string(DisplayFont, Vector2(604, 560), loc("ENTER / クリック：再生    ↑↓：選択    L：言語", "ENTER / CLICK: PLAY    ↑↓: SELECT    L: LANGUAGE"), HORIZONTAL_ALIGNMENT_LEFT, 620, 12, Palette.MINT)
+
+
+func draw_story_log() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.006, 0.014, 0.032, 0.985))
+	for index in range(8):
+		var radius := 120.0 + index * 43.0
+		draw_arc(Vector2(1110, 360), radius, -PI * 0.86 + animation_time * 0.025, PI * 0.64 + animation_time * 0.025, 64, Palette.with_alpha(Palette.CYAN if index % 2 == 0 else Palette.VIOLET, 0.09), 2.0)
+	draw_rect(Rect2(0, 0, 1280, 6), Palette.CYAN)
+	draw_string(DisplayFont, Vector2(48, 52), loc("会話記録 // 回収メモリ", "STORY LOG // RECOVERED MEMORY"), HORIZONTAL_ALIGNMENT_LEFT, 700, 24, Palette.CYAN)
+	var total := StoryCatalog.event_ids().size()
+	var recovered: int = achievements.story_archive_ids.size()
+	draw_string(Palette.UI_FONT, Vector2(50, 84), loc("回収済み %d / %d　選択した会話は何度でも再生できます" % [recovered, total], "RECOVERED %d / %d · UNLOCKED SCENES MAY BE REPLAYED" % [recovered, total]), HORIZONTAL_ALIGNMENT_LEFT, 760, 14, Palette.MUTED)
+	draw_campaign_button(story_language_rect, loc("日本語 / EN", "EN / 日本語"), Palette.CYAN, false)
+	draw_campaign_button(story_log_close_rect, loc("閉じる  J", "CLOSE  J"), Palette.MUTED, false)
+	var ids := StoryCatalog.event_ids()
+	if ids.is_empty():
+		return
+	ensure_story_log_selection_visible()
+	for slot in range(7):
+		var index := story_log_scroll + slot
+		if index >= ids.size():
+			break
+		var event_id := ids[index]
+		var definition := StoryCatalog.event(event_id)
+		var unlocked: bool = achievements.has_story_event(event_id)
+		var selected := index == story_log_selected
+		var rect := story_log_row_rect(slot)
+		var accent := Palette.CYAN if unlocked else Palette.MUTED
+		draw_machine_plate(rect, Palette.with_alpha(Palette.PANEL, 0.96), Palette.with_alpha(accent, 0.8 if selected else 0.24), 7.0, 2.0 if selected else 1.0)
+		draw_string(DisplayFont, rect.position + Vector2(16, 23), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, 38, 11, accent)
+		var title := str(definition.get("title_ja" if is_japanese else "title_en", event_id)) if unlocked else loc("未回収記録", "UNRECOVERED LOG")
+		draw_string(DisplayFont, rect.position + Vector2(58, 24), title, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 74, 13, Palette.PAPER if unlocked and selected else Palette.MUTED)
+		var chapter := str(definition.get("chapter", "story")).to_upper() if unlocked else "LOCKED"
+		draw_string(Palette.UI_FONT, rect.position + Vector2(58, 44), chapter, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 74, 9, accent)
+	var selected_id := ids[clampi(story_log_selected, 0, ids.size() - 1)]
+	var selected_definition := StoryCatalog.event(selected_id)
+	var selected_unlocked: bool = achievements.has_story_event(selected_id)
+	var panel := Rect2(552, 134, 676, 432)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.INK, 0.98), Palette.with_alpha(Palette.VIOLET if selected_unlocked else Palette.MUTED, 0.54), 14.0, 2.0)
+	if not selected_unlocked:
+		draw_string(DisplayFont, panel.position + Vector2(0, 176), loc("記録はまだ回収されていない", "THIS MEMORY HAS NOT BEEN RECOVERED"), HORIZONTAL_ALIGNMENT_CENTER, panel.size.x, 19, Palette.MUTED)
+		draw_string(Palette.UI_FONT, panel.position + Vector2(70, 220), loc("本編で該当イベントを見ると、ここから再生できます。", "ENCOUNTER THIS EVENT IN THE CAMPAIGN TO REPLAY IT HERE."), HORIZONTAL_ALIGNMENT_CENTER, panel.size.x - 140, 13, Palette.MUTED)
+	else:
+		draw_string(DisplayFont, panel.position + Vector2(30, 44), str(selected_definition.get("title_ja" if is_japanese else "title_en", selected_id)), HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 60, 20, Palette.PAPER)
+		draw_multiline_string(Palette.UI_FONT, panel.position + Vector2(30, 82), str(selected_definition.get("context_ja" if is_japanese else "context_en", "")), HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 60, 14, 3, Palette.MUTED)
+		var lines: Array = selected_definition.get("lines", [])
+		var y := panel.position.y + 166.0
+		for line_index in range(mini(4, lines.size())):
+			var entry: Dictionary = lines[line_index]
+			var role := str(entry.get("role", "support"))
+			var accent := Palette.CORAL if role == "enemy" else Palette.AMBER if role == "player" else Palette.CYAN
+			draw_string(DisplayFont, Vector2(panel.position.x + 30, y), str(entry.get("speaker_ja" if is_japanese else "speaker_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 190, 12, accent)
+			draw_multiline_string(Palette.UI_FONT, Vector2(panel.position.x + 224, y), str(entry.get("text_ja" if is_japanese else "text_en", "")), HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 254, 12, 2, Palette.PAPER)
+			y += 61.0
+	draw_campaign_button(story_log_replay_rect, loc("決定  会話を再生", "CONFIRM  REPLAY SCENE") if selected_unlocked else loc("本編で回収すると解禁", "LOCKED UNTIL RECOVERED"), Palette.MINT if selected_unlocked else Palette.MUTED, selected_unlocked)
+	draw_string(Palette.UI_FONT, Vector2(48, 626), loc("↑↓：記録選択　ENTER：再生　L：言語　J / ESC：閉じる", "↑↓: SELECT · ENTER: REPLAY · L: LANGUAGE · J / ESC: CLOSE"), HORIZONTAL_ALIGNMENT_LEFT, 716, 12, Palette.MUTED)
 
 
 func draw_story_preview_stage() -> void:
@@ -3194,6 +3516,7 @@ func draw_story_event_overlay() -> void:
 	var line := str(entry.get("text_ja" if is_japanese else "text_en", ""))
 	var lines: Array = definition.get("lines", [])
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.005, 0.014, 0.58))
+	draw_rect(Rect2(0, 0, 1280, 116), Color(0.006, 0.014, 0.032, 0.985))
 	draw_rect(Rect2(0, 0, 1280, 7), accent)
 	draw_string(DisplayFont, Vector2(72, 48), title, HORIZONTAL_ALIGNMENT_LEFT, 730, 18, Palette.PAPER)
 	draw_multiline_string(Palette.UI_FONT, Vector2(74, 80), context, HORIZONTAL_ALIGNMENT_LEFT, 730, 13, 2, Palette.MUTED)
@@ -3241,6 +3564,7 @@ func draw_title_screen() -> void:
 		loc("設定", "SETTINGS"),
 		loc("実績", "RECORDS"),
 		loc("制作記録", "CREDITS"),
+		loc("会話", "LOG"),
 		loc("アートワーク", "ARTWORK"),
 	]
 	for index in range(title_button_count()):
@@ -3256,7 +3580,7 @@ func draw_title_screen() -> void:
 func draw_title_button(index: int, label: String) -> void:
 	var rect := title_button_rects[index]
 	var selected := title_selected == index
-	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.AMBER if index == 3 else Palette.VIOLET if index == 4 else Palette.MINT
+	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.AMBER if index == 3 else Palette.VIOLET if index == 4 else Palette.MINT if index == 5 else Palette.PAPER
 	draw_machine_plate(rect, Palette.with_alpha(accent, 0.7 if selected and index == 0 else 0.18 if selected else 0.055), Palette.with_alpha(accent, 1.0 if selected else 0.38), 10.0, 2.0 if selected else 1.0)
 	draw_rect(Rect2(rect.position + Vector2(10, 9), Vector2(4, rect.size.y - 18)), Palette.with_alpha(accent, 0.92 if selected else 0.32))
 	draw_string(DisplayFont, rect.position + Vector2(20 if rect.size.x < 110 else 30, 39 if rect.size.y >= 60 else 33), label, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - (36 if rect.size.x < 110 else 58), 18 if rect.size.y >= 60 else 12 if rect.size.x < 110 else 14, Palette.INK if selected and index == 0 else Palette.PAPER)
@@ -3661,6 +3985,7 @@ func draw_campaign_map() -> void:
 	var build_text := loc("統合コア %d/6　強化LV %d/%d　CHARGE %s", "INTEGRATED CORES %d/6  ·  UPGRADE LV %d/%d  ·  CHARGE %s") % [run.beast_cores.size(), run.skill_points_bought(), run.total_possible_ranks(), format_number(run.credits)]
 	draw_string(DisplayFont, Vector2(62, 632), build_text, HORIZONTAL_ALIGNMENT_LEFT, 780, 14, Palette.AMBER if not run.beast_cores.is_empty() else Palette.MUTED)
 	draw_campaign_button(respec_rect, loc("T  スキルツリー", "T  SKILL TREES"), Palette.MINT, false)
+	draw_campaign_button(story_log_rect, loc("J  会話記録", "J  STORY LOG"), Palette.CYAN, false)
 	draw_string(Palette.UI_FONT, Vector2(62, 660), loc("武器・CHARGE・コアは全ステージへ引き継がれ、自動保存される", "WEAPONS, CHARGE AND CORES PERSIST ACROSS EVERY HUNT AND AUTOSAVE"), HORIZONTAL_ALIGNMENT_LEFT, 850, 11, Palette.MUTED)
 
 func draw_campaign_progress(origin: Vector2, accent: Color) -> void:

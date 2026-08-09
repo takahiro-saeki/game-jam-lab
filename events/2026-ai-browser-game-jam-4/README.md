@@ -29,6 +29,7 @@ VOLT NOMAD is an active mechanical-beast clicker where every attack produces its
 - The application opens directly on the VOLT NOMAD title screen; the retired prototype launcher is not part of the game.
 - Press `Esc`, gamepad `B`, or use **Title** to return to the title screen.
 - Japanese is selected automatically on Japanese devices. Use the language switch or press `L` / gamepad `View/Share` to change between Japanese and English.
+- Story scenes pause combat and can be advanced, skipped, or switched between Japanese and English at any line. Press `J` on the hunt map or choose **Story Log** on the title screen to replay recovered conversations; unrecovered scenes remain spoiler-hidden.
 
 - Choose any three of six mechanical beasts, defeat one of two abyssal bosses, and reach the normal ending. Continue with the same build through the remaining hunts, enhanced boss, and ARCH SINGULARITY. After its credits, Continue returns to a persistent choice between ascending and answering the deeper signal.
 - Press the large **CHARGE ATTACK** button, `Space`, `Enter` / `X`, right-click, or the configured gamepad action. One input always produces exactly one manual command; holding a key never creates hidden auto-clicks.
@@ -41,7 +42,7 @@ VOLT NOMAD is an active mechanical-beast clicker where every attack produces its
 - Ten persistent hunt records cover normal campaign goals, including all 317 skill ranks. Infinite Mode is an optional CHARGE workshop with escalating waves and no exclusive achievements or wave-gated abilities.
 - Open a tree by clicking one of the five gear cards, pressing `1`–`5` / `T`, or gamepad `Menu`. Navigate nodes with the D-pad, switch gear with `Q` / `E` or shoulder buttons, and purchase with `Enter` / gamepad `A`.
 - TIER II unlocks after the first normal boss; TIER III unlocks after all six beast cores. ARCH SINGULARITY unlocks permanent TIER IV OVERLIMIT restoration. Switch the visible tier with `Z` / `X` or the mapped language/active button while the tree is open.
-- OVERLIMIT has no equipment slots or exclusions: all five acquired rewrites remain active simultaneously. The first is free with the recovered Singularity Residue; later restorations cost escalating CHARGE and survive standard skill respec.
+- OVERLIMIT has no equipment slots or exclusions: all five acquired rewrites remain active simultaneously. Every restoration costs the same 40M CHARGE and survives standard skill respec.
 - Respec all five trees for free from the hunt map. Exact current and maximum enemy HP are always shown beside the percentage gauge.
 - Each beast changes the optimal rhythm through positive targets: timed armor breaks, CHARGE milestones, upgrade overdrive, manual/AUTO chains, drone marking, and analysis-guaranteed criticals.
 - Every defeated beast grants a named core automatically. Its rule becomes a permanent player ability for later battles.

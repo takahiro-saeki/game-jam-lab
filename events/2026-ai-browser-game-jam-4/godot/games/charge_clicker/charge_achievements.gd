@@ -21,10 +21,21 @@ const DEFINITIONS := [
 
 var unlocked_ids: Array[String] = []
 var artwork_gallery_unlocked := false
+var story_archive_ids: Array[String] = []
 
 func reset_for_tests() -> void:
 	unlocked_ids.clear()
 	artwork_gallery_unlocked = false
+	story_archive_ids.clear()
+
+func archive_story_event(event_id: String) -> bool:
+	if event_id.is_empty() or event_id in story_archive_ids:
+		return false
+	story_archive_ids.append(event_id)
+	return true
+
+func has_story_event(event_id: String) -> bool:
+	return event_id in story_archive_ids
 
 func evaluate(run, route) -> Array[Dictionary]:
 	if route.final_boss_defeated:
@@ -82,21 +93,29 @@ func unlock_artwork_gallery() -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 1,
+		"version": 2,
 		"unlocked_ids": unlocked_ids.duplicate(),
 		"artwork_gallery_unlocked": artwork_gallery_unlocked,
+		"story_archive_ids": story_archive_ids.duplicate(),
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
-	if int(data.get("version", 0)) != 1:
+	var version := int(data.get("version", 0))
+	if version not in [1, 2]:
 		return false
 	unlocked_ids.clear()
+	story_archive_ids.clear()
 	artwork_gallery_unlocked = bool(data.get("artwork_gallery_unlocked", false))
 	for value in data.get("unlocked_ids", []):
 		var id := str(value)
 		if definition(id).is_empty() or id in unlocked_ids:
 			continue
 		unlocked_ids.append(id)
+	if version >= 2:
+		for value in data.get("story_archive_ids", []):
+			var event_id := str(value)
+			if not event_id.is_empty() and event_id not in story_archive_ids:
+				story_archive_ids.append(event_id)
 	return true
 
 func definition(id: String) -> Dictionary:

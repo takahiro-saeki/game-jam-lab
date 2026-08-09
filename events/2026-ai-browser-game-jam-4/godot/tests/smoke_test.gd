@@ -192,7 +192,7 @@ func test_charge_clicker_v5() -> void:
 	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
-	check(game.title_screen_open and game.title_button_rects.size() == 6 and game.title_button_count() == 5, "VOLT NOMAD opens on a complete title screen without a retired Game Lab action")
+	check(game.title_screen_open and game.title_button_rects.size() == 7 and game.title_button_count() == 6, "VOLT NOMAD opens on a complete title screen with a player-facing story log and no retired Game Lab action")
 	game.open_audio_settings()
 	check(game.settings_open and game.settings_row_rects.size() == 5 and AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0, "settings expose saved audio and visual-comfort controls on separate buses")
 	game.close_audio_settings()
@@ -202,7 +202,7 @@ func test_charge_clicker_v5() -> void:
 	check(game.EndingIllustrations.size() == 4 and game.EndingIllustrations["dawn"].resource_path.ends_with("ending-core-dawn-v11.png"), "the true ending integrates four generated cinematic illustrations")
 	check(not game.open_artwork_gallery(), "the artwork archive cannot open before the real final boss is defeated")
 	game.achievements.unlock_artwork_gallery()
-	check(game.title_button_count() == 6 and game.open_artwork_gallery() and game.artwork_open and game.desired_bgm_key() == "artwork_gallery", "complete-clear records reveal a permanent title-screen artwork archive with independent music")
+	check(game.title_button_count() == 7 and game.open_artwork_gallery() and game.artwork_open and game.desired_bgm_key() == "artwork_gallery", "complete-clear records reveal a permanent title-screen artwork archive with independent music")
 	check(game.BossArtwork.size() == 10 and game.ArtworkGallery.size() == 14, "the complete-clear archive includes all six beasts, both abyssal bosses, ARCH and PRIME CURRENT")
 	game.artwork_selected = 13
 	check(game.artwork_page_start() == 12 and game.artwork_index_for_slot(0) == 12 and game.artwork_index_for_slot(2) == -1, "the expanded archive pages fourteen memories without exposing empty cards")
@@ -228,7 +228,15 @@ func test_charge_clicker_v5() -> void:
 	game.debug_show_dialogue("試験話者", "TEST SPEAKER", "任意本文", "ARBITRARY BODY", 8.0)
 	check(game.comms_speaker_ja == "試験話者" and game.comms_text_en == "ARBITRARY BODY" and is_equal_approx(game.comms_time, 8.0), "debug tooling can display an arbitrary localized dialogue box without mutating campaign state")
 	game.clear_comms()
-	check(ChargeStoryCatalog.validate().is_empty() and ChargeStoryCatalog.event_ids().size() == 5, "the story vertical-slice catalog has complete bilingual metadata and dialogue")
+	check(ChargeStoryCatalog.validate().is_empty() and ChargeStoryCatalog.event_ids().size() == 32, "the complete campaign story catalog has thirty-two bilingual scenes")
+	var all_progression_story_ids_exist := true
+	for stage_id in ChargeStageCatalog.stage_ids():
+		all_progression_story_ids_exist = all_progression_story_ids_exist and not ChargeStoryCatalog.event("hunt.%s.encounter" % stage_id).is_empty() and not ChargeStoryCatalog.event("hunt.%s.defeat" % stage_id).is_empty()
+	for boss_id in ChargeStageCatalog.boss_ids():
+		all_progression_story_ids_exist = all_progression_story_ids_exist and not ChargeStoryCatalog.event("boss.%s.encounter" % boss_id).is_empty() and not ChargeStoryCatalog.event("boss.%s.defeat" % boss_id).is_empty()
+	for required_story_id in ["arch.encounter", "arch.phase_2", "arch.phase_3", "arch.defeat", "prime.signal_answer", "prime.form_1", "prime.form_2", "prime.form_3", "prime.defeat", "ending.true_dawn"]:
+		all_progression_story_ids_exist = all_progression_story_ids_exist and not ChargeStoryCatalog.event(required_story_id).is_empty()
+	check(all_progression_story_ids_exist, "every freely ordered hunt, boss phase, route choice and ending resolves to an authored scene")
 	var story_session_before: float = float(game.run.session_elapsed)
 	check(game.start_story_event("hunt.gearmaw.encounter") and game.story_event_open and game.current_story_line().role == "support", "the reusable story player opens GEARMAW's blocking encounter scene")
 	game._process(1.0)
@@ -237,6 +245,13 @@ func test_charge_clicker_v5() -> void:
 	check(game.story_event_line_index == 1 and game.current_story_line().role == "enemy", "story events advance deterministically across speaker roles")
 	game.close_story_event(true)
 	check(not game.story_event_open and game.story_event_definition.is_empty(), "story events can be skipped without mutating campaign state")
+	check(game.campaign_route.has_seen_story_event("hunt.gearmaw.encounter") and game.achievements.has_story_event("hunt.gearmaw.encounter"), "campaign triggers and the permanent story archive record recovered scenes independently")
+	game.open_story_log(false)
+	check(game.story_log_open and game.story_log_selected_unlocked(), "the player-facing story log exposes recovered conversations")
+	check(game.replay_story_log_selection() and game.story_event_from_log, "recovered conversations can be replayed without progression mutations")
+	game.close_story_event(true)
+	check(game.story_log_open, "closing an archived replay returns to the story log")
+	game.close_story_log()
 	check(game.BGMStreams.size() == 18 and game.desired_bgm_key() == "map", "music routing includes separate title/map slots, independent endings, artwork and all three PRIME CURRENT forms")
 	check(str(game.BGMStreams["title"].resource_path).ends_with("awakening_below.mp3") and str(game.BGMStreams["map"].resource_path).ends_with("six_core_descent.mp3"), "selected Awakening Below A and Six-Core Descent B masters are assigned to title and map")
 	var final_form_stream_paths := {}
@@ -305,7 +320,11 @@ func test_charge_clicker_v5() -> void:
 	game.start_final_defeat_cinematic()
 	check(game.final_defeat_cinematic_open and not game.epilogue_open and game.desired_bgm_key() == "prime_current_form_3", "real-final victory enters a timed collapse cinematic before the true ending")
 	game.finish_final_defeat_cinematic()
-	check(not game.final_defeat_cinematic_open and game.epilogue_open and game.desired_bgm_key() == "ending_true", "finishing the explosion sequence crossfades into the dedicated true-ending presentation")
+	check(not game.final_defeat_cinematic_open and game.story_event_open and game.story_event_id == "prime.defeat", "finishing the explosion sequence opens the final bilingual conversation before the ending")
+	game.close_story_event(true)
+	check(game.story_event_open and game.story_event_id == "ending.true_dawn", "the final conversation flows into the two-voice dawn scene")
+	game.close_story_event(true)
+	check(game.epilogue_open and game.desired_bgm_key() == "ending_true", "the completed story sequence crossfades into the dedicated true-ending presentation")
 	game.epilogue_open = false
 	game.open_gear_tree(2)
 	check(game.gear_tree_open and game.selected_tree_skills().size() == 7, "combat UI opens a dedicated, navigable skill tree for the selected gear")
@@ -386,6 +405,8 @@ func test_charge_clicker_v5() -> void:
 	achievement_run.refresh_stats()
 	var achievement_state := ChargeAchievements.new()
 	achievement_state.evaluate(achievement_run, achievement_route)
+	route.mark_story_event_seen("arch.encounter")
+	achievement_state.archive_story_event("arch.encounter")
 	check(achievement_state.is_unlocked("all_skills") and achievement_state.unlocked_count() == ChargeAchievements.DEFINITIONS.size(), "standard records include full skill mastery without an Infinite-exclusive achievement")
 	check(not achievement_state.artwork_gallery_unlocked and achievement_state.evaluate(achievement_run, final_route).is_empty() and achievement_state.artwork_gallery_unlocked, "a defeated real final boss migrates existing saves into the permanent artwork unlock")
 
@@ -398,6 +419,7 @@ func test_charge_clicker_v5() -> void:
 	check(save.load_bundle_into(restored_state, restored_route, restored_achievements), "v8 campaign save restores successfully")
 	check("impact_guidance" in restored_state.beast_cores and restored_state.lifetime_charge == state.lifetime_charge and restored_route.phase == restored_route.RoutePhase.SINGULARITY, "save preserves CHARGE, repeatable upgrades, cores and route position")
 	check(restored_achievements.is_unlocked("all_skills") and restored_achievements.artwork_gallery_unlocked, "achievement and artwork records persist independently of campaign state")
+	check(restored_route.has_seen_story_event("arch.encounter") and restored_achievements.has_story_event("arch.encounter"), "campaign story triggers and the permanent conversation archive both survive save restoration")
 	var telemetry := ChargeClickerState.new()
 	telemetry.set_playtest_mode("benchmark")
 	telemetry.begin_stage("gearmaw", "manual", 1.0, 1.0, 0)

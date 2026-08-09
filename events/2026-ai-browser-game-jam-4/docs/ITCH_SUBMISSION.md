@@ -53,6 +53,7 @@ CHARGE is both the game's resource and its central verb. A click is an attack, a
 - **Enter / controller A:** Confirm
 - **Esc / controller Back:** Return
 - **T:** Open the gear tree when available
+- **J:** Open the recovered conversation archive from the hunt map
 - **L:** Switch Japanese / English
 - **M:** Toggle music
 - Audio, effects, screen shake, flashes, and language can also be changed from **Settings**.
