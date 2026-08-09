@@ -478,11 +478,21 @@ func test_charge_clicker_v5() -> void:
 	var final_form_stream_paths := {}
 	for final_music_key in ["prime_current_form_1", "prime_current_form_2", "prime_current_form_3"]:
 		final_form_stream_paths[(game.BGMStreams[final_music_key] as AudioStream).resource_path] = true
-	check(final_form_stream_paths.size() == 3, "all three real-final forms already play audibly different provisional masters")
+	check(final_form_stream_paths.size() == 3, "all three real-final forms play audibly different selected masters")
+	var expected_final_master_files := {
+		"prime_current_form_1": "prime_current_crownless_protocol.mp3",
+		"prime_current_form_2": "prime_current_null_cathedral.mp3",
+		"prime_current_form_3": "prime_current_fallen_seraph.mp3",
+	}
+	var selected_final_masters_match := true
+	for final_music_key in expected_final_master_files:
+		selected_final_masters_match = selected_final_masters_match and (game.BGMStreams[final_music_key] as AudioStream).resource_path.ends_with(str(expected_final_master_files[final_music_key]))
+	check(selected_final_masters_match, "the selected B/A/A Suno masters are assigned to PRIME CURRENT forms one through three")
 	var normal_credits_path := (game.BGMStreams["ending_normal"] as AudioStream).resource_path
 	var true_credits_path := (game.BGMStreams["ending_true"] as AudioStream).resource_path
 	var artwork_music_path := (game.BGMStreams["artwork_gallery"] as AudioStream).resource_path
 	check(normal_credits_path != true_credits_path and artwork_music_path not in [normal_credits_path, true_credits_path], "normal credits, true credits and artwork archive use three independent audio masters")
+	check(artwork_music_path.ends_with("recovered_memory_archive.mp3"), "the selected Suno A master is assigned exclusively to the artwork archive")
 	var true_ending_stream := game.BGMStreams.get("ending_true") as AudioStream
 	check(true_ending_stream != null and true_ending_stream.resource_path.ends_with("the_current_remembers.mp3"), "the approved three-minute Suno B master is assigned to the true ending")
 	var unique_encounter_music := {}

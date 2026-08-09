@@ -64,8 +64,10 @@ Five original instrumental tracks were generated in the user's Suno account unde
 
 On August 6, 2026, twelve additional instrumental candidates were generated as A/B pairs for the six encounters that did not yet have an exclusive track: VAULTBACK, PYRE WYRM, RELAY HYDRA, SWARM MATRIARCH, PHASE MANTIS, and GRID LEECH. Because Suno's automatic duration produced several clips that were too short for gameplay, a second pass used Advanced mode, Instrumental, explicit seamless-loop language, and a custom 3:00 duration. That pass generated twelve candidates plus four rerolls for two early-ending outputs. The user selected VAULTBACK A, PYRE WYRM B, RELAY HYDRA A, SWARM MATRIARCH A, PHASE MANTIS B, and GRID LEECH A. Those six selected WAV masters now ship as processed Ogg derivatives, giving all nine enemy encounters a unique track and bringing the soundtrack to eleven runtime tracks including map and ending music. Exact prompts, durations, source URLs, rejected short outputs, and song IDs are recorded in [`SUNO_MUSIC_BRIEF.md`](SUNO_MUSIC_BRIEF.md).
 
+On August 8–9, 2026, the user selected five further masters: TRUE ENDING B, PRIME CURRENT form one B, form two A, form three A, and ARTWORK A. The three boss forms now change music independently and the gallery no longer borrows map or ending music. These five canonical 48 kHz stereo MP3 files bring the runtime soundtrack to sixteen unique tracks. Exact source URLs, song IDs, durations, A/B decisions, and filenames are recorded in [`SUNO_MUSIC_BRIEF.md`](SUNO_MUSIC_BRIEF.md).
+
 - Untouched masters: 48 kHz / 16-bit / stereo WAV downloads retained outside the repository by the user.
-- Shipped derivatives: `godot/assets/audio/project_charge/*.ogg`.
+- Shipped derivatives: `godot/assets/audio/project_charge/*.ogg` and the five selected v8 `*.mp3` masters.
 - Processing: fixed per-track gain to approximately -18 LUFS, Ogg Vorbis quality 5, no stems, remixing, or generated vocals.
 - Runtime use: full-track looping, 0.85-second scene crossfades, and an additional -10 dB BGM playback level so synthesized attacks and alarms remain readable.
 

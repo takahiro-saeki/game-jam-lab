@@ -27,18 +27,17 @@ const BGMStreams := {
 	"singularity": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
 	"ending_normal": preload("res://assets/audio/project_charge/core_of_dawn.ogg"),
 	# Dedicated composition slots. The true-ending master is the approved
-	# three-minute Suno B arrangement; the remaining v8 slots stay independent.
+	# three-minute Suno B arrangement; world-engine credits remain independent.
 	"ending_world": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
 	"ending_true": preload("res://assets/audio/project_charge/the_current_remembers.mp3"),
-	# Independent routing slots for the three bodies of PRIME CURRENT. These
-	# provisional masters are deliberately different until their dedicated Suno
-	# tracks are selected, so every phase transition is already audible in-game.
-	"prime_current_form_1": preload("res://assets/audio/project_charge/forge_of_breakpoints.ogg"),
-	"prime_current_form_2": preload("res://assets/audio/project_charge/critical_parallax.ogg"),
-	"prime_current_form_3": preload("res://assets/audio/project_charge/arch_singularity.ogg"),
-	# The archive has its own replaceable slot instead of borrowing true-ending
-	# music. A calm map master is used only as the provisional gallery track.
-	"artwork_gallery": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
+	# Human-selected Suno masters for the three bodies of PRIME CURRENT:
+	# Crownless Protocol B, Null Cathedral A, and Fallen Seraph Current A.
+	"prime_current_form_1": preload("res://assets/audio/project_charge/prime_current_crownless_protocol.mp3"),
+	"prime_current_form_2": preload("res://assets/audio/project_charge/prime_current_null_cathedral.mp3"),
+	"prime_current_form_3": preload("res://assets/audio/project_charge/prime_current_fallen_seraph.mp3"),
+	# The archive uses its selected reflective A master and never borrows combat
+	# or true-ending music.
+	"artwork_gallery": preload("res://assets/audio/project_charge/recovered_memory_archive.mp3"),
 }
 # Every enemy encounter has its own mastered track. The generic keys remain the
 # dedicated Gearmaw and Thermal Titan tracks as well as safe fallback values.

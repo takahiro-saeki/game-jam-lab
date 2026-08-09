@@ -1,8 +1,8 @@
 # PROJECT CHARGE — Suno BGM制作ブリーフ
 
-## 採用・実装結果（2026-08-06）
+## 採用・実装結果（2026-08-09）
 
-全11曲の採用案をユーザーが試聴して確定し、SunoのWAV原音からGodot/Web用Ogg Vorbisへ変換した。六体の機械魔獣、二体の通常ボス、真ボスはすべて固有BGMを持ち、地図・ツリーとエンディングにも独立した曲を割り当てている。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
+全16曲の採用案をユーザーが試聴して確定した。六体の機械魔獣、二体の通常ボス、真ボス、PRIME CURRENTの三形態はすべて固有BGMを持ち、地図・ツリー、通常エンディング、真エンディング、アートワークにも独立した曲を割り当てている。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
 
 | 用途 | 採用曲 | 案 | Suno原曲 | ゲーム用ファイル | 長さ |
 |---|---|---:|---|---|---:|
@@ -16,9 +16,14 @@
 | グリッド・リーチ | Siphon Breakpoint | A | [357a05b0](https://suno.com/song/357a05b0-1683-4638-9e86-e253e9e92123) | `siphon_breakpoint.ogg` | 3:00 |
 | サーマル・タイタン／強化ボス | Forge of Breakpoints | B | [939de7cd](https://suno.com/song/939de7cd-8c5b-45cf-bd1c-083f2e424ffb) | `forge_of_breakpoints.ogg` | 2:19 |
 | 真ボス | Arch Singularity | A | [79144c1c](https://suno.com/song/79144c1c-bc79-4873-a200-01cbe32b80e0) | `arch_singularity.ogg` | 2:11 |
-| 通常・真エンディング | Core of Dawn | A | [d196ebaf](https://suno.com/song/d196ebaf-3d80-4a38-8881-b3b0fba76023) | `core_of_dawn.ogg` | 2:20 |
+| 通常エンディング | Core of Dawn | A | [d196ebaf](https://suno.com/song/d196ebaf-3d80-4a38-8881-b3b0fba76023) | `core_of_dawn.ogg` | 2:20 |
+| 真エンディング | The Current Remembers | B | [41766ea9](https://suno.com/song/41766ea9-2ffe-489d-9daf-e723c62806c2) | `the_current_remembers.mp3` | 3:00 |
+| PRIME CURRENT 第1形態 | Crownless Protocol | B | [392a3fe3](https://suno.com/song/392a3fe3-a0cb-4ca6-93e1-6a44bbc92c82) | `prime_current_crownless_protocol.mp3` | 2:54 |
+| PRIME CURRENT 第2形態 | Null Cathedral Rotation | A | [17d510cb](https://suno.com/song/17d510cb-565b-4590-a0f5-810e9a3c7ea6) | `prime_current_null_cathedral.mp3` | 3:33 |
+| PRIME CURRENT 第3形態 | Fallen Seraph Current | A | [300a310f](https://suno.com/song/300a310f-b4f6-457e-856c-8062181b2da3) | `prime_current_fallen_seraph.mp3` | 2:59 |
+| アートワーク | Recovered Memory Archive | A | [892c19b0](https://suno.com/song/892c19b0-3412-4d35-b3c0-4585b2647a40) | `recovered_memory_archive.mp3` | 3:39 |
 
-原音は48 kHz / 16-bit / stereo WAV。波形のダイナミクスを変える再圧縮型ノーマライズは避け、曲ごとの固定ゲインで約 -18 LUFSへ統一してからVorbis quality 5へ変換した。追加6曲の変換後は -18.03〜-18.08 LUFS、全11曲で合計約30.3 MiB。元WAVはリポジトリへ含めず、各Oggのメタデータにタイトル、作者名 `NeoN Lament`、Suno song IDを保存している。
+初期11曲は48 kHz / 16-bit / stereo WAV原音に固定ゲインを適用して約 -18 LUFSへ揃え、Vorbis quality 5へ変換した。追加5曲はSunoの正規配信元から取得した48 kHz / stereo MP3をそのまま保持し、Godot側でループを有効化している。全曲の作者名は `NeoN Lament`。元WAVはリポジトリへ含めず、曲名、Suno song ID、採用案、ランタイム割り当てを本書に記録する。
 
 ## 共通方針
 
@@ -188,14 +193,18 @@ Custom 3:00、Instrumental。14枚をゆっくり眺められ、真エンディ�
 
 ### 形態別・アートワーク候補（2026-08-08）
 
-Suno v5.5 / Advanced / Instrumentalで各2案を生成。初回の第1形態2案はどちらも13秒だったため除外し、長尺R3を正式な比較対象にした。第2形態も初回Bが2:16だったため長尺R3へ統一した。ゲーム実装は選択前のため、各専用スロットに既存曲の仮マスターを割り当てている。
+Suno v5.5 / Advanced / Instrumentalで各2案を生成。初回の第1形態2案はどちらも13秒だったため除外し、長尺R3を正式な比較対象にした。第2形態も初回Bが2:16だったため長尺R3へ統一した。
 
 | 用途 | A | B |
 |---|---|---|
-| 第1形態 `Crownless Protocol` | [R3 A — 2:47](https://suno.com/song/97217474-0c7b-4566-9526-6caf83a7a2e0) | [R3 B — 2:54](https://suno.com/song/392a3fe3-a0cb-4ca6-93e1-6a44bbc92c82) |
-| 第2形態 `Null Cathedral Rotation` | [R3 A — 3:33](https://suno.com/song/17d510cb-565b-4590-a0f5-810e9a3c7ea6) | [R3 B — 3:18](https://suno.com/song/cc755273-ab5e-4ca2-a528-9ef043c90c23) |
-| 第3形態 `Fallen Seraph Current` | [A — 2:59](https://suno.com/song/300a310f-b4f6-457e-856c-8062181b2da3) | [B — 2:48](https://suno.com/song/4386e19a-0903-4a89-bb57-fd45793b7d35) |
-| アートワーク `Recovered Memory Archive` | [A — 3:39](https://suno.com/song/892c19b0-3412-4d35-b3c0-4585b2647a40) | [B — 3:18](https://suno.com/song/5b19e5cd-cb65-4ecc-829e-2d350d52d40c) |
+| 第1形態 `Crownless Protocol` | [R3 A — 2:47](https://suno.com/song/97217474-0c7b-4566-9526-6caf83a7a2e0) | **[R3 B — 2:54](https://suno.com/song/392a3fe3-a0cb-4ca6-93e1-6a44bbc92c82)（採用）** |
+| 第2形態 `Null Cathedral Rotation` | **[R3 A — 3:33](https://suno.com/song/17d510cb-565b-4590-a0f5-810e9a3c7ea6)（採用）** | [R3 B — 3:18](https://suno.com/song/cc755273-ab5e-4ca2-a528-9ef043c90c23) |
+| 第3形態 `Fallen Seraph Current` | **[A — 2:59](https://suno.com/song/300a310f-b4f6-457e-856c-8062181b2da3)（採用）** | [B — 2:48](https://suno.com/song/4386e19a-0903-4a89-bb57-fd45793b7d35) |
+| アートワーク `Recovered Memory Archive` | **[A — 3:39](https://suno.com/song/892c19b0-3412-4d35-b3c0-4585b2647a40)（採用）** | [B — 3:18](https://suno.com/song/5b19e5cd-cb65-4ecc-829e-2d350d52d40c) |
+
+### 形態別・アートワーク正式採用（2026-08-09）
+
+ユーザーレビューにより、第1形態B、第2形態A、第3形態A、アートワークAを正式採用した。各MP3は専用スロットへ実装済みで、形態遷移ごとにクロスフェードし、アートワーク画面では戦闘曲や真エンディング曲を流用しない。
 
 ### 地核機神エンド — `After the World Engine`
 
