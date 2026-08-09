@@ -228,3 +228,23 @@ Suno v5.5 / Advanced / Instrumental / Custom 3:00で生成。ユーザーレビ�
 | **B（正式採用）** | **3:00** | [The Current Remembers — True Ending 3M R2 B](https://suno.com/song/41766ea9-2ffe-489d-9daf-e723c62806c2) |
 
 予備として[R2 A（2:59）](https://suno.com/song/9c5f48f1-9e20-4df5-930a-29a5428d85ed)も保持する。初回抽選B（2:34）は尺要件を満たさないため選考対象外。
+
+## 単体製品化BGM更新 — タイトル / 深層討伐地図（2026-08-09）
+
+4ゲーム実験室を廃止してPROJECT CHARGE単体へ移行したため、タイトル画面と深層討伐地図を別々の専用曲にする。どちらもSuno v5.5 / Advanced / Instrumental / Custom 3:00でA・Bを生成し、選定後に既存の`title`と`map`スロットへ実装する。
+
+### タイトル画面 — `Awakening Below`
+
+静かだが記憶に残り、主人公ヴォルト・ノマドが地底へ降下する前の決意を伝える。戦闘曲ほど強くせず、最初の10秒で作品固有の四音モチーフを提示する。
+
+> Instrumental main-title loop for a premium pixel-art game about VOLT NOMAD, a lone humanoid machine hunter preparing to descend into a buried world of mechanical beasts. Exactly three minutes, 96 BPM, D minor opening toward a restrained F major glow. Begin within three seconds with a memorable four-note signal played by intimate glass-metal keys, then add a slow electrical heartbeat, distant piston ambience, warm analog bass and sparse high arpeggios. Ancient subterranean technology awakening, lonely determination, mystery and scale without sadness or combat aggression. Clear spacious mix, no vocals, no choir, no trailer orchestra, no huge impacts, no long ambient intro, no fade-out and no final cadence. Use evolving eight-to-sixteen-bar cells; the final electrical pulse must reconnect seamlessly to the opening signal.
+
+### 深層討伐地図 — `Six-Core Descent`
+
+6体から次の獲物とビルド経路を考える画面。タイトルより速く、戦闘曲よりも余白を持たせ、選択・強化操作を急かさない。
+
+> Instrumental strategic hunt-map loop for choosing among six mechanical beasts and planning five interconnected gear trees deep beneath the earth. Exactly three minutes, 118 BPM, E minor with cyan-and-amber harmonic colors. Establish a precise six-step sequencer within four seconds, supported by restrained machine percussion, cable-click syncopation, low modular bass and fragments of the same four-note title signal passed between five distinct synthetic timbres. Forward motion and tactical anticipation without full combat intensity; curious, purposeful and highly readable beneath menu clicks. Modern premium indie-game production, crisp but not busy, no vocals, no choir, no long breakdown, no dramatic ending, no fade-out. Repeat and evolve eight-to-sixteen-bar cells; match the harmony, pulse and ambience of the last bar to the first for a seamless loop.
+
+共通除外:
+
+> vocals, lyrics, spoken word, choir, cinematic trailer booms, generic cyberpunk nightclub, cheerful chiptune, lo-fi hiss, constant risers, long ambient intro, long breakdown, fade-out, conclusive final chord

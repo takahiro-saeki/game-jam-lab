@@ -26,7 +26,7 @@ for required_file in index.html index.js index.pck index.wasm; do
   fi
 done
 
-if ! /usr/bin/unzip -Z1 "$archive_path" | /usr/bin/grep -qx "index.html"; then
+if ! /usr/bin/unzip -Z1 "$archive_path" | /usr/bin/grep -x "index.html" >/dev/null; then
   echo "The itch.io ZIP does not contain index.html at its root" >&2
   exit 1
 fi

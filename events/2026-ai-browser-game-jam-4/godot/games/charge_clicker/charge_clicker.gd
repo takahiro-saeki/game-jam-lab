@@ -15,6 +15,9 @@ const CampaignRoute = preload("res://games/charge_clicker/charge_route.gd")
 const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
 const BGMStreams := {
+	# Dedicated title slot. It temporarily shares the approved map master until
+	# the new title-screen Suno selection is imported.
+	"title": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
 	"map": preload("res://assets/audio/project_charge/subterranean_hunt.ogg"),
 	"hunt": preload("res://assets/audio/project_charge/piston_hunt_loop.ogg"),
 	"vaultback": preload("res://assets/audio/project_charge/blue_vault_pulse.ogg"),
@@ -324,7 +327,6 @@ var title_button_rects: Array[Rect2] = [
 	Rect2(726, 448, 96, 48),
 	Rect2(830, 448, 96, 48),
 	Rect2(934, 448, 96, 48),
-	Rect2(1038, 448, 98, 48),
 	Rect2(726, 510, 410, 48),
 ]
 var settings_row_rects: Array[Rect2] = [
@@ -435,7 +437,7 @@ func desired_bgm_key() -> String:
 	if credits_open:
 		return "ending_true" if credits_context in ["final", "artwork_replay"] else "ending_world" if credits_context == "world" else "ending_normal"
 	if title_screen_open:
-		return "map"
+		return "title"
 	if campaign_route == null:
 		return "map"
 	match campaign_route.phase:
@@ -862,9 +864,8 @@ func campaign_screen_visible() -> bool:
 	return campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY, CampaignRoute.RoutePhase.FINAL_BOSS] and run.stage_phase == ChargeState.StagePhase.CLEAR
 
 func _unhandled_input(event: InputEvent) -> void:
-	# PROJECT CHARGE owns its input while mounted in the shared launcher. Without
-	# consuming it here, a click/confirm that closes the game can also activate a
-	# launcher card in the same frame.
+	# Consume the event so a click/confirm that closes one screen cannot also
+	# activate a control on the next screen in the same frame.
 	get_viewport().set_input_as_handled()
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10:
 		debug_show_dialogue(
@@ -982,7 +983,7 @@ func handle_title_input(event: InputEvent) -> void:
 		if event.keycode == KEY_L:
 			toggle_language()
 		elif event.keycode == KEY_ESCAPE:
-			return_to_menu.emit()
+			return
 		elif event.keycode == KEY_M:
 			toggle_music()
 		elif event.keycode in [KEY_UP, KEY_W]:
@@ -995,7 +996,7 @@ func handle_title_input(event: InputEvent) -> void:
 			activate_title_selection()
 	elif event is InputEventJoypadButton and event.pressed:
 		if event.button_index == controller_button("back"):
-			return_to_menu.emit()
+			return
 		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
 			title_selected = wrapi(title_selected - 1, 0, title_button_count())
 			synth.click()
@@ -1030,8 +1031,6 @@ func activate_title_selection() -> void:
 		4:
 			open_credits(true)
 		5:
-			return_to_menu.emit()
-		6:
 			open_artwork_gallery()
 
 func title_button_count() -> int:
@@ -1061,7 +1060,7 @@ func close_artwork_gallery() -> void:
 	artwork_zoom_level = 0
 	artwork_ui_visible = true
 	title_screen_open = true
-	title_selected = mini(6, title_button_count() - 1)
+	title_selected = mini(5, title_button_count() - 1)
 	bgm_key = ""
 	refresh_music()
 	synth.click()
@@ -2941,7 +2940,6 @@ func draw_title_screen() -> void:
 		loc("設定", "SETTINGS"),
 		loc("実績", "RECORDS"),
 		loc("制作記録", "CREDITS"),
-		loc("ゲーム選択", "GAME LAB"),
 		loc("アートワーク", "ARTWORK"),
 	]
 	for index in range(title_button_count()):
@@ -2957,7 +2955,7 @@ func draw_title_screen() -> void:
 func draw_title_button(index: int, label: String) -> void:
 	var rect := title_button_rects[index]
 	var selected := title_selected == index
-	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.AMBER if index == 3 else Palette.VIOLET if index == 4 else Palette.MINT if index == 6 else Palette.MUTED
+	var accent := Palette.AMBER if index <= 1 else Palette.CYAN if index == 2 else Palette.AMBER if index == 3 else Palette.VIOLET if index == 4 else Palette.MINT
 	draw_machine_plate(rect, Palette.with_alpha(accent, 0.7 if selected and index == 0 else 0.18 if selected else 0.055), Palette.with_alpha(accent, 1.0 if selected else 0.38), 10.0, 2.0 if selected else 1.0)
 	draw_rect(Rect2(rect.position + Vector2(10, 9), Vector2(4, rect.size.y - 18)), Palette.with_alpha(accent, 0.92 if selected else 0.32))
 	draw_string(DisplayFont, rect.position + Vector2(20 if rect.size.x < 110 else 30, 39 if rect.size.y >= 60 else 33), label, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - (36 if rect.size.x < 110 else 58), 18 if rect.size.y >= 60 else 12 if rect.size.x < 110 else 14, Palette.INK if selected and index == 0 else Palette.PAPER)
@@ -3440,7 +3438,7 @@ func draw_boss_briefing() -> void:
 	var rule_y := 510.0 if is_fallen_seraph else 470.0
 	draw_string(Palette.UI_FONT, Vector2(350, rule_y), str(definition.get("rule_ja" if is_japanese else "rule_en", "")), HORIZONTAL_ALIGNMENT_CENTER, 580, 15, Palette.MUTED)
 	draw_campaign_button(campaign_primary_rect, loc("第%d形態へ接続" % campaign_route.final_boss_form, "ENGAGE FORM %d" % campaign_route.final_boss_form) if final_encounter else loc("地核決戦を開始", "ENGAGE THE WORLD ENGINE") if singularity else loc("強化ボス戦を開始", "ENGAGE ENHANCED BOSS"), accent, true)
-	draw_campaign_button(campaign_secondary_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
+	draw_campaign_button(campaign_secondary_rect, loc("タイトルへ", "RETURN TO TITLE"), Palette.MUTED, false)
 
 func draw_post_true_choice() -> void:
 	var accent := Palette.PAPER
@@ -3511,7 +3509,7 @@ func draw_campaign_ending(true_end: bool) -> void:
 	draw_campaign_button(campaign_primary_rect, loc("Infinite Modeへ", "ENTER INFINITE MODE") if true_end else loc("真ルートへ続く", "CONTINUE TRUE ROUTE"), accent, true)
 	draw_campaign_button(campaign_achievement_rect, loc("H  実績", "H  RECORDS"), Palette.AMBER, false)
 	draw_campaign_button(campaign_credits_rect, loc("E  エンドロール", "E  CREDITS"), Palette.VIOLET, false)
-	draw_campaign_button(campaign_ending_return_rect, loc("ゲーム選択へ", "RETURN TO GAME LAB"), Palette.MUTED, false)
+	draw_campaign_button(campaign_ending_return_rect, loc("タイトルへ", "RETURN TO TITLE"), Palette.MUTED, false)
 
 func draw_campaign_button(rect: Rect2, label: String, accent: Color, primary: bool) -> void:
 	var hovered := rect.has_point(mouse_position)
@@ -3540,7 +3538,7 @@ func draw_header() -> void:
 	draw_small_button(reset_rect, loc("R  もう一度", "R  CONFIRM") if reset_confirm_time > 0.0 else loc("R  初期化", "R  RESET"), Palette.CORAL)
 	draw_small_button(settings_rect, loc("設定", "SET"), Palette.VIOLET)
 	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
-	draw_small_button(menu_rect, loc("ゲーム選択", "GAME LAB"), Palette.CYAN)
+	draw_small_button(menu_rect, loc("タイトル", "TITLE"), Palette.CYAN)
 
 func campaign_header_context() -> String:
 	if campaign_route == null:
@@ -4290,7 +4288,7 @@ func draw_completion_overlay() -> void:
 	else:
 		draw_clear_overlay()
 	draw_small_button(language_rect, "日本語 / EN", Palette.MINT)
-	draw_small_button(menu_rect, loc("ゲーム選択", "GAME LAB"), Palette.CYAN)
+	draw_small_button(menu_rect, loc("タイトル", "TITLE"), Palette.CYAN)
 
 func draw_reward_overlay() -> void:
 	var definition := current_stage_definition()
@@ -4341,7 +4339,7 @@ func draw_clear_overlay() -> void:
 	draw_machine_plate(clear_retry_rect, Palette.AMBER, Palette.PAPER, 10.0, 2.0)
 	draw_string(DisplayFont, clear_retry_rect.position + Vector2(0, 34), loc("次のWAVE", "NEXT WAVE") if is_infinite else loc("討伐地図へ", "HUNT MAP"), HORIZONTAL_ALIGNMENT_CENTER, clear_retry_rect.size.x, 16, Palette.INK)
 	draw_machine_plate(clear_menu_rect, Palette.PANEL_2, Palette.CYAN, 10.0, 1.0)
-	draw_string(Palette.UI_FONT, clear_menu_rect.position + Vector2(0, 34), loc("完全復旧記録へ", "END INFINITE") if is_infinite else loc("ゲーム選択", "GAME LAB"), HORIZONTAL_ALIGNMENT_CENTER, clear_menu_rect.size.x, 16, Palette.PAPER)
+	draw_string(Palette.UI_FONT, clear_menu_rect.position + Vector2(0, 34), loc("完全復旧記録へ", "END INFINITE") if is_infinite else loc("タイトルへ", "RETURN TO TITLE"), HORIZONTAL_ALIGNMENT_CENTER, clear_menu_rect.size.x, 16, Palette.PAPER)
 
 func boss_integrity_label() -> String:
 	if run.infinite_mode:

@@ -121,7 +121,7 @@ Use screenshots 1–5 on the public page. Add screenshot 6 only if the page need
 
 - Run `tools/build-itch-project-charge.sh` to create the dedicated direct-launch build and `build/itch/project-charge-web.zip`.
 - Export the Godot Web build with `index.html` at the root of the ZIP.
-- Open the ZIP build without a `?game=project-charge` query and confirm it bypasses the internal four-game launcher.
+- Open the ZIP build without query parameters and confirm it starts on the PROJECT CHARGE title screen.
 - Confirm the game starts in a private browser window without local saves.
 - Confirm audio is initially respectful of browser autoplay rules.
 - Confirm English is usable without reading the Japanese copy.

@@ -1,8 +1,5 @@
 extends SceneTree
 
-const ZeroGame = preload("res://games/zero_percent_city/zero_percent_city.gd")
-const ChargebackGame = preload("res://games/chargeback/chargeback.gd")
-const CapacitorGame = preload("res://games/capacitor_defense/capacitor_defense.gd")
 const ChargeClickerGame = preload("res://games/charge_clicker/charge_clicker.gd")
 const ChargeClickerState = preload("res://games/charge_clicker/charge_state.gd")
 const ChargeClickerSave = preload("res://games/charge_clicker/charge_save.gd")
@@ -29,9 +26,6 @@ func run_tests() -> void:
 	test_input_map()
 	test_controller_bindings()
 	test_launcher()
-	test_zero_percent_city()
-	test_chargeback()
-	test_capacitor_defense()
 	test_charge_clicker_v5()
 	await process_frame
 	await process_frame
@@ -92,261 +86,18 @@ func joy_button(button: JoyButton) -> InputEventJoypadButton:
 	return event
 
 func test_launcher() -> void:
-	print("\nLAUNCHER")
-	var launcher := Launcher.new()
-	root.add_child(launcher)
-	launcher.controller_config.reset_defaults(false)
-	launcher.controller_bindings = launcher.controller_config.bindings.duplicate(true)
-	launcher.is_japanese = false
-	launcher.open_settings()
-	check(launcher.settings_open, "gamepad setup screen opens from the launcher")
-	launcher.start_rebinding(0)
-	launcher.capture_controller_button(JOY_BUTTON_X, false)
-	check(launcher.controller_button("primary") == JOY_BUTTON_X, "setup screen captures a new controller button")
-	check(launcher.controller_button("secondary") == JOY_BUTTON_A, "setup screen swaps duplicate bindings")
-	launcher.close_settings()
-	launcher.controller_config.reset_defaults(false)
-	launcher.controller_bindings = launcher.controller_config.bindings.duplicate(true)
-	launcher.hover_index = 0
-	launcher._unhandled_input(joy_button(JOY_BUTTON_DPAD_RIGHT))
-	check(launcher.hover_index == 1, "gamepad direction selects a game")
-	launcher._unhandled_input(joy_button(JOY_BUTTON_A))
-	check(launcher.active_game != null, "gamepad A launches the selected game")
-	launcher.active_game.toggle_language()
-	check(launcher.is_japanese, "in-game language choice persists in the launcher")
-	launcher.return_to_menu()
-	check(launcher.card_rects.size() == 4, "launcher exposes all four playable concepts")
-	check(launcher.query_requests_project_charge("?game=project-charge"), "the local review URL can launch PROJECT CHARGE directly")
-	check(not launcher.query_requests_project_charge("game=chargeback"), "unrelated query values do not bypass the launcher")
-	launcher.launch_game(3)
-	check(launcher.active_game != null and launcher.active_game.get("run") != null, "fourth launcher card opens PROJECT CHARGE")
-	launcher.return_to_menu()
-	launcher.free()
-
-func test_zero_percent_city() -> void:
-	print("\nZERO PERCENT CITY")
-	var game := ZeroGame.new()
-	root.add_child(game)
-	game.is_japanese = true
-	game._unhandled_input(joy_button(JOY_BUTTON_A))
-	check(game.run_state == game.RunState.PLAYING, "run boots into PLAYING")
-	check(game.player_pos == Vector2(130, 600), "gamepad A boots the run")
-	check(game.loc("日本語", "English") == "日本語", "Japanese copy is selected")
-	game.player_pos = game.pickups[0].rect.get_center()
-	game.handle_interactions(0.016)
-	check(game.has_dash, "dash module can be acquired")
-	game.enemies[0].pos = game.player_pos + Vector2(34, 0)
-	var attack_hp: int = game.enemies[0].hp
-	game.begin_attack()
-	check(game.enemies[0].hp == attack_hp - 1, "normal attack damages a hostile")
-	var first_wall: Rect2 = game.walls[0].rect
-	var standing_center_y := 650.0 - game.PLAYER_SIZE.y * 0.5
-	var jump_apex_bottom := standing_center_y - game.JUMP_SPEED * game.JUMP_SPEED / (2.0 * game.GRAVITY) + game.PLAYER_SIZE.y * 0.5
-	check(jump_apex_bottom + 12.0 < first_wall.position.y, "the first wall has comfortable normal-jump clearance")
-	check(game.break_wall(game.walls[0].rect), "dash wall can be broken")
-	game.has_double_jump = true
-	game.player_pos = Vector2(3446, 114)
-	game.handle_interactions(0.016)
-	check(game.run_state == game.RunState.PLAYING, "city core stays locked until the warden is defeated")
-	game.boss_defeated = true
-	game.handle_interactions(0.016)
-	check(game.run_state == game.RunState.COMPLETE, "city core completes the run")
-	game.free()
-
-func test_chargeback() -> void:
-	print("\nCHARGEBACK")
-	var game := ChargebackGame.new()
-	root.add_child(game)
-	game.is_japanese = false
-	game.start_run()
-	check(game.hand.size() == 5, "opening hand draws five cards")
-	game.toggle_language()
-	check(game.is_japanese and game.deck[0].title == "異議申立て", "in-game language toggle relocalizes cards")
-	check(game.enemy.name == "無料体験ヒドラ", "in-game language toggle relocalizes the encounter")
-	check(game.enemy.hp == 68, "first authorization loads")
-	var pool: Array[Dictionary] = game.all_cards()
-	game.hand = [game.find_card(pool, "dispute").duplicate()]
-	game.update_card_rects()
-	game.energy = 3
-	game.shield = 0
-	game.hover_card = 0
-	game.handle_controller_button(JOY_BUTTON_A)
-	check(game.shield == 13 and game.counter == 3 and game.energy == 2, "DISPUTE spends energy and activates the selected policy")
-	check(game.hand.is_empty(), "gamepad A plays the selected card")
-	game.hand = [game.find_card(pool, "chargeback").duplicate()]
-	game.energy = 3
-	game.credit = 50
-	var before_hp: int = game.enemy.hp
-	game.play_card(0)
-	check(game.enemy.hp == before_hp - 24, "CHARGEBACK scales with missing credit")
-	game.archetype_counts = {"defense": 0, "debt": 0, "audit": 0}
-	game.archetype_triggered = {"defense": false, "debt": false, "audit": false}
-	game.policy_triggered = true
-	game.hand = [game.find_card(pool, "dispute").duplicate(), game.find_card(pool, "dispute").duplicate()]
-	game.energy = 3
-	game.shield = 0
-	game.play_card(0)
-	game.play_card(0)
-	check(game.shield == 23 and game.total_synergies >= 1, "two cards of one archetype trigger a meaningful synergy")
-	game.enemy.hp = 1
-	game.deal_damage(2)
-	game.win_encounter()
-	check(game.state == game.GameState.REWARD and game.reward_cards.size() == 3, "victory offers three rewards")
-	game.energy = 0
-	check(game.card_is_available(game.find_card(pool, "bankruptcy")), "reward cards stay bright and selectable without energy")
-	var upgraded_rewards := 0
-	for reward in game.reward_cards:
-		if reward.upgraded: upgraded_rewards += 1
-	check(upgraded_rewards >= 1, "every reward set includes an upgraded card")
-	game.state = game.GameState.PLAYER_TURN
-	check(not game.card_is_available(game.find_card(pool, "bankruptcy")), "hand cards still dim when energy is insufficient")
-	game.start_run(2)
-	check(game.policy_id == "forensic" and game.hand.size() == 6, "forensic policy opens with a six-card hand")
-	game.free()
-
-	seed(1337)
-	var full_run := ChargebackGame.new()
-	root.add_child(full_run)
-	full_run.start_run(0)
-	for decision in range(160):
-		if full_run.state == full_run.GameState.PLAYER_TURN:
-			for play in range(14):
-				var choice := choose_chargeback_card(full_run)
-				if choice < 0:
-					break
-				full_run.play_card(choice)
-				if full_run.state != full_run.GameState.PLAYER_TURN:
-					break
-			if full_run.state == full_run.GameState.PLAYER_TURN:
-				full_run.end_turn()
-				full_run.resolve_enemy_turn()
-		elif full_run.state == full_run.GameState.REWARD:
-			var reward_choice := 0
-			for index in range(full_run.reward_cards.size()):
-				if bool(full_run.reward_cards[index].upgraded):
-					reward_choice = index
-					break
-			full_run.take_reward(reward_choice)
-		else:
-			break
-	check(full_run.state == full_run.GameState.WON, "a synergy-aware card strategy can reverse all three authorizations")
-	full_run.free()
-
-func choose_chargeback_card(game: Node) -> int:
-	var best_index := -1
-	var best_score := -999
-	for index in range(game.hand.size()):
-		var item: Dictionary = game.hand[index]
-		if game.effective_card_cost(item) > game.energy:
-			continue
-		var id := str(item.id)
-		var score := 0
-		match id:
-			"dispute": score = 72 if game.shield < game.enemy_intent else 24
-			"freeze": score = 78 if game.shield < game.enemy_intent else 42
-			"fraud_alert": score = 76 if game.shield < game.enemy_intent else 38
-			"paper_trail": score = 82 if game.shield < game.enemy_intent else 48
-			"class_action": score = 46 + game.shield
-			"cashback": score = 55 + (game.max_credit - game.credit)
-			"autopay": score = 75 if game.credit > 30 else -50
-			"audit": score = 70
-			"data_mine": score = 88
-			"recurring": score = 38 + game.cards_played_this_turn * 12
-			"chargeback": score = 58 + (game.max_credit - game.credit)
-			"interest": score = 62
-			"leverage": score = 80 if game.credit > 45 and game.energy <= 1 else -40
-			"compound": score = 44 + (game.max_credit - game.credit)
-			"bankruptcy": score = 74 if game.credit > 34 else -70
-			"limit": score = 68
-			"refund": score = 64 + (game.max_credit - game.credit)
-			_: score = -100
-		if int(item.cost) == 0:
-			score += 12
-		if score > best_score:
-			best_score = score
-			best_index = index
-	return best_index if best_score > 0 else -1
-
-func test_capacitor_defense() -> void:
-	print("\nCAPACITOR DEFENSE")
-	var game := CapacitorGame.new()
-	root.add_child(game)
-	game.is_japanese = true
-	game.reset_run()
-	check(game.wave_name(0) == "偵察電流", "wave names use Japanese copy")
-	game.handle_controller_button(JOY_BUTTON_RIGHT_SHOULDER)
-	game.handle_controller_button(JOY_BUTTON_RIGHT_SHOULDER)
-	check(game.build_mode == game.BuildMode.ARC, "gamepad shoulder cycles build tools")
-	game.hover_node = 1
-	game.handle_controller_button(JOY_BUTTON_A)
-	check(game.nodes[1].building == "arc" and game.credits == 82, "arc tower builds on a live socket")
-	game.move_node_focus(Vector2.RIGHT)
-	check(game.hover_node == 2, "gamepad direction selects the next socket")
-	game.build_mode = game.BuildMode.CABLE
-	game.handle_controller_button(JOY_BUTTON_A)
-	check(game.nodes[2].active and game.credits == 76, "cable extends the powered grid")
-	game.build_mode = game.BuildMode.CAPACITOR
-	game.handle_node(2)
-	check(game.nodes[2].building == "capacitor" and game.credits == 54, "capacitor builds on the new route")
-	game.nodes[1].charge = 1.0
-	game.enemies = [{"distance": 480.0, "hp": 30, "max_hp": 30, "speed": 0.0, "reward": 1, "boss": false, "slow": 0.0, "flash": 0.0}]
-	var before_hp: int = game.enemies[0].hp
-	game.update_towers(0.016)
-	check(game.enemies[0].hp < before_hp, "charged tower damages an enemy in range")
-	game.state = game.GameState.BUILD
-	game.launch_wave()
-	check(game.state == game.GameState.WAVE, "armed grid launches a wave")
-	game.set_simulation_speed(3.0)
-	check(game.simulation_speed == 3.0, "simulation can run at triple speed")
-	game.nodes[3].active = true
-	game.nodes[3].building = "pulse"
-	check(is_equal_approx(game.network_synergy_multiplier(), 1.25), "capacitor, arc, and pulse unlock network resonance")
-	game.overcharge_meter = 100.0
-	game.handle_controller_button(JOY_BUTTON_Y)
-	check(game.overdrive_time > 0.0 and game.overcharge_meter == 0.0, "gamepad active ability triggers overdrive")
-	game.free()
-
-	var full_run := CapacitorGame.new()
-	root.add_child(full_run)
-	full_run.reset_run()
-	full_run.build_mode = full_run.BuildMode.ARC
-	full_run.handle_node(1)
-	full_run.build_mode = full_run.BuildMode.CABLE
-	full_run.handle_node(2)
-	full_run.build_mode = full_run.BuildMode.CAPACITOR
-	full_run.handle_node(2)
-	full_run.build_mode = full_run.BuildMode.CABLE
-	full_run.handle_node(3)
-	full_run.build_mode = full_run.BuildMode.PULSE
-	full_run.handle_node(3)
-	full_run.simulation_speed = 3.0
-	for wave_number in range(full_run.waves.size()):
-		full_run.launch_wave()
-		for tick in range(16000):
-			full_run._process(1.0 / 60.0)
-			if full_run.state != full_run.GameState.WAVE:
-				break
-		if full_run.state in [full_run.GameState.WON, full_run.GameState.LOST]:
-			break
-		improve_test_grid(full_run)
-	check(full_run.state == full_run.GameState.WON, "a sensible synergistic grid can clear all five waves")
-	full_run.free()
-
-func improve_test_grid(game: Node) -> void:
-	# Spend inter-wave rewards the same way a first-time player reasonably might:
-	# improve the original network, then add one more chained arc before the boss.
-	for index in [1, 3, 2]:
-		if int(game.nodes[index].level) < 3:
-			var cost: int = game.cost_for_mode(game.BuildMode.UPGRADE) + (int(game.nodes[index].level) - 1) * 12
-			if game.credits >= cost:
-				game.build_mode = game.BuildMode.UPGRADE
-				game.handle_node(index)
-				return
-	if not game.nodes[4].active and game.credits >= 36:
-		game.build_mode = game.BuildMode.CABLE
-		game.handle_node(4)
-		game.build_mode = game.BuildMode.ARC
-		game.handle_node(4)
+	print("\nPROJECT CHARGE ENTRYPOINT")
+	var entrypoint := Launcher.new()
+	root.add_child(entrypoint)
+	entrypoint.launch_project_charge()
+	check(entrypoint.active_game != null, "the application launches PROJECT CHARGE directly")
+	check(entrypoint.active_game.get("run") != null, "the direct entrypoint initializes the campaign")
+	var initial_language: bool = entrypoint.is_japanese
+	entrypoint.active_game.toggle_language()
+	check(entrypoint.is_japanese != initial_language, "the selected language remains synchronized with the application root")
+	entrypoint.return_to_title()
+	check(entrypoint.active_game == null, "returning from gameplay never exposes the retired game lab")
+	entrypoint.free()
 
 func test_charge_clicker_v5() -> void:
 	print("\nPROJECT CHARGE V8 — OVERLIMIT / PRIME CURRENT / TRUE ENDING")
@@ -440,7 +191,7 @@ func test_charge_clicker_v5() -> void:
 	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
-	check(game.title_screen_open and game.title_button_rects.size() == 7 and game.title_button_count() == 6, "PROJECT CHARGE opens on a complete title screen while the spoiler gallery remains hidden")
+	check(game.title_screen_open and game.title_button_rects.size() == 6 and game.title_button_count() == 5, "PROJECT CHARGE opens on a complete title screen without a retired Game Lab action")
 	game.open_audio_settings()
 	check(game.settings_open and game.settings_row_rects.size() == 5 and AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0, "settings expose saved audio and visual-comfort controls on separate buses")
 	game.close_audio_settings()
@@ -450,7 +201,7 @@ func test_charge_clicker_v5() -> void:
 	check(game.EndingIllustrations.size() == 4 and game.EndingIllustrations["dawn"].resource_path.ends_with("ending-core-dawn-v11.png"), "the true ending integrates four generated cinematic illustrations")
 	check(not game.open_artwork_gallery(), "the artwork archive cannot open before the real final boss is defeated")
 	game.achievements.unlock_artwork_gallery()
-	check(game.title_button_count() == 7 and game.open_artwork_gallery() and game.artwork_open and game.desired_bgm_key() == "artwork_gallery", "complete-clear records reveal a permanent title-screen artwork archive with independent music")
+	check(game.title_button_count() == 6 and game.open_artwork_gallery() and game.artwork_open and game.desired_bgm_key() == "artwork_gallery", "complete-clear records reveal a permanent title-screen artwork archive with independent music")
 	check(game.BossArtwork.size() == 10 and game.ArtworkGallery.size() == 14, "the complete-clear archive includes all six beasts, both abyssal bosses, ARCH and PRIME CURRENT")
 	game.artwork_selected = 13
 	check(game.artwork_page_start() == 12 and game.artwork_index_for_slot(0) == 12 and game.artwork_index_for_slot(2) == -1, "the expanded archive pages fourteen memories without exposing empty cards")
@@ -476,7 +227,7 @@ func test_charge_clicker_v5() -> void:
 	game.debug_show_dialogue("試験話者", "TEST SPEAKER", "任意本文", "ARBITRARY BODY", 8.0)
 	check(game.comms_speaker_ja == "試験話者" and game.comms_text_en == "ARBITRARY BODY" and is_equal_approx(game.comms_time, 8.0), "debug tooling can display an arbitrary localized dialogue box without mutating campaign state")
 	game.clear_comms()
-	check(game.BGMStreams.size() == 17 and game.desired_bgm_key() == "map", "music routing includes independent endings, artwork and all three PRIME CURRENT forms")
+	check(game.BGMStreams.size() == 18 and game.desired_bgm_key() == "map", "music routing includes separate title/map slots, independent endings, artwork and all three PRIME CURRENT forms")
 	var final_form_stream_paths := {}
 	for final_music_key in ["prime_current_form_1", "prime_current_form_2", "prime_current_form_3"]:
 		final_form_stream_paths[(game.BGMStreams[final_music_key] as AudioStream).resource_path] = true

@@ -7,18 +7,9 @@
 - **Target:** Browser, keyboard/mouse, gamepad, and touch
 - **AI workflow:** OpenAI Codex for design, implementation, testing, balancing, and documentation; OpenAI image generation for key art.
 
-## Playable concepts
+## Game
 
-1. **ZERO PERCENT CITY** — a compact battery-powered metroidvania.
-2. **CHARGEBACK** — a financial deck-building roguelike where your credit limit is your life.
-3. **CAPACITOR DEFENSE** — a circuit-routing tower defense driven by visible energy packets.
-4. **PROJECT CHARGE** — a mechanical-beast hunting clicker where every input attacks or issues a PURE command, while five visible machines expand through 86 branching skills and permanent stolen-core synergies.
-
-The four concepts share one web build and launcher so they can be compared under identical conditions. The original three are complete vertical slices. PROJECT CHARGE has been rebuilt around six visible mechanical-beast battles: any three hunts lead to a chosen normal boss and ending, while the remaining beasts and ARCH SINGULARITY lead to a persistent two-choice epilogue and an optional three-form ultimate boss.
-
-## Selected concept: PROJECT CHARGE
-
-The selected candidate is an active mechanical-beast clicker where every attack produces its own upgrade currency. A compact normal ending can continue into an expanded true route with the same build.
+PROJECT CHARGE is an active mechanical-beast clicker where every attack produces its own upgrade currency. Any three of six hunts lead to a chosen normal boss and ending; completing the remaining hunts opens ARCH SINGULARITY, a persistent epilogue choice, and the optional three-form PRIME CURRENT encounter.
 
 - [Original active-clicker concept](docs/CHARGE_CLICKER_GDD.md)
 - [Previous v5 five-gear specification](docs/PROJECT_CHARGE_V5_GDD.md)
@@ -35,43 +26,9 @@ The selected candidate is an active mechanical-beast clicker where every attack 
 
 ## Controls
 
-### Shared
-
-- Select a game with `1`, `2`, `3`, the arrow keys, the gamepad D-pad/left stick, or by clicking/tapping its card. Confirm with `Enter`, `Space`, or gamepad `A`.
-- Press `Esc`, gamepad `B`, or use **Game Lab** to return to the launcher.
+- The application opens directly on the PROJECT CHARGE title screen; the retired prototype launcher is not part of the game.
+- Press `Esc`, gamepad `B`, or use **Title** to return to the title screen.
 - Japanese is selected automatically on Japanese devices. Use the language switch or press `L` / gamepad `View/Share` to change between Japanese and English.
-- Open **Gamepad Setup** from the launcher (or press `F1` / `C`) to remap confirm/use, dash, attack/active ability, menu actions, back, language, and tool cycling. Duplicate assignments are swapped and changes are saved automatically. The D-pad and left stick remain dedicated to movement/navigation.
-
-### ZERO PERCENT CITY
-
-- Move: `A` / `D`, `←` / `→`, or gamepad D-pad/left stick
-- Jump: `Space` / `Z` / `↑`, or gamepad `A` / D-pad up
-- Dash after unlocking it: `X` / `Shift` / `↓`, or gamepad `X` / D-pad down
-- Normal attack: `C` / `J`, or gamepad `Y`. Chain three attacks for an empowered finisher; dash impacts deal heavier damage.
-- The first obstruction can be jumped normally or smashed with the newly acquired dash.
-- Defeat enemies to recycle power, collect traversal modules, destroy the Core Warden, then reboot the city.
-- Touch: left/right, attack, jump, and dash buttons appear on touch devices.
-
-### CHARGEBACK
-
-- Click/tap a card, or select one with the arrow keys / D-pad / left stick and play it with `Space` / gamepad `A`.
-- Click **End Turn**, press `Enter` / `E`, or use gamepad `Start`.
-- Keyboard card shortcuts: `1`–`9`.
-- Choose one of three credit policies before a run. Playing two cards from one archetype triggers its synergy; playing defense, debt, and audit in one turn balances the books.
-- Defeated authorizations award one of three cards, including at least one upgraded card. Press `R` or the configured active-ability button to skip a reward for credit.
-- Switch Japanese/English at any time with the in-game language button, `L`, or the configured language button.
-
-### CAPACITOR DEFENSE
-
-- Select a tool, then click/tap a circuit socket. Keyboard: `1`–`5` or `Q` / `E`; gamepad: left/right shoulder or `X`.
-- Select sockets with the arrow keys or gamepad D-pad/left stick, then build with `Space` / gamepad `A`.
-- Extend cables only from a live cyan socket.
-- Place at least one tower, then select **Launch Wave**, press `Enter`, or use gamepad `Start`.
-- Press `F` or select the header controls for `1×`, `2×`, or `3×` simulation speed.
-- Adjacent capacitors amplify towers; adjacent arc towers chain attacks. Building capacitor, arc, and pulse equipment activates network resonance.
-- Deliver packets and ground hostiles to fill Overcharge, then press `R` / `V` or gamepad `Y` for five seconds of rapid-fire Overdrive.
-
-### PROJECT CHARGE
 
 - Choose any three of six mechanical beasts, defeat one of two abyssal bosses, and reach the normal ending. Continue with the same build through the remaining hunts, enhanced boss, and ARCH SINGULARITY. After its credits, Continue returns to a persistent choice between ascending and answering the deeper signal.
 - Press the large **CHARGE ATTACK** button, `Space`, `Enter` / `X`, right-click, or the configured gamepad action. One input always produces exactly one manual command; holding a key never creates hidden auto-clicks.
@@ -125,9 +82,8 @@ godot --headless --path events/2026-ai-browser-game-jam-4/godot \
   --export-release Web "$PWD/build/web/index.html"
 ```
 
-Build the itch.io submission ZIP. This preset adds a release-only feature that
-opens PROJECT CHARGE directly while preserving the four-game launcher in the
-ordinary development build:
+Build the itch.io submission ZIP. Both development and release builds open
+PROJECT CHARGE directly:
 
 ```bash
 events/2026-ai-browser-game-jam-4/tools/build-itch-project-charge.sh
@@ -136,7 +92,7 @@ events/2026-ai-browser-game-jam-4/tools/build-itch-project-charge.sh
 ## AI and asset disclosure
 
 - Game concepts, GDScript implementation, testing, balancing, and documentation were created in collaboration with OpenAI Codex.
-- The three original launcher/key-art images and the ZERO PERCENT CITY gameplay backdrop were created with OpenAI image generation from original prompts written for this project. PROJECT CHARGE combines procedural Godot effects with original PixelLab machinery, UI, mechanical beasts, and fifteen PRIME CURRENT form candidates including slender dark-king and world-scale refinements; prompts, API settings, generations used, and selection notes are recorded locally.
+- PROJECT CHARGE combines procedural Godot effects with original PixelLab machinery, UI, mechanical beasts, and fifteen PRIME CURRENT form candidates including slender dark-king and world-scale refinements; prompts, API settings, generations used, and selection notes are recorded locally.
 - PROJECT CHARGE uses sixteen original instrumental Suno generations selected by the user from A/B candidates. All nine original enemies and all three PRIME CURRENT forms have exclusive battle music, with separate map/tree, ending, and artwork tracks. Exact song URLs, IDs, processing, and runtime assignments are recorded in [`docs/SUNO_MUSIC_BRIEF.md`](docs/SUNO_MUSIC_BRIEF.md).
 - No third-party game code, trademarked characters, or downloaded art assets are included.
 - Japanese UI text uses Noto Sans JP from Google Fonts under the SIL Open Font License 1.1; the license is included at [`godot/assets/fonts/OFL-NotoSansJP.txt`](godot/assets/fonts/OFL-NotoSansJP.txt).
@@ -146,4 +102,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-The original three vertical slices are feature-complete and independently playable. PROJECT CHARGE v8 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 86 standard nodes and 317 ranks, five permanent simultaneous OVERLIMIT rewrites, PURE COMMAND evolution, eight stolen cores, normal and world-engine endings, a three-form PRIME CURRENT final chapter, an eight-scene skippable true-ending slideshow, persistent achievements, optional Infinite Mode, bilingual UI/results, atomic saves, playtest telemetry, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the original normal/full routes in about 6.4/10.7 minutes at five inputs per second; PRIME CURRENT takes about 11.6–12.8 minutes with one OVERLIMIT or 2.7 minutes with all five in the maximum-rank benchmark. Fifteen PixelLab final-boss proposals and their reviews are recorded locally; Volt Nomad remains the approved protagonist art.
+PROJECT CHARGE v8 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 86 standard nodes and 317 ranks, five permanent simultaneous OVERLIMIT rewrites, PURE COMMAND evolution, eight stolen cores, normal and world-engine endings, a three-form PRIME CURRENT final chapter, an eight-scene skippable true-ending slideshow, persistent achievements, optional Infinite Mode, bilingual UI/results, atomic saves, playtest telemetry, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the original normal/full routes in about 6.4/10.7 minutes at five inputs per second; PRIME CURRENT takes about 11.6–12.8 minutes with one OVERLIMIT or 2.7 minutes with all five in the maximum-rank benchmark. Fifteen PixelLab final-boss proposals and their reviews are recorded locally; Volt Nomad remains the approved protagonist art.

@@ -73,7 +73,7 @@ On August 8–9, 2026, the user selected five further masters: TRUE ENDING B, PR
 
 ## ZERO PERCENT CITY
 
-Saved as `godot/assets/keyart/zero-percent-city.jpg`.
+Archived as `archive/retired-prototypes/assets/keyart/zero-percent-city.jpg`.
 
 ```text
 Use case: stylized-concept
@@ -88,7 +88,7 @@ Color palette: midnight navy, electric cyan, warning amber, restrained magenta
 Constraints: no text, no logo, no watermark, no photorealism, no extra characters, no recognizable franchise elements
 ```
 
-Gameplay background saved as `godot/assets/keyart/zero-percent-city-gameplay.png`.
+Gameplay background archived as `archive/retired-prototypes/assets/keyart/zero-percent-city-gameplay.png`.
 
 ```text
 Use case: production gameplay backdrop
@@ -102,7 +102,7 @@ Constraints: no characters, enemies, gameplay platforms, logos, words, UI, borde
 
 ## CHARGEBACK
 
-Saved as `godot/assets/keyart/chargeback.jpg`.
+Archived as `archive/retired-prototypes/assets/keyart/chargeback.jpg`.
 
 ```text
 Use case: stylized-concept
@@ -119,7 +119,7 @@ Constraints: no readable text, no numbers, no real company logos, no trademarks,
 
 ## CAPACITOR DEFENSE
 
-Saved as `godot/assets/keyart/capacitor-defense.jpg`.
+Archived as `archive/retired-prototypes/assets/keyart/capacitor-defense.jpg`.
 
 ```text
 Use case: stylized-concept
