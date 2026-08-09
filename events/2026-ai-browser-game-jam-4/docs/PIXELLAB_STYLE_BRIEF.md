@@ -1,4 +1,4 @@
-# PROJECT CHARGE — PixelLab Style Brief
+# VOLT NOMAD — PixelLab Style Brief
 
 > Status: 83 candidates generated; human-selected v6 Volt Nomad protagonist plus v5 five-gear and three-region selections integrated for playtesting
 > Scope: Phase 2 style validation and first production-detail batch

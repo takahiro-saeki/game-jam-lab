@@ -1,4 +1,4 @@
-# PROJECT CHARGE — Suno BGM制作ブリーフ
+# VOLT NOMAD — Suno BGM制作ブリーフ
 
 ## 採用・実装結果（2026-08-09）
 
@@ -97,27 +97,27 @@
 
 ### VAULTBACK — `Blue Vault Pulse`
 
-> Instrumental mechanical beast battle theme for VAULTBACK, a colossal thunder-shell creature that stores player energy until its armor opens. 124 BPM, D minor, deep capacitor thumps, gated electrical bass, restrained breakbeat, glassy blue arpeggios that grow brighter every eight bars, heavy shell-closing metal impacts, a compact four-note PROJECT CHARGE motif emerging from the stored electricity. The groove should feel patient, pressurized and rewarding when the shell opens, not frantic. Premium modern indie game soundtrack, clear rhythmic pocket for rapid clicking and weapon SFX, loop-friendly A-B-A structure, no vocals, no final cadence.
+> Instrumental mechanical beast battle theme for VAULTBACK, a colossal thunder-shell creature that stores player energy until its armor opens. 124 BPM, D minor, deep capacitor thumps, gated electrical bass, restrained breakbeat, glassy blue arpeggios that grow brighter every eight bars, heavy shell-closing metal impacts, a compact four-note VOLT NOMAD motif emerging from the stored electricity. The groove should feel patient, pressurized and rewarding when the shell opens, not frantic. Premium modern indie game soundtrack, clear rhythmic pocket for rapid clicking and weapon SFX, loop-friendly A-B-A structure, no vocals, no final cadence.
 
 ### PYRE WYRM — `Redline Molt`
 
-> Instrumental electro-industrial combat loop for PYRE WYRM, a furnace serpent that enters overdrive whenever the player purchases an upgrade. 142 BPM, E Phrygian dominant, dry forge hammers, coiling syncopated synth bass, rising heat pulses, short bursts of distorted guitar-like synthesizer without becoming metal music, a four-note PROJECT CHARGE motif reshaped as a red-hot warning signal. Alternate controlled pressure with brief eight-bar overdrive blooms so upgrade moments feel explosive. Crisp transients, strong low-end machinery, generous space for attack SFX, seamless loop, no vocals, no cinematic ending.
+> Instrumental electro-industrial combat loop for PYRE WYRM, a furnace serpent that enters overdrive whenever the player purchases an upgrade. 142 BPM, E Phrygian dominant, dry forge hammers, coiling syncopated synth bass, rising heat pulses, short bursts of distorted guitar-like synthesizer without becoming metal music, a four-note VOLT NOMAD motif reshaped as a red-hot warning signal. Alternate controlled pressure with brief eight-bar overdrive blooms so upgrade moments feel explosive. Crisp transients, strong low-end machinery, generous space for attack SFX, seamless loop, no vocals, no cinematic ending.
 
 ### RELAY HYDRA — `Cascade Trinity`
 
-> Instrumental mechanical battle track for RELAY HYDRA, a three-headed bus creature powered by alternating manual and automatic attacks. 136 BPM, C sharp minor, three interlocking rhythmic voices: piston drums, staccato modular bass and bright relay-click percussion, constantly passing a four-note PROJECT CHARGE motif between left, center and right positions. Clear call-and-response phrases that build into a six-step cascading chain, energetic and clever rather than chaotic, subtle polyrhythm over a readable four-four pulse. Wide but uncluttered mix for gameplay SFX, loopable development, no vocals, no long intro or final hit.
+> Instrumental mechanical battle track for RELAY HYDRA, a three-headed bus creature powered by alternating manual and automatic attacks. 136 BPM, C sharp minor, three interlocking rhythmic voices: piston drums, staccato modular bass and bright relay-click percussion, constantly passing a four-note VOLT NOMAD motif between left, center and right positions. Clear call-and-response phrases that build into a six-step cascading chain, energetic and clever rather than chaotic, subtle polyrhythm over a readable four-four pulse. Wide but uncluttered mix for gameplay SFX, loopable development, no vocals, no long intro or final hit.
 
 ### SWARM MATRIARCH — `Hive Command Lattice`
 
-> Instrumental high-tech battle loop for SWARM MATRIARCH, a mechanical brood queen commanding clouds of attack drones. 148 BPM, A minor, precise micro-percussion, fast hovering rotor rhythms, elastic sub bass, small bright synth particles circling a slower authoritative lead, the PROJECT CHARGE four-note motif multiplied into a controlled swarm pattern. Sections should alternate between scattered marks and synchronized automatic volleys, elegant tactical intensity instead of noisy insect horror. Modern detailed game production, preserve midrange space for clicks and drone shots, seamless loop shape, no vocals, no triumphant ending.
+> Instrumental high-tech battle loop for SWARM MATRIARCH, a mechanical brood queen commanding clouds of attack drones. 148 BPM, A minor, precise micro-percussion, fast hovering rotor rhythms, elastic sub bass, small bright synth particles circling a slower authoritative lead, the VOLT NOMAD four-note motif multiplied into a controlled swarm pattern. Sections should alternate between scattered marks and synchronized automatic volleys, elegant tactical intensity instead of noisy insect horror. Modern detailed game production, preserve midrange space for clicks and drone shots, seamless loop shape, no vocals, no triumphant ending.
 
 ### PHASE MANTIS — `Critical Parallax`
 
-> Instrumental precision boss-like battle loop for PHASE MANTIS, a crystalline machine predator that shifts phase and rewards guaranteed critical timing. 150 BPM, F sharp minor, razor-clean broken beats, glass harmonics, phase-shifted arpeggios, sudden half-beat silences, focused synthetic bass and a four-note PROJECT CHARGE motif appearing in mirrored and displaced forms. Build tension toward recurring analysis-complete windows where the harmony snaps into perfect alignment, cerebral, dangerous and stylish, never ambient. High rhythmic clarity for active clicking, restrained distortion, loopable A-B-C-A form, no vocals and no conclusive ending.
+> Instrumental precision boss-like battle loop for PHASE MANTIS, a crystalline machine predator that shifts phase and rewards guaranteed critical timing. 150 BPM, F sharp minor, razor-clean broken beats, glass harmonics, phase-shifted arpeggios, sudden half-beat silences, focused synthetic bass and a four-note VOLT NOMAD motif appearing in mirrored and displaced forms. Build tension toward recurring analysis-complete windows where the harmony snaps into perfect alignment, cerebral, dangerous and stylish, never ambient. High rhythmic clarity for active clicking, restrained distortion, loopable A-B-C-A form, no vocals and no conclusive ending.
 
 ### GRID LEECH — `Siphon Breakpoint`
 
-> Instrumental industrial boss battle music for GRID LEECH, an abyssal machine parasite that opens a siphon core for a short eight-click break window. 146 BPM, B minor, predatory suction-like sub pulses, cable snaps, hydraulic percussion, cold cyan modular sequences and a corrupted four-note PROJECT CHARGE motif that resolves only during recurring short breakout sections. Create obvious tension-and-release cycles: compressed stalking groove, three-second opening, violent mechanical payoff, then renewed pursuit. Menacing but readable, wide low end, clean attack transients and space for alarms and rapid clicks, loopable without a final chord, no vocals.
+> Instrumental industrial boss battle music for GRID LEECH, an abyssal machine parasite that opens a siphon core for a short eight-click break window. 146 BPM, B minor, predatory suction-like sub pulses, cable snaps, hydraulic percussion, cold cyan modular sequences and a corrupted four-note VOLT NOMAD motif that resolves only during recurring short breakout sections. Create obvious tension-and-release cycles: compressed stalking groove, three-second opening, violent mechanical payoff, then renewed pursuit. Menacing but readable, wide low end, clean attack transients and space for alarms and rapid clicks, loopable without a final chord, no vocals.
 
 ### 確定した敵別割り当て
 
@@ -189,7 +189,7 @@ Custom 3:00、Instrumental。細身の闇堕機天使。第1・第2形態より�
 
 Custom 3:00、Instrumental。14枚をゆっくり眺められ、真エンディング曲の感情的な結論を繰り返さない。
 
-> Instrumental gallery loop for a recovered archive of mechanical beasts, world engines and a lone robot hunter. Exactly three minutes, 92 BPM, A minor with gentle suspended major colors. Soft data pulses, restrained analog bass, glass mallets, distant machine-room ambience and fragmentary four-note PROJECT CHARGE motifs appearing in different timbres like catalogued memories. Curious, reflective and slightly mysterious, not sad, not triumphant, suitable for lingering over artwork and reading captions. No vocals, no choir, no heavy drums, no long intro, no fade-out and no final chord; use subtle eight-to-sixteen-bar variations and reconnect the last bar seamlessly to the first.
+> Instrumental gallery loop for a recovered archive of mechanical beasts, world engines and a lone robot hunter. Exactly three minutes, 92 BPM, A minor with gentle suspended major colors. Soft data pulses, restrained analog bass, glass mallets, distant machine-room ambience and fragmentary four-note VOLT NOMAD motifs appearing in different timbres like catalogued memories. Curious, reflective and slightly mysterious, not sad, not triumphant, suitable for lingering over artwork and reading captions. No vocals, no choir, no heavy drums, no long intro, no fade-out and no final chord; use subtle eight-to-sixteen-bar variations and reconnect the last bar seamlessly to the first.
 
 ### 形態別・アートワーク候補（2026-08-08）
 
@@ -210,13 +210,13 @@ Suno v5.5 / Advanced / Instrumentalで各2案を生成。初回の第1形態2案
 
 通常帰還を選んだ際の約3分エンドロール。達成感はあるが、深部信号がまだ残っている。
 
-> Instrumental ending-credits piece after the defeat of ARCH SINGULARITY. Exactly three minutes, 82 BPM, D major shaded by B minor, warm analog pads, intimate synthetic piano, soft struck metal and a slow electrical heartbeat. Resolve the established PROJECT CHARGE four-note motif with dignity, but leave a faint low six-note signal unanswered beneath the final section, suggesting something deeper still lives. Reflective mechanical dawn, earned relief rather than triumph, spacious mix, no vocals, no trailer orchestra, no fade-out. Build from sparse memory fragments to a warm full statement, then return to the opening heartbeat so the credits can loop seamlessly.
+> Instrumental ending-credits piece after the defeat of ARCH SINGULARITY. Exactly three minutes, 82 BPM, D major shaded by B minor, warm analog pads, intimate synthetic piano, soft struck metal and a slow electrical heartbeat. Resolve the established VOLT NOMAD four-note motif with dignity, but leave a faint low six-note signal unanswered beneath the final section, suggesting something deeper still lives. Reflective mechanical dawn, earned relief rather than triumph, spacious mix, no vocals, no trailer orchestra, no fade-out. Build from sparse memory fragments to a warm full statement, then return to the opening heartbeat so the credits can loop seamlessly.
 
 ### 真エンディング — `The Current Remembers`
 
 8枚の紙芝居と真エンドロール用。多少長く聴けるようCustom 3:00。通常エンドとは明確に別曲。
 
-> Instrumental true-ending music for a lone automaton who learns that the defeated beasts, world-engine and final current were all fragments of one surviving memory. Exactly three minutes, 76 BPM, begin with solitary ivory-piano notes and quiet cable resonance, gradually introduce warm analog strings, glass harmonics and five gentle colored synth voices that weave into one transformed PROJECT CHARGE motif. Bittersweet, humane and luminous; grief becoming chosen rest, never sentimental or grandiose. The last minute should feel like first daylight reaching an underground machine for the first time. No vocals, no choir, no cinematic boom, no fade-out; sustain a soft electrical pulse that can loop back into the first piano note for long illustrated credits.
+> Instrumental true-ending music for a lone automaton who learns that the defeated beasts, world-engine and final current were all fragments of one surviving memory. Exactly three minutes, 76 BPM, begin with solitary ivory-piano notes and quiet cable resonance, gradually introduce warm analog strings, glass harmonics and five gentle colored synth voices that weave into one transformed VOLT NOMAD motif. Bittersweet, humane and luminous; grief becoming chosen rest, never sentimental or grandiose. The last minute should feel like first daylight reaching an underground machine for the first time. No vocals, no choir, no cinematic boom, no fade-out; sustain a soft electrical pulse that can loop back into the first piano note for long illustrated credits.
 
 ### 真エンディング正式採用（2026-08-08）
 
@@ -231,7 +231,7 @@ Suno v5.5 / Advanced / Instrumental / Custom 3:00で生成。ユーザーレビ�
 
 ## 単体製品化BGM更新 — タイトル / 深層討伐地図（2026-08-09）
 
-4ゲーム実験室を廃止してPROJECT CHARGE単体へ移行したため、タイトル画面と深層討伐地図を別々の専用曲にする。どちらもSuno v5.5 / Advanced / Instrumental / Custom 3:00でA・Bを生成し、選定後に既存の`title`と`map`スロットへ実装する。
+4ゲーム実験室を廃止してVOLT NOMAD単体へ移行したため、タイトル画面と深層討伐地図を別々の専用曲にする。どちらもSuno v5.5 / Advanced / Instrumental / Custom 3:00でA・Bを生成し、選定後に既存の`title`と`map`スロットへ実装する。
 
 ### タイトル画面 — `Awakening Below`
 

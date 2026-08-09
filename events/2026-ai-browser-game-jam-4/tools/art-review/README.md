@@ -1,4 +1,4 @@
-# PROJECT CHARGE Art Review
+# VOLT NOMAD Art Review
 
 ## v8 本当のラスボス
 
@@ -35,7 +35,7 @@ v6の細身主人公再提案は `http://127.0.0.1:6670/?batch=v6-protagonist-re
 
 `npm start` は最新のGodot Web buildも自動で書き出します。「Godot組み合わせ比較」を開くと、原子炉、背景、6セル、GRID WRAITH、エネルギー片、CHARGE、DISCHARGE、AUTO OFFの全候補を、固定したボス戦状態の実ゲームUI、発光リング、整数倍表示と重ねて切り替えられます。プレビューモードではゲーム進行を停止し、セーブも読み書きしません。
 
-統合済み地域の実戦背景は `game/?game=project-charge&art_preview=1&encounter=pyre_wyrm` のように `encounter` を指定して確認できます。6体の通常魔獣、2体の通常ボス、真ボスのIDに対応しています。
+統合済み地域の実戦背景は `game/?art_preview=1&encounter=pyre_wyrm` のように `encounter` を指定して確認できます。6体の通常魔獣、2体の通常ボス、真ボスのIDに対応しています。
 
 ## 生成
 

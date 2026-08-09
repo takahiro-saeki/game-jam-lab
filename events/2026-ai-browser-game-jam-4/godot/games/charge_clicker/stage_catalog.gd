@@ -1,7 +1,7 @@
 class_name ChargeStageCatalog
 extends RefCounted
 
-# PROJECT CHARGE v4 turns each circuit into a visible mechanical beast battle.
+# VOLT NOMAD v4 turns each circuit into a visible mechanical beast battle.
 # The same six beasts can be tackled in any order; encounter order supplies the
 # campaign-wide inflation while each definition supplies its own rule and core.
 const STAGES := [

@@ -1,4 +1,4 @@
-# PROJECT CHARGE v7 プレイテストガイド
+# VOLT NOMAD v7 プレイテストガイド
 
 > 対象ビルド: PURE COMMAND / RECORDS / INFINITE版
 > 目的: 恒久PURE COMMAND、Tier II/III追加分、実績、Infinite Mode、通常/真ルート所要時間を確認する

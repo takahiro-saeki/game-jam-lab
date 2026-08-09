@@ -122,7 +122,7 @@ function openUiIdentityPreview() {
       </div>
       <div class="identity-stage">
         <div class="identity-stage-header">
-          <div class="identity-brand"><span>PROJECT CHARGE</span><small>GENERATOR CORE / UI IDENTITY TEST</small></div>
+          <div class="identity-brand"><span>VOLT NOMAD</span><small>GENERATOR CORE / UI IDENTITY TEST</small></div>
           <div class="identity-accumulator-wrap"><img id="identity-accumulator-image" alt="エネルギー片カウンター候補"><span class="identity-shard">✦</span><strong>0240</strong></div>
         </div>
         <div class="identity-boss-row"><span>GRID WRAITH / SIPHON INTEGRITY</span><img id="identity-gauge-image" alt="GRID WRAITHゲージ候補"></div>
@@ -206,7 +206,7 @@ function openGameCombinationPreview() {
         <a id="open-game-window" href="#" target="_blank" rel="noreferrer">別タブで開く</a>
       </div>
       <div class="game-preview-status" role="status">選択を反映しています。初回はGodotの読み込みに数秒かかります。</div>
-      <iframe id="game-preview-frame" title="PROJECT CHARGE Godot組み合わせプレビュー" allow="autoplay; gamepad"></iframe>
+      <iframe id="game-preview-frame" title="VOLT NOMAD Godot組み合わせプレビュー" allow="autoplay; gamepad"></iframe>
     </div>`;
   const reactorSelect = elements.dialogContent.querySelector("#game-reactor-select");
   const environmentSelect = elements.dialogContent.querySelector("#game-environment-select");

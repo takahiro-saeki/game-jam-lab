@@ -1,4 +1,4 @@
-# PROJECT CHARGE — UI Identity / 脱AI感パス
+# VOLT NOMAD — UI Identity / 脱AI感パス
 
 > Status: 人間レビュー反映・Godot本統合・Web目視確認完了（ラックのみ交換可能な暫定採用）
 > Review: <http://127.0.0.1:6670> → `UI基盤・脱AI感比較`

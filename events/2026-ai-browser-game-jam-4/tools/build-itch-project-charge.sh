@@ -4,14 +4,14 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 event_root="$(cd "$script_dir/.." && pwd)"
 godot_root="$event_root/godot"
-output_dir="$event_root/build/itch/project-charge"
-archive_path="$event_root/build/itch/project-charge-web.zip"
+output_dir="$event_root/build/itch/volt-nomad"
+archive_path="$event_root/build/itch/volt-nomad-web.zip"
 
 mkdir -p "$output_dir"
 find "$output_dir" -mindepth 1 -maxdepth 1 -type f -delete
 
 godot --headless --path "$godot_root" \
-  --export-release "Itch Project Charge" "$output_dir/index.html"
+  --export-release "Itch Volt Nomad" "$output_dir/index.html"
 
 (
   cd "$output_dir"
@@ -31,5 +31,5 @@ if ! /usr/bin/unzip -Z1 "$archive_path" | /usr/bin/grep -x "index.html" >/dev/nu
   exit 1
 fi
 
-echo "PROJECT CHARGE itch.io build: $output_dir"
-echo "PROJECT CHARGE itch.io ZIP:   $archive_path"
+echo "VOLT NOMAD itch.io build: $output_dir"
+echo "VOLT NOMAD itch.io ZIP:   $archive_path"

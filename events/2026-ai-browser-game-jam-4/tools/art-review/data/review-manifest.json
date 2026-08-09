@@ -3,7 +3,7 @@
   "updatedAt": "2026-08-07T06:40:36.585Z",
   "project": {
     "id": "project-charge",
-    "title": "PROJECT CHARGE",
+    "title": "VOLT NOMAD",
     "subtitle": "PixelLab Art Direction Review",
     "brief": "../../docs/PIXELLAB_STYLE_BRIEF.md",
     "gameplayPreview": "/review-data/game-pixellab-preview.png",
@@ -58,7 +58,7 @@
       "order": 1,
       "title": "Reactor silhouette",
       "titleJa": "原子炉シルエット",
-      "objective": "96×96のゲーム表示でも6セル構造と中心核が読み取れる、PROJECT CHARGEの基準造形を決める。",
+      "objective": "96×96のゲーム表示でも6セル構造と中心核が読み取れる、VOLT NOMADの基準造形を決める。",
       "gate": "3案から1案を選び、Godotの充電リングと重ねて最終確認する。",
       "status": "ready",
       "candidates": [
@@ -180,7 +180,7 @@
             "status": "recommended",
             "rank": 1,
             "score": 91,
-            "summary": "暫定採用候補です。中央核と六つの独立ポッドが一目で読め、PROJECT CHARGEの6セル同期を絵だけで説明できます。",
+            "summary": "暫定採用候補です。中央核と六つの独立ポッドが一目で読め、VOLT NOMADの6セル同期を絵だけで説明できます。",
             "strengths": [
               "96pxでも正確な6分割が読める",
               "中心の暗い余白へ数値と発光を重ねやすい",
@@ -418,7 +418,7 @@
             "status": "not_recommended",
             "rank": 3,
             "score": 77,
-            "summary": "低輝度と中央余白は改善しましたが、導管が八本へ増え、茶色の占有率も高くなりました。機械室Aの方がPROJECT CHARGEらしい配色と構造です。",
+            "summary": "低輝度と中央余白は改善しましたが、導管が八本へ増え、茶色の占有率も高くなりました。機械室Aの方がVOLT NOMADらしい配色と構造です。",
             "strengths": [
               "中央の余白と暗さは三案中最大",
               "UIの背後でも形が暴れにくい"
@@ -522,7 +522,7 @@
             "summary": "採用原子炉の六角言語を自然に引き継ぎ、中央の静かな窓へ充電色・数値・状態を重ねられる。6個並べても密度と可読性のバランスが最も良い。",
             "strengths": [
               "広い中央窓がゲーム状態の可視化に使いやすい",
-              "六角外形と小さなシアン端子がPROJECT CHARGEの意匠を統一する"
+              "六角外形と小さなシアン端子がVOLT NOMADの意匠を統一する"
             ],
             "concerns": [
               "空状態ではやや静かなので、充電アニメーションで生命感を足す必要がある"
@@ -4298,7 +4298,7 @@
             "status": "not_recommended",
             "rank": 3,
             "score": 73,
-            "summary": "電流骨格という狙いは出ていますが、骸骨と翼の図像が強く、PROJECT CHARGE固有の機械性を失っています。",
+            "summary": "電流骨格という狙いは出ていますが、骸骨と翼の図像が強く、VOLT NOMAD固有の機械性を失っています。",
             "strengths": [
               "装甲喪失が即座に伝わる"
             ],
@@ -4543,7 +4543,7 @@
             "concerns": [
               "髑髏の既視感が強い",
               "雷が外周で切れやすい",
-              "PROJECT CHARGE固有の機械性がA・Bより弱い"
+              "VOLT NOMAD固有の機械性がA・Bより弱い"
             ]
           },
           "humanReview": {
@@ -4593,7 +4593,7 @@
             "status": "alternate",
             "rank": 2,
             "score": 95,
-            "summary": "黒い太陽、雷環、外周機核によって前回案より明確に世界規模へ到達。細身の王体も中央で読みやすく、PROJECT CHARGEらしい最終形です。",
+            "summary": "黒い太陽、雷環、外周機核によって前回案より明確に世界規模へ到達。細身の王体も中央で読みやすく、VOLT NOMADらしい最終形です。",
             "strengths": [
               "王本体と巨大機関の主従関係が明確",
               "円形シルエットが戦闘UIの背景演出と相性が良い",

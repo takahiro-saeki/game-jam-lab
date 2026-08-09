@@ -1,4 +1,4 @@
-# PROJECT CHARGE v4 — DIRECT CHARGE 仕様書
+# VOLT NOMAD v4 — DIRECT CHARGE 仕様書
 
 > 実装基準: 2026-08-04 直接攻撃版
 > 目的: 「クリックした瞬間に攻撃でき、稼いだCHARGEが次の強さへ返る」ことをゲームの中心に置く。

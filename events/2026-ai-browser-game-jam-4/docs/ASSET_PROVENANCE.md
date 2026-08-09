@@ -32,7 +32,7 @@ Generated with OpenAI's built-in image generation tool on August 1, 2026. The ou
 
 The Japanese and Latin body UI typeface is [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp). Device labels and display headings use [DotGothic16](https://github.com/google/fonts/tree/main/ofl/dotgothic16). Both are distributed through Google Fonts under the SIL Open Font License 1.1; font files and license copies are stored in `godot/assets/fonts/`.
 
-## PROJECT CHARGE — PixelLab exploration and mechanical-beast production pass
+## VOLT NOMAD — PixelLab exploration and mechanical-beast production pass
 
 Eighty-nine original pixel-art candidates were generated through PixelLab API v2 on August 2–7, 2026. The first 26 consist of five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, three 64×64 transparent energy-shard icons, and nine 64×64 transparent control emblems for CHARGE, DISCHARGE, and AUTO OFF. The UI Identity pass added 18 transparent machine-housing candidates: three 384×128 upgrade racks, three 384×128 three-part control kits, six 320×80 GRID WRAITH gauge attempts, and six 192×96 shard-accumulator attempts. The v3 hunt pass added one 256×256 transparent first-pass sprite for each of six mechanical beasts, two normal bosses, and the true boss. The v5 visual-identity pass added three 192×192 protagonist concepts, fifteen 96×96 five-gear emblems, and nine 320×180 region backgrounds. The v6 refinement pass added three slimmer 192×192 protagonist candidates. The v10 combat polish pass added three 192×96 AUTO projectile effects and three 256×128 OVERLIMIT UI concepts. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
 
@@ -58,7 +58,7 @@ Eighty-nine original pixel-art candidates were generated through PixelLab API v2
 
 The first eight provisional machinery selections are rendered in the game for an in-context quality check but have not been copied to `approved/`. Human review selected the switchboard control kit and gauge plus the corrupted blank shard accumulator; those three are now integrated into Godot. The switchboard upgrade rack is integrated as an explicitly replaceable provisional selection because its alternate received only a hold rating. All nine hunt sprites are likewise integrated as first-pass candidates so silhouette and rule readability can be judged in the real map and combat layout before additional generations are spent. Human-reviewed selections now provide the v6 Volt Nomad protagonist, five v5 gear emblems, and three v5 encounter regions; untouched alternates stay reviewable. The Phase Mantis wing count, Thermal Titan's humanoid silhouette, and Twin-Rail Autogun silhouette remain explicit refinement targets. Every alternate and prompt remains selectable in the local review board, preserving an auditable generation and selection history.
 
-## PROJECT CHARGE — Suno soundtrack
+## VOLT NOMAD — Suno soundtrack
 
 Five original instrumental tracks were generated in the user's Suno account under the creator name `NeoN Lament` on August 5, 2026, then selected by the user after A/B listening. Exact source URLs and song IDs are recorded in [`SUNO_MUSIC_BRIEF.md`](SUNO_MUSIC_BRIEF.md) and embedded in the Ogg metadata.
 

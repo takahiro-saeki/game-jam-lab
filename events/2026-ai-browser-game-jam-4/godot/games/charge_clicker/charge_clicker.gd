@@ -1906,7 +1906,7 @@ func record_campaign_result_if_needed() -> bool:
 
 func campaign_result_text() -> String:
 	var ending := loc("通常復旧", "NORMAL RESTORATION") if campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END else loc("完全復旧", "TOTAL RESTORATION")
-	return "PROJECT CHARGE — %s\n%s %s | %s %s | %s %d/6 | %s %d/2\n%s %s | %s %d | %s %d | ID %s" % [
+	return "VOLT NOMAD — %s\n%s %s | %s %s | %s %d/6 | %s %d/2\n%s %s | %s %d | %s %d | ID %s" % [
 		ending,
 		loc("総時間", "SESSION"), format_time(run.session_elapsed),
 		loc("戦闘", "COMBAT"), format_time(run.elapsed),
@@ -2929,8 +2929,8 @@ func draw_title_screen() -> void:
 		draw_arc(Vector2(310, 366), radius, -PI * 0.7 + animation_time * 0.09 * direction, PI * 1.25 + animation_time * 0.09 * direction, 64, Palette.with_alpha(Palette.CYAN if index % 2 == 0 else Palette.VIOLET, 0.24 - index * 0.022), 3.0)
 	draw_texture_rect(ProtagonistTexture, Rect2(88, 166, 444, 444), false, Color(0.98, 1.0, 1.0, 1.0))
 	draw_rect(Rect2(0, 0, 1280, 6), Palette.AMBER)
-	draw_string(DisplayFont, Vector2(702, 104), "PROJECT", HORIZONTAL_ALIGNMENT_LEFT, 470, 24, Palette.CYAN)
-	draw_string(DisplayFont, Vector2(696, 184), "CHARGE", HORIZONTAL_ALIGNMENT_LEFT, 520, 66, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(702, 104), "VOLT", HORIZONTAL_ALIGNMENT_LEFT, 470, 24, Palette.CYAN)
+	draw_string(DisplayFont, Vector2(696, 184), "NOMAD", HORIZONTAL_ALIGNMENT_LEFT, 520, 66, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(704, 223), loc("地底機獣討伐アクティブクリッカー", "ABYSSAL MACHINE-HUNT ACTIVE CLICKER"), HORIZONTAL_ALIGNMENT_LEFT, 470, 15, Palette.MUTED)
 	draw_line(Vector2(704, 252), Vector2(1136, 252), Palette.with_alpha(Palette.CYAN, 0.46), 2.0)
 	draw_string(Palette.UI_FONT, Vector2(704, 280), loc("充電は弾丸。機械核は進化。地核機神を停止せよ。", "CHARGE IS AMMUNITION. CORES ARE EVOLUTION. STOP THE WORLD ENGINE."), HORIZONTAL_ALIGNMENT_LEFT, 470, 12, Palette.AMBER)
@@ -3052,11 +3052,11 @@ func draw_credits_roll() -> void:
 		var point := Vector2(fmod(float(index * 211), 1280.0), fmod(float(index * 127) + animation_time * 8.0, 720.0))
 		draw_circle(point, 1.0 + float(index % 3) * 0.4, Palette.with_alpha(Palette.CYAN, 0.16 + float(index % 4) * 0.04))
 	draw_rect(Rect2(0, 0, 1280, 76), Color(0.004, 0.01, 0.025, 0.96))
-	draw_string(DisplayFont, Vector2(48, 46), "PROJECT CHARGE // CREDITS", HORIZONTAL_ALIGNMENT_LEFT, 600, 22, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(48, 46), "VOLT NOMAD // CREDITS", HORIZONTAL_ALIGNMENT_LEFT, 600, 22, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(48, 67), loc("地核より回収された制作記録", "PRODUCTION RECORD RECOVERED FROM THE WORLD ENGINE"), HORIZONTAL_ALIGNMENT_LEFT, 650, 10, Palette.MUTED)
 	var offset_y := 610.0 - credits_scroll * 31.0
 	var sections := [
-		["PROJECT CHARGE", loc("機械核を継ぎ、地底の世界機関へ挑む", "INHERIT THE MACHINE CORES. DESCEND TO THE WORLD ENGINE."), Palette.AMBER, 28],
+		["VOLT NOMAD", loc("機械核を継ぎ、地底の世界機関へ挑む", "INHERIT THE MACHINE CORES. DESCEND TO THE WORLD ENGINE."), Palette.AMBER, 28],
 		[loc("ゲームデザイン・ディレクション", "GAME DESIGN & DIRECTION"), "TAKAHIRO SAEKI", Palette.CYAN, 15],
 		[loc("開発・ゲームデザイン支援", "DEVELOPMENT & DESIGN SUPPORT"), "OPENAI CODEX", Palette.VIOLET, 15],
 		[loc("ピクセルアート生成", "PIXEL ART GENERATION"), "PIXELLAB\nART DIRECTION & SELECTION — TAKAHIRO SAEKI", Palette.MINT, 15],
@@ -3469,7 +3469,7 @@ func draw_final_ending_gate() -> void:
 	draw_campaign_button(campaign_ending_return_rect, loc("タイトルへ", "RETURN TO TITLE"), Palette.MUTED, false)
 
 func draw_postgame_terminal() -> void:
-	draw_string(DisplayFont, Vector2(0, 156), "PROJECT CHARGE // COMPLETE", HORIZONTAL_ALIGNMENT_CENTER, 1280, 34, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(0, 156), "VOLT NOMAD // COMPLETE", HORIZONTAL_ALIGNMENT_CENTER, 1280, 34, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(0, 194), loc("真エンディング記録済み。Infinite Modeは強化を完成させるためだけの任意モードです。", "TRUE ENDING RECORDED. INFINITE MODE REMAINS AN OPTIONAL SPACE TO FINISH STANDARD SKILLS."), HORIZONTAL_ALIGNMENT_CENTER, 1280, 14, Palette.MUTED)
 	var panel := Rect2(300, 240, 680, 246)
 	draw_machine_plate(panel, Palette.with_alpha(Palette.PANEL, 0.95), Palette.with_alpha(Palette.CYAN, 0.4), 18.0, 2.0)
@@ -3523,7 +3523,7 @@ func draw_header() -> void:
 		var rail_x := 8.0 + index * 80.0
 		draw_line(Vector2(rail_x, 83), Vector2(rail_x + 50, 83), Palette.with_alpha(Palette.CYAN, 0.2 if index % 3 else 0.42), 2.0)
 	draw_rect(Rect2(171, 15, 3, 52), Palette.with_alpha(Palette.CYAN, 0.34))
-	draw_string(DisplayFont, Vector2(178, 34), "PROJECT CHARGE", HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Palette.PAPER)
+	draw_string(DisplayFont, Vector2(178, 34), "VOLT NOMAD", HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Palette.PAPER)
 	draw_string(Palette.UI_FONT, Vector2(178, 60), campaign_header_context(), HORIZONTAL_ALIGNMENT_LEFT, 330, 13, Palette.MUTED)
 	var accumulator_tint := Color(1.0, 1.0, 1.0, 0.94 + shard_pulse * 0.06)
 	draw_texture_rect(ShardAccumulatorTexture, SHARD_ACCUMULATOR_RECT, false, accumulator_tint)

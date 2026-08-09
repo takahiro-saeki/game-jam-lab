@@ -1,4 +1,4 @@
-# PROJECT CHARGE — TRUE ENDING CINEMATIC v11
+# VOLT NOMAD — TRUE ENDING CINEMATIC v11
 
 Status: **Human Review approved — all four illustrations formally adopted on 2026-08-07.**
 

@@ -1,4 +1,4 @@
-# PROJECT CHARGE — Product Polish Plan
+# VOLT NOMAD — Product Polish Plan
 
 更新日: 2026-08-06
 
@@ -19,7 +19,7 @@ Codex:
 
 - ガトリング変異とレール砲変異の排他を撤廃する。
 - 両方取得時にHYBRID（複合砲身）を発動し、257/257を達成可能にする。
-- PROJECT CHARGE専用タイトル画面を作る。
+- VOLT NOMAD専用タイトル画面を作る。
 - Continue / New Hunt / Settings / Game Labを実装する。
 - Master / BGM / SFX / 画面揺れ / フラッシュの設定と保存を実装する。
 - BGMとSFXをGodotの別Audio Busへ接続する。

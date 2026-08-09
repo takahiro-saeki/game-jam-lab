@@ -3,7 +3,7 @@ extends RefCounted
 
 const PERPETUAL_SUN_GENERATION_MULTIPLIER := 12.0
 
-# PROJECT CHARGE v5 — five-gear build engine.
+# VOLT NOMAD v5 — five-gear build engine.
 # Manual commands generate resources, marks and firing orders while the AUTO
 # arsenal grows into the late-game damage engine. Every node belongs to one
 # visible, navigable gear tree.

@@ -131,5 +131,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PROJECT CHARGE Art Review: http://127.0.0.1:${port}`);
+  console.log(`VOLT NOMAD Art Review: http://127.0.0.1:${port}`);
 });

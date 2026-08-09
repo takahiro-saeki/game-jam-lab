@@ -86,11 +86,11 @@ func joy_button(button: JoyButton) -> InputEventJoypadButton:
 	return event
 
 func test_launcher() -> void:
-	print("\nPROJECT CHARGE ENTRYPOINT")
+	print("\nVOLT NOMAD ENTRYPOINT")
 	var entrypoint := Launcher.new()
 	root.add_child(entrypoint)
 	entrypoint.launch_project_charge()
-	check(entrypoint.active_game != null, "the application launches PROJECT CHARGE directly")
+	check(entrypoint.active_game != null, "the application launches VOLT NOMAD directly")
 	check(entrypoint.active_game.get("run") != null, "the direct entrypoint initializes the campaign")
 	var initial_language: bool = entrypoint.is_japanese
 	entrypoint.active_game.toggle_language()
@@ -100,7 +100,7 @@ func test_launcher() -> void:
 	entrypoint.free()
 
 func test_charge_clicker_v5() -> void:
-	print("\nPROJECT CHARGE V8 — OVERLIMIT / PRIME CURRENT / TRUE ENDING")
+	print("\nVOLT NOMAD V8 — OVERLIMIT / PRIME CURRENT / TRUE ENDING")
 	var state := ChargeClickerState.new()
 	state.rng.seed = 404
 	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v8 starts with AUTO fire online and direct enemy combat")
@@ -191,7 +191,7 @@ func test_charge_clicker_v5() -> void:
 	game.persistence_enabled = false
 	root.add_child(game)
 	game.is_japanese = true
-	check(game.title_screen_open and game.title_button_rects.size() == 6 and game.title_button_count() == 5, "PROJECT CHARGE opens on a complete title screen without a retired Game Lab action")
+	check(game.title_screen_open and game.title_button_rects.size() == 6 and game.title_button_count() == 5, "VOLT NOMAD opens on a complete title screen without a retired Game Lab action")
 	game.open_audio_settings()
 	check(game.settings_open and game.settings_row_rects.size() == 5 and AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0, "settings expose saved audio and visual-comfort controls on separate buses")
 	game.close_audio_settings()
@@ -401,8 +401,8 @@ func test_charge_clicker_v5() -> void:
 
 	var normal_seconds := simulate_project_charge_v5(false)
 	var true_seconds := simulate_project_charge_v5(true)
-	print("PROJECT CHARGE v8 efficient normal route: %.1f seconds" % normal_seconds)
-	print("PROJECT CHARGE v8 efficient true route: %.1f seconds" % true_seconds)
+	print("VOLT NOMAD v8 efficient normal route: %.1f seconds" % normal_seconds)
+	print("VOLT NOMAD v8 efficient true route: %.1f seconds" % true_seconds)
 	check(normal_seconds > 0.0 and normal_seconds < true_seconds, "true route is materially longer than the normal judging route")
 
 func simulate_project_charge_v5(include_true_route: bool) -> float:
@@ -467,7 +467,7 @@ func purchase_affordable_skills(simulated) -> void:
 			return
 
 func test_charge_clicker() -> void:
-	print("\nPROJECT CHARGE")
+	print("\nVOLT NOMAD")
 	var game := ChargeClickerGame.new()
 	game.persistence_enabled = false
 	root.add_child(game)
@@ -535,12 +535,12 @@ func test_charge_clicker() -> void:
 	var campaign_game := ChargeClickerGame.new()
 	campaign_game.persistence_enabled = false
 	root.add_child(campaign_game)
-	check(campaign_game.campaign_route.phase == campaign_game.CampaignRoute.RoutePhase.MAP, "new PROJECT CHARGE runs open on the six-stage circuit map")
+	check(campaign_game.campaign_route.phase == campaign_game.CampaignRoute.RoutePhase.MAP, "new VOLT NOMAD runs open on the six-stage circuit map")
 	var campaign_stick := InputEventJoypadMotion.new()
 	campaign_stick.axis = JOY_AXIS_LEFT_X
 	campaign_stick.axis_value = 1.0
 	campaign_game.handle_campaign_input(campaign_stick)
-	check(campaign_game.campaign_selected == 1, "left stick navigates the PROJECT CHARGE circuit map")
+	check(campaign_game.campaign_selected == 1, "left stick navigates the VOLT NOMAD circuit map")
 	campaign_game.handle_campaign_input(campaign_stick)
 	check(campaign_game.campaign_selected == 1, "held analog input is latched instead of scrolling repeatedly")
 	campaign_stick.axis_value = 0.0
@@ -567,14 +567,14 @@ func test_charge_clicker() -> void:
 	campaign_game.run.apply_output(2.0, false)
 	check(campaign_game.complete_campaign_boss() and campaign_game.campaign_route.phase == campaign_game.CampaignRoute.RoutePhase.NORMAL_END, "the chosen boss reaches the complete normal ending screen")
 	var share_result := campaign_game.campaign_result_text()
-	check("PROJECT CHARGE" in share_result and "3/6" in share_result, "ending results produce a compact shareable campaign record")
+	check("VOLT NOMAD" in share_result and "3/6" in share_result, "ending results produce a compact shareable campaign record")
 	check(campaign_game.campaign_route.continue_true_route(), "normal ending can continue into the same build without reset")
 	campaign_game.free()
 	var reset_guard_game := ChargeClickerGame.new()
 	reset_guard_game.persistence_enabled = false
 	root.add_child(reset_guard_game)
 	reset_guard_game.run.credits = 77
-	check(not reset_guard_game.request_reset() and reset_guard_game.run.credits == 77, "the first PROJECT CHARGE reset input only arms a confirmation window")
+	check(not reset_guard_game.request_reset() and reset_guard_game.run.credits == 77, "the first VOLT NOMAD reset input only arms a confirmation window")
 	check(reset_guard_game.request_reset() and reset_guard_game.run.credits == 0, "a confirmed second reset starts a fresh campaign")
 	reset_guard_game.free()
 
@@ -600,10 +600,10 @@ func test_charge_clicker() -> void:
 		mechanics.upgrade_levels[id] = 2
 	check(mechanics.active_synergies().size() == 4, "the eight upgrades form four functional two-part synergies")
 	var campaign_seconds := simulate_project_charge_normal_route()
-	print("PROJECT CHARGE efficient normal-route simulation: %.1f seconds" % campaign_seconds)
+	print("VOLT NOMAD efficient normal-route simulation: %.1f seconds" % campaign_seconds)
 	check(campaign_seconds >= 600.0 and campaign_seconds <= 1100.0, "an efficient three-stage normal route lands in the 10–18 minute automation band")
 	var true_route_seconds := simulate_project_charge_true_route()
-	print("PROJECT CHARGE efficient true-route simulation: %.1f seconds" % true_route_seconds)
+	print("VOLT NOMAD efficient true-route simulation: %.1f seconds" % true_route_seconds)
 	check(true_route_seconds >= 1500.0 and true_route_seconds <= 3000.0, "an efficient full true route lands in the 25–50 minute automation band")
 
 	var stage := ChargeClickerState.new()

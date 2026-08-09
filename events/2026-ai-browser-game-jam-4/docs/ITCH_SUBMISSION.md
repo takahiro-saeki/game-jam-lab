@@ -1,11 +1,11 @@
-# PROJECT CHARGE — itch.io Submission Kit
+# VOLT NOMAD — itch.io Submission Kit
 
 Prepared for **AI Browser Game Jam 4**. The jam requires a free, browser-playable entry and encourages open disclosure of the AI-assisted workflow. Submission closes **2026-08-15 03:00 JST**.
 
 ## Page metadata
 
-- **Title:** PROJECT CHARGE
-- **Project URL:** `project-charge`
+- **Title:** VOLT NOMAD
+- **Project URL:** `volt-nomad`
 - **Classification:** Game
 - **Kind of project:** HTML
 - **Release status:** Released
@@ -26,7 +26,7 @@ Hunt six machine beasts, inherit their cores, and turn every click of CHARGE int
 
 **The first current beneath the earth has refused to stop.**
 
-PROJECT CHARGE is a compact incremental boss rush about a lone recovery automaton descending into a subterranean world engine. Every manual command deals damage and generates **CHARGE**. Spend it across five interconnected gear trees, evolve your automatic weapons, and inherit the cores of the machine beasts you defeat.
+VOLT NOMAD is a compact incremental boss rush about a lone recovery automaton descending into a subterranean world engine. Every manual command deals damage and generates **CHARGE**. Spend it across five interconnected gear trees, evolve your automatic weapons, and inherit the cores of the machine beasts you defeat.
 
 Choose any three of six hunts to reach a fast normal ending. If the build has you hooked, return for the remaining beasts, the second abyssal boss, ARCH SINGULARITY, and the signal waiting below the world engine.
 
@@ -59,7 +59,7 @@ CHARGE is both the game's resource and its central verb. A click is an attack, a
 
 ## AI-assisted production disclosure
 
-PROJECT CHARGE was created specifically for AI Browser Game Jam 4 through an AI-heavy, human-directed workflow.
+VOLT NOMAD was created specifically for AI Browser Game Jam 4 through an AI-heavy, human-directed workflow.
 
 - **Game direction, playtesting, selection, and final decisions:** Takahiro Saeki
 - **Code, systems design, balancing, UX copy, and production support:** OpenAI Codex in collaboration with Takahiro Saeki
@@ -119,14 +119,14 @@ Use screenshots 1–5 on the public page. Add screenshot 6 only if the page need
 
 ## Upload checklist
 
-- Run `tools/build-itch-project-charge.sh` to create the dedicated direct-launch build and `build/itch/project-charge-web.zip`.
+- Run `tools/build-itch-project-charge.sh` to create the dedicated direct-launch build and `build/itch/volt-nomad-web.zip`.
 - Export the Godot Web build with `index.html` at the root of the ZIP.
-- Open the ZIP build without query parameters and confirm it starts on the PROJECT CHARGE title screen.
+- Open the ZIP build without query parameters and confirm it starts on the VOLT NOMAD title screen.
 - Confirm the game starts in a private browser window without local saves.
 - Confirm audio is initially respectful of browser autoplay rules.
 - Confirm English is usable without reading the Japanese copy.
 - Enable **This file will be played in the browser** for the Web ZIP.
 - Enable fullscreen.
 - Add screenshots in the order above and use `01-title-screen.png` as the initial cover source.
-- Join AI Browser Game Jam 4 and select PROJECT CHARGE as the submission.
+- Join AI Browser Game Jam 4 and select VOLT NOMAD as the submission.
 - Reopen the public page and complete one fresh normal-route run before the deadline.

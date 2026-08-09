@@ -1,4 +1,4 @@
-# PROJECT CHARGE v7 — PURE COMMAND / RECORDS / INFINITE
+# VOLT NOMAD v7 — PURE COMMAND / RECORDS / INFINITE
 
 ## 今回確定した範囲
 
@@ -62,7 +62,7 @@ Tier II / IIIには従来の幹1・枝2に加え、各枝の先へ1ノードず�
 
 - Noto Sans JPのウェイトを500から600へ上げる。
 - 補助文字色を明るくし、暗背景とのコントラストを改善。
-- PROJECT CHARGEの8〜10px級テキストを10〜12pxへ引き上げる。
+- VOLT NOMADの8〜10px級テキストを10〜12pxへ引き上げる。
 - 敵HPはパーセントと `現在HP / 最大HP` を併記。
 - スキルカード、Tierタブ、ギア進捗、操作ヒントを優先して拡大。
 
