@@ -312,6 +312,7 @@ var story_log_selected := 0
 var story_log_scroll := 0
 var story_log_return_to_title := false
 var story_preview_event_id := ""
+var story_archive_preview_all := false
 var story_singularity_phase := 1
 
 var charge_rect := Rect2(70, 502, 284, 88)
@@ -437,6 +438,9 @@ func _ready() -> void:
 	if not story_preview_event_id.is_empty():
 		title_screen_open = false
 		start_story_event(story_preview_event_id, true)
+	elif story_archive_preview_all:
+		unlock_story_archive_for_preview()
+		open_story_log(true)
 	setup_music()
 	evaluate_achievements(false)
 	refresh_music()
@@ -565,9 +569,16 @@ func apply_web_art_preview() -> void:
 	if window == null:
 		return
 	var values := parse_query_string(str(window.location.search))
+	var preview_hostname := str(window.location.hostname).to_lower()
+	var is_local_preview_host := preview_hostname in ["127.0.0.1", "localhost", "::1"]
 	campaign_preview_screen = str(values.get("campaign_preview", ""))
 	story_preview_event_id = str(values.get("story_preview", "")) if OS.is_debug_build() else ""
+	story_archive_preview_all = is_local_preview_host and str(values.get("story_archive", "")) == "all"
 	debug_dialogue_requested = str(values.get("debug_dialogue", "")) == "1"
+	if story_archive_preview_all:
+		# Release exports are used for browser QA, so gate this by hostname rather
+		# than OS.is_debug_build(). Never read or mutate the player's real save.
+		persistence_enabled = false
 	if debug_dialogue_requested:
 		pending_debug_dialogue = {
 			"speaker_ja": str(values.get("dialogue_speaker", "デバッグ通信")),
@@ -2909,6 +2920,13 @@ func open_story_log(from_title: bool) -> void:
 	queue_redraw()
 
 
+func unlock_story_archive_for_preview() -> void:
+	# Local QA helper only. It deliberately unlocks the permanent archive object
+	# without marking campaign-route events as seen or writing a save bundle.
+	for event_id in StoryCatalog.event_ids():
+		achievements.archive_story_event(event_id)
+
+
 func close_story_log() -> void:
 	story_log_open = false
 	story_log_return_to_title = false
@@ -3441,6 +3459,8 @@ func draw_story_log() -> void:
 	var total := StoryCatalog.event_ids().size()
 	var recovered: int = achievements.story_archive_ids.size()
 	draw_string(Palette.UI_FONT, Vector2(50, 84), loc("回収済み %d / %d　選択した会話は何度でも再生できます" % [recovered, total], "RECOVERED %d / %d · UNLOCKED SCENES MAY BE REPLAYED" % [recovered, total]), HORIZONTAL_ALIGNMENT_LEFT, 760, 14, Palette.MUTED)
+	if story_archive_preview_all:
+		draw_string(DisplayFont, Vector2(50, 110), loc("開発検証：全メモリ開放中 // セーブ無効", "LOCAL QA: ALL MEMORIES UNLOCKED // SAVE DISABLED"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, Palette.AMBER)
 	draw_campaign_button(story_language_rect, loc("日本語 / EN", "EN / 日本語"), Palette.CYAN, false)
 	draw_campaign_button(story_log_close_rect, loc("閉じる  J", "CLOSE  J"), Palette.MUTED, false)
 	var ids := StoryCatalog.event_ids()

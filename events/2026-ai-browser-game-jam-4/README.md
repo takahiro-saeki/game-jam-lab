@@ -90,6 +90,16 @@ VOLT NOMAD directly:
 events/2026-ai-browser-game-jam-4/tools/build-itch-project-charge.sh
 ```
 
+For a complete Story Log review in the local browser export, open:
+
+```text
+http://127.0.0.1:6680/?story_archive=all
+```
+
+This localhost-only QA mode temporarily unlocks all 32 recovered memories,
+opens the Story Log directly, and disables save loading and writing. The query
+does nothing on itch.io or any other non-local hostname.
+
 ## AI and asset disclosure
 
 - Game concepts, GDScript implementation, testing, balancing, and documentation were created in collaboration with OpenAI Codex.

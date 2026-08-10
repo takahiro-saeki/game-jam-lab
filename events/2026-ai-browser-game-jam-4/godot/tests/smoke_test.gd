@@ -252,6 +252,10 @@ func test_charge_clicker_v5() -> void:
 	game.close_story_event(true)
 	check(game.story_log_open, "closing an archived replay returns to the story log")
 	game.close_story_log()
+	var campaign_seen_before_preview: int = game.campaign_route.story_event_ids.size()
+	game.unlock_story_archive_for_preview()
+	check(game.achievements.story_archive_ids.size() == ChargeStoryCatalog.event_ids().size(), "the local QA helper unlocks all thirty-two story-log memories in memory")
+	check(game.campaign_route.story_event_ids.size() == campaign_seen_before_preview, "the local QA helper does not mark campaign progression events as seen")
 	check(game.BGMStreams.size() == 18 and game.desired_bgm_key() == "map", "music routing includes separate title/map slots, independent endings, artwork and all three PRIME CURRENT forms")
 	check(str(game.BGMStreams["title"].resource_path).ends_with("awakening_below.mp3") and str(game.BGMStreams["map"].resource_path).ends_with("six_core_descent.mp3"), "selected Awakening Below A and Six-Core Descent B masters are assigned to title and map")
 	var final_form_stream_paths := {}
