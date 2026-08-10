@@ -1,5 +1,16 @@
 # YouTube / Vimeo handoff
 
+## Published URLs
+
+- Channel: https://www.youtube.com/@tsgamestudio
+- Trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
+- itch.io: https://tsgamestudio.itch.io/volt-nomad
+
+The trailer was published on 2026-08-11 and passed YouTube's copyright check
+with no issues detected. A one-time channel verification is still required to
+replace the generated thumbnail with the custom key art and enable clickable
+external links in the description.
+
 ## Title
 
 VOLT NOMAD — Official Trailer | AI Browser Game Jam 4
