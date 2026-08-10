@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-07T06:40:36.585Z",
+  "updatedAt": "2026-08-10T07:16:21.835Z",
   "project": {
     "id": "project-charge",
     "title": "VOLT NOMAD",
@@ -4977,6 +4977,134 @@
             "concerns": [
               "文字枠にはならないため、既存のコード描画プレートと組み合わせる"
             ]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "v12-defeat-vfx",
+      "order": 30,
+      "title": "Mechanical beast defeat VFX",
+      "titleJa": "機械魔獣・機神 撃破VFX",
+      "objective": "通常魔獣からPRIME CURRENTまで共通利用できる三段階の機核崩壊素材を作り、Godotの発光・破片・画面揺れと組み合わせて固有の撃破演出へ仕上げる。",
+      "gate": "透明背景、中央の敵シルエットを隠し切らない輪郭、128〜320px表示で亀裂・衝撃環・飛散片の役割が分離して読める。文字・偽文字・完成済み背景を含まない。",
+      "status": "integrated",
+      "candidates": [
+        {
+          "id": "defeat-vfx-core-fracture-v12-a",
+          "title": "Sixfold Core Fracture",
+          "titleJa": "六相機核亀裂",
+          "variation": "撃破直前。中心の機核へ六方向から亀裂が集まり、白青の電流が露出する破断層。",
+          "prompt": "One centered mechanical core rupture overlay for a boss defeat animation, a small dark circular machine core split by exactly six sharp radial fractures, white-cyan electricity exposed inside the cracks, restrained violet ion sparks and a few coral warning pixels, the outer area mostly transparent so a large enemy sprite remains visible behind it, symmetrical front-facing orthographic effect, no creature, no scenery, no completed explosion. Premium authored 16-bit pixel art game VFX, crisp deliberate pixel clusters, hard one-to-two pixel edges, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated effect on transparent background, no ground, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/vfx/defeat-vfx-core-fracture-v12-a.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-10T07:14:59.329Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 2,
+            "score": 88,
+            "summary": "亀裂そのものに加えて装甲リングも生成されたため、敵へ重ねる小さな破断核として採用。真ボスでは中心機構の露出にも使える。",
+            "strengths": ["六方向の白青亀裂が明瞭", "既存の機械魔獣と同じ工業密度"],
+            "concerns": ["外装面積が大きいため全画面ではなく中心へ縮小して使用"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "defeat-vfx-voltage-halo-v12-b",
+          "title": "Broken Voltage Halo",
+          "titleJa": "断裂電圧環",
+          "variation": "爆発瞬間。中心から外へ膨張する三重の壊れた電圧環と短い放電アーク。",
+          "prompt": "One centered expanding electrical shockwave overlay for a mechanical boss defeat, exactly three clearly separated broken concentric voltage rings, thin white-cyan leading edges, violet plasma gaps, sparse amber capacitor sparks and small coral overload arcs, empty transparent center and generous transparent space between ring fragments, designed to expand over an existing enemy sprite, no creature, no scenery, no fireball. Premium authored 16-bit pixel art game VFX, crisp deliberate pixel clusters, hard one-to-two pixel edges, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated effect on transparent background, no ground, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/vfx/defeat-vfx-voltage-halo-v12-b.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-10T07:15:34.958Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "alternate",
+            "rank": 3,
+            "score": 84,
+            "summary": "透明な衝撃波より機械式の電圧環として生成された。爆発瞬間に短時間だけ拡大・透過させる中間層として使用する。",
+            "strengths": ["シアン・紫・アンバーの電流経路が強い", "円形シルエットが画面中央へ視線を集める"],
+            "concerns": ["中央が空ではないため低アルファ・短時間表示に限定"]
+          },
+          "humanReview": {
+            "status": "unreviewed",
+            "rating": null,
+            "note": "",
+            "reviewedAt": null
+          }
+        },
+        {
+          "id": "defeat-vfx-machine-shards-v12-c",
+          "title": "Machine-Seraph Shard Bloom",
+          "titleJa": "機天破片華",
+          "variation": "爆発後。翼状に広がる機械片と消え残る小さな機核光。",
+          "prompt": "One centered radial bloom of mechanical defeat debris, twenty to thirty individually readable dark navy armor shards flying outward in an elegant six-wing arrangement, a very small fading ivory-cyan core light at the center, thin violet electricity connecting only a few fragments, restrained coral-hot broken edges, large transparent gaps and no intact body, suitable as the final layer of a boss disintegration animation, no scenery, no smoke cloud, no generic fire explosion. Premium authored 16-bit pixel art game VFX, crisp deliberate pixel clusters, hard one-to-two pixel edges, deep navy #09111F #111D31 #182B43, electric cyan #4DEEEA, restrained violet #9B5DE5, amber #FFB703, coral #FF5C5C and warm ivory #F5F0DB, isolated effect on transparent background, no ground, no text, no letters, no numbers, no logo, no watermark, no blur, no antialiasing, no glossy mobile-game style, no resemblance to an existing franchise.",
+          "model": "pixen",
+          "width": 256,
+          "height": 256,
+          "noBackground": true,
+          "detail": "highly detailed",
+          "view": null,
+          "direction": null,
+          "seed": null,
+          "file": "source/vfx/defeat-vfx-machine-shards-v12-c.png",
+          "generation": {
+            "status": "generated",
+            "generatedAt": "2026-08-10T07:16:21.835Z",
+            "usage": {
+              "type": "generations",
+              "generations": 1
+            },
+            "error": null
+          },
+          "codexReview": {
+            "status": "recommended",
+            "rank": 1,
+            "score": 96,
+            "summary": "六翼状の装甲片と中心光が、通常の火球ではないVOLT NOMAD固有の機械爆発として最も完成度が高い。全撃破演出の最終層へ採用。",
+            "strengths": ["機械片の輪郭と中心光が小表示でも読める", "PRIME CURRENTの機天使意匠と自然につながる"],
+            "concerns": ["通常魔獣では表示サイズと色を抑え、真ボスとの差を残す"]
           },
           "humanReview": {
             "status": "unreviewed",

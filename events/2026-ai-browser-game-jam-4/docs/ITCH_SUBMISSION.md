@@ -120,6 +120,8 @@ Use screenshots 1–5 on the public page. Add screenshot 6 only if the page need
 
 ## Upload checklist
 
+- Run `godot --headless --path godot --script res://tests/smoke_test.gd` and confirm every gameplay/system check passes.
+- Run `godot --headless --path godot --script res://tests/release_audit.gd` and confirm all 1,440 campaign permutations, bilingual story records, packaged audio/VFX, saves, and route invariants pass.
 - Run `tools/build-itch-project-charge.sh` to create the dedicated direct-launch build and `build/itch/volt-nomad-web.zip`.
 - Export the Godot Web build with `index.html` at the root of the ZIP.
 - Open the ZIP build without query parameters and confirm it starts on the VOLT NOMAD title screen.

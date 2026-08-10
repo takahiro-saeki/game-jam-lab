@@ -1,5 +1,12 @@
 # Asset provenance
 
+## 2026-08-10 — DEFEAT VFX v12
+
+- PixelLab API (`pixen`) で撃破演出用の透過256×256素材を3案生成。機械核の破断、電圧ハロー、機械片の爆散をそれぞれ独立したレイヤーとして設計した。
+- 採用構成は `defeat-vfx-core-fracture-v12-a.png` と `defeat-vfx-voltage-halo-v12-b.png` を敵背面の低輝度レイヤー、`defeat-vfx-machine-shards-v12-c.png` を前面の決着フレームとして合成する。単一の矩形画像に見えないよう、ゲーム側でクロップ、回転、拡縮、発光、手描きの亀裂線を時間差で重ねている。
+- 元画像のピクセルは加工せず `godot/assets/charge_clicker/pixellab/source/vfx/` に保存。生成プロンプト、API usage、Codex選考はレビューバッチ `v12-defeat-vfx` に記録した。
+- 6機械魔獣、通常ボス、ARCH SINGULARITY、PRIME CURRENTの各形態で同じ素材を色・速度・規模だけ変えて使用し、個体ごとのBGMや会話を保ったまま撃破の読後感を統一している。
+
 ## 2026-08-07 — TRUE ENDING CINEMATIC v11
 
 - OpenAI built-in image generationで、既存PixelLab素材をキャラクター参照にした16:9の真エンディング用イラスト4枚を生成。
@@ -34,7 +41,7 @@ The Japanese and Latin body UI typeface is [Noto Sans JP](https://github.com/goo
 
 ## VOLT NOMAD — PixelLab exploration and mechanical-beast production pass
 
-Eighty-nine original pixel-art candidates were generated through PixelLab API v2 on August 2–7, 2026. The first 26 consist of five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, three 64×64 transparent energy-shard icons, and nine 64×64 transparent control emblems for CHARGE, DISCHARGE, and AUTO OFF. The UI Identity pass added 18 transparent machine-housing candidates: three 384×128 upgrade racks, three 384×128 three-part control kits, six 320×80 GRID WRAITH gauge attempts, and six 192×96 shard-accumulator attempts. The v3 hunt pass added one 256×256 transparent first-pass sprite for each of six mechanical beasts, two normal bosses, and the true boss. The v5 visual-identity pass added three 192×192 protagonist concepts, fifteen 96×96 five-gear emblems, and nine 320×180 region backgrounds. The v6 refinement pass added three slimmer 192×192 protagonist candidates. The v10 combat polish pass added three 192×96 AUTO projectile effects and three 256×128 OVERLIMIT UI concepts. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
+Ninety-two original pixel-art candidates were generated through PixelLab API v2 on August 2–10, 2026. The first 26 consist of five 192×192 transparent reactor candidates, three 320×180 generator-chamber candidates, three 96×144 transparent charge cells, three 192×192 transparent GRID WRAITH candidates, three 64×64 transparent energy-shard icons, and nine 64×64 transparent control emblems for CHARGE, DISCHARGE, and AUTO OFF. The UI Identity pass added 18 transparent machine-housing candidates: three 384×128 upgrade racks, three 384×128 three-part control kits, six 320×80 GRID WRAITH gauge attempts, and six 192×96 shard-accumulator attempts. The v3 hunt pass added one 256×256 transparent first-pass sprite for each of six mechanical beasts, two normal bosses, and the true boss. The v5 visual-identity pass added three 192×192 protagonist concepts, fifteen 96×96 five-gear emblems, and nine 320×180 region backgrounds. The v6 refinement pass added three slimmer 192×192 protagonist candidates. The v10 combat polish pass added three 192×96 AUTO projectile effects and three 256×128 OVERLIMIT UI concepts. The v12 defeat pass added three 256×256 transparent mechanical destruction layers. Each successful request consumed one subscription generation. No generated pixels were manually edited during these exploration batches.
 
 - Untouched API outputs: `godot/assets/charge_clicker/pixellab/source/`
 - Full prompts, settings, usage, scores, and review decisions: `tools/art-review/data/review-manifest.json`
@@ -55,6 +62,7 @@ Eighty-nine original pixel-art candidates were generated through PixelLab API v2
 - Integrated human-selected v6 protagonist: `protagonist/protagonist-volt-nomad-v6-a.png`
 - Integrated v5 gear emblems: `gear/gear-striker-piston-a.png`, `gear-dynamo-flywheel-a.png`, `gear-autogun-rail-a.png`, `gear-drone-crown-a.png`, and `gear-core-cradle-a.png`
 - Integrated v5 region backgrounds: `environment/bg-scrap-ossuary-a.png`, `bg-geo-pressure-foundry-a.png`, and `bg-biocrystal-observatory-a.png`
+- Integrated v12 defeat layers: `vfx/defeat-vfx-core-fracture-v12-a.png`, `defeat-vfx-voltage-halo-v12-b.png`, and `defeat-vfx-machine-shards-v12-c.png`
 
 The first eight provisional machinery selections are rendered in the game for an in-context quality check but have not been copied to `approved/`. Human review selected the switchboard control kit and gauge plus the corrupted blank shard accumulator; those three are now integrated into Godot. The switchboard upgrade rack is integrated as an explicitly replaceable provisional selection because its alternate received only a hold rating. All nine hunt sprites are likewise integrated as first-pass candidates so silhouette and rule readability can be judged in the real map and combat layout before additional generations are spent. Human-reviewed selections now provide the v6 Volt Nomad protagonist, five v5 gear emblems, and three v5 encounter regions; untouched alternates stay reviewable. The Phase Mantis wing count, Thermal Titan's humanoid silhouette, and Twin-Rail Autogun silhouette remain explicit refinement targets. Every alternate and prompt remains selectable in the local review board, preserving an auditable generation and selection history.
 
@@ -67,6 +75,8 @@ On August 6, 2026, twelve additional instrumental candidates were generated as A
 On August 8–9, 2026, the user selected five further masters: TRUE ENDING B, PRIME CURRENT form one B, form two A, form three A, and ARTWORK A. The three boss forms now change music independently and the gallery no longer borrows map or ending music. These five canonical 48 kHz stereo MP3 files bring the runtime soundtrack to sixteen unique tracks. Exact source URLs, song IDs, durations, A/B decisions, and filenames are recorded in [`SUNO_MUSIC_BRIEF.md`](SUNO_MUSIC_BRIEF.md).
 
 On August 9, 2026, the standalone VOLT NOMAD release received two final 3-minute masters: `Awakening Below` A for the title screen and `Six-Core Descent` B for the hunt map. Both were generated with an explicit 3:00 custom duration after rejecting short automatic-duration drafts. The two canonical MP3 files replace the shared provisional map music and bring the runtime soundtrack to seventeen unique tracks.
+
+On August 10, 2026, two short instrumental victory-stinger candidates were generated for a distinct end-of-encounter punctuation. The 13-second A candidate, `Nomad Victory Signal`, was selected for its immediate transient and concise four-note Volt motif. The game plays authored excerpts with encounter-specific pitch and duration, ducks the active BGM, and retains a synthesized fallback for headless tests. This brings the shipped soundtrack to eighteen unique tracks.
 
 - Untouched masters: 48 kHz / 16-bit / stereo WAV downloads retained outside the repository by the user.
 - Shipped derivatives: `godot/assets/audio/project_charge/*.ogg` and the seven selected later-production `*.mp3` masters.

@@ -43,6 +43,7 @@ const BGMStreams := {
 	# or true-ending music.
 	"artwork_gallery": preload("res://assets/audio/project_charge/recovered_memory_archive.mp3"),
 }
+const VictoryJingleStream: AudioStream = preload("res://assets/audio/project_charge/nomad_victory_signal.mp3")
 # Every enemy encounter has its own mastered track. The generic keys remain the
 # dedicated Gearmaw and Thermal Titan tracks as well as safe fallback values.
 const EncounterBGMKeys := {
@@ -187,6 +188,16 @@ const UpgradeRackTexture: Texture2D = preload("res://assets/charge_clicker/pixel
 const ControlConsoleKitTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/control-kit-switchboard-a.png")
 const WraithGaugeTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/wraith-gauge-switchboard-a.png")
 const ShardAccumulatorTexture: Texture2D = preload("res://assets/charge_clicker/pixellab/source/ui/shard-accumulator-corrupted-b.png")
+const DefeatVFX := {
+	"fracture": preload("res://assets/charge_clicker/pixellab/source/vfx/defeat-vfx-core-fracture-v12-a.png"),
+	"halo": preload("res://assets/charge_clicker/pixellab/source/vfx/defeat-vfx-voltage-halo-v12-b.png"),
+	"shards": preload("res://assets/charge_clicker/pixellab/source/vfx/defeat-vfx-machine-shards-v12-c.png"),
+}
+const ENCOUNTER_LAB_IDS := [
+	"gearmaw", "vaultback", "pyre_wyrm", "relay_hydra", "swarm_matriarch", "phase_mantis",
+	"grid_leech", "thermal_titan", "arch_singularity",
+	"prime_current_form_1", "prime_current_form_2", "prime_current_form_3",
+]
 
 const VIEW := Vector2(1280, 720)
 const BGM_VOLUME_DB := -10.0
@@ -211,6 +222,8 @@ var bgm_active_index := -1
 var bgm_key := ""
 var bgm_crossfade: Tween
 var bgm_jingle_duck: Tween
+var victory_jingle_player: AudioStreamPlayer
+var victory_jingle_fade: Tween
 var music_enabled := true
 var music_volume_before_mute := 0.72
 var run
@@ -235,6 +248,12 @@ var art_preview_tree_tier := 3
 var campaign_preview_screen := ""
 var debug_battle_id := ""
 var debug_battle_overlimit_count := 5
+var encounter_lab_enabled := false
+var encounter_lab_open := false
+var encounter_lab_selected := 0
+var encounter_lab_text_enabled := true
+var encounter_lab_last_action := ""
+var encounter_lab_freeze_combat := false
 
 var animation_time := 0.0
 var charge_held := false
@@ -281,7 +300,13 @@ var epilogue_return_to_artwork := false
 var final_defeat_cinematic_open := false
 var final_defeat_cinematic_time := 0.0
 var final_defeat_burst_stage := 0
-var final_defeat_dialogue_started := false
+var defeat_preview_open := false
+var defeat_preview_time := 0.0
+var defeat_preview_encounter_id := ""
+var defeat_preview_return_to_lab := false
+var defeat_preview_burst_stage := 0
+var defeat_preview_duration := 4.8
+var pending_campaign_defeat_resolution := false
 var artwork_open := false
 var artwork_viewer_open := false
 var artwork_selected := 0
@@ -305,6 +330,7 @@ var story_event_definition: Dictionary = {}
 var story_event_line_index := 0
 var story_event_from_lab := false
 var story_event_from_log := false
+var story_event_from_encounter_lab := false
 var story_event_after_action := ""
 var story_event_queue: Array[Dictionary] = []
 var story_lab_open := false
@@ -316,6 +342,7 @@ var story_log_scroll := 0
 var story_log_return_to_title := false
 var story_preview_event_id := ""
 var story_archive_preview_all := false
+var browser_test_muted := false
 var story_singularity_phase := 1
 var tutorial_open := false
 var tutorial_page := 0
@@ -392,11 +419,28 @@ var story_log_close_rect := Rect2(1034, 28, 188, 44)
 var story_log_replay_rect := Rect2(828, 598, 368, 48)
 var tutorial_next_rect := Rect2(778, 590, 392, 54)
 var tutorial_skip_rect := Rect2(92, 590, 220, 48)
+var encounter_lab_action_rects: Array[Rect2] = [
+	Rect2(824, 196, 352, 54),
+	Rect2(824, 262, 352, 54),
+	Rect2(824, 328, 352, 54),
+	Rect2(824, 394, 352, 54),
+	Rect2(824, 460, 352, 54),
+]
+var encounter_lab_text_rect := Rect2(824, 536, 352, 48)
+var encounter_lab_close_rect := Rect2(1004, 622, 172, 44)
+var encounter_lab_return_rect := Rect2(1080, 80, 160, 38)
 
 func _ready() -> void:
 	apply_web_art_preview()
 	audio_settings = AudioSettings.new()
 	audio_settings.load_settings()
+	if browser_test_muted:
+		# Local browser QA must never surprise someone working nearby. This is an
+		# in-memory override only; it deliberately leaves player settings untouched.
+		audio_settings.master_volume = 0.0
+		audio_settings.music_volume = 0.0
+		audio_settings.sfx_volume = 0.0
+		audio_settings.apply()
 	music_enabled = audio_settings.music_volume > 0.001
 	music_volume_before_mute = maxf(0.72, audio_settings.music_volume)
 	synth = Synth.new()
@@ -418,7 +462,9 @@ func _ready() -> void:
 		run.unlock_overlimit_system()
 	title_has_saved_campaign = resumed
 	title_screen_open = not art_preview_enabled
-	if not debug_battle_id.is_empty():
+	if encounter_lab_enabled:
+		configure_encounter_lab()
+	elif not debug_battle_id.is_empty():
 		configure_debug_battle()
 	elif art_preview_enabled:
 		if campaign_preview_screen.is_empty():
@@ -432,7 +478,9 @@ func _ready() -> void:
 		campaign_selected = first_available_stage_index()
 	elif campaign_route.phase == CampaignRoute.RoutePhase.BOSS_SELECT:
 		campaign_selected = 0
-	if not debug_battle_id.is_empty():
+	if encounter_lab_enabled:
+		show_message(loc("開発検証：全敵演出ラボ // セーブ無効", "LOCAL QA: ENCOUNTER LAB // SAVE DISABLED"), 4.0)
+	elif not debug_battle_id.is_empty():
 		show_message(loc("開発検証：PRIME CURRENT直行 // セーブ無効", "LOCAL QA: PRIME CURRENT DIRECT // SAVE DISABLED"), 4.0)
 	elif resumed:
 		show_message(loc("保存したキャンペーンを再開", "CAMPAIGN RESUMED"), 3.0)
@@ -470,6 +518,12 @@ func setup_music() -> void:
 		player.volume_db = BGM_SILENT_DB
 		add_child(player)
 		bgm_players.append(player)
+	victory_jingle_player = AudioStreamPlayer.new()
+	victory_jingle_player.name = "VictoryJingle"
+	victory_jingle_player.bus = AudioSettings.BUS_MUSIC
+	victory_jingle_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+	victory_jingle_player.stream = VictoryJingleStream
+	add_child(victory_jingle_player)
 
 func desired_bgm_key() -> String:
 	if final_defeat_cinematic_open:
@@ -541,19 +595,36 @@ func refresh_music(force := false) -> void:
 
 
 func play_defeat_jingle(kind: String) -> void:
-	# When the encounter keeps the same track (normal hunts), briefly duck it so
-	# the victory motif reads clearly. Boss route changes already crossfade the
-	# old track out and therefore need no competing volume tween.
+	# The selected 13-second Suno cue has an immediate authored opening. We use a
+	# short, softly faded excerpt so a kill reads as a musical event without
+	# slowing the clicker loop or spilling far into the next screen.
+	var hold := 2.15 if kind == "hunt" else 2.75 if kind == "boss" else 1.75
 	if music_enabled and bgm_active_index >= 0 and desired_bgm_key() == bgm_key:
 		if bgm_jingle_duck != null and bgm_jingle_duck.is_valid():
 			bgm_jingle_duck.kill()
 		var player := bgm_players[bgm_active_index]
-		var hold := 0.62 if kind == "hunt" else 0.92
 		bgm_jingle_duck = create_tween()
-		bgm_jingle_duck.tween_property(player, "volume_db", BGM_VOLUME_DB - 10.0, 0.07)
+		bgm_jingle_duck.tween_property(player, "volume_db", BGM_VOLUME_DB - 12.0, 0.07)
 		bgm_jingle_duck.tween_interval(hold)
 		bgm_jingle_duck.tween_property(player, "volume_db", BGM_VOLUME_DB, 0.34)
-	synth.defeat_jingle(kind)
+	if music_enabled and victory_jingle_player != null:
+		if victory_jingle_fade != null and victory_jingle_fade.is_valid():
+			victory_jingle_fade.kill()
+		victory_jingle_player.stop()
+		victory_jingle_player.pitch_scale = 1.08 if kind == "hunt" else 0.96 if kind == "boss" else 1.14
+		victory_jingle_player.volume_db = -4.5 if kind == "boss" else -6.0
+		victory_jingle_player.play()
+		victory_jingle_fade = create_tween()
+		victory_jingle_fade.tween_interval(hold)
+		victory_jingle_fade.tween_property(victory_jingle_player, "volume_db", BGM_SILENT_DB, 0.38)
+		victory_jingle_fade.finished.connect(func() -> void:
+			if is_instance_valid(victory_jingle_player):
+				victory_jingle_player.stop()
+		)
+	else:
+		# Retain deterministic synthesized coverage for headless tests and any
+		# platform unable to instantiate the streamed master.
+		synth.defeat_jingle(kind)
 
 func toggle_music() -> void:
 	if audio_settings == null:
@@ -602,6 +673,8 @@ func apply_web_art_preview() -> void:
 	var is_local_preview_host := preview_hostname in ["127.0.0.1", "localhost", "::1"]
 	campaign_preview_screen = str(values.get("campaign_preview", "")) if is_local_preview_host else ""
 	debug_battle_id = str(values.get("debug_battle", "")) if is_local_preview_host else ""
+	encounter_lab_enabled = is_local_preview_host and str(values.get("encounter_lab", "")) == "1"
+	browser_test_muted = is_local_preview_host and str(values.get("mute_test", "")) == "1"
 	var overlimit_value := str(values.get("overlimits", "all"))
 	debug_battle_overlimit_count = 5 if overlimit_value == "all" else clampi(int(overlimit_value), 0, 5)
 	story_preview_event_id = str(values.get("story_preview", "")) if OS.is_debug_build() else ""
@@ -612,6 +685,8 @@ func apply_web_art_preview() -> void:
 		# than OS.is_debug_build(). Never read or mutate the player's real save.
 		persistence_enabled = false
 	if not debug_battle_id.is_empty():
+		persistence_enabled = false
+	if encounter_lab_enabled:
 		persistence_enabled = false
 	if debug_dialogue_requested:
 		pending_debug_dialogue = {
@@ -715,6 +790,15 @@ func configure_campaign_preview() -> void:
 			campaign_route.true_end_seen = true
 			campaign_route.final_boss_defeated = true
 			campaign_route.phase = CampaignRoute.RoutePhase.FINAL_END
+			var explosion_definition := StageCatalog.boss("prime_current_form_3")
+			run.begin_final_boss_form("prime_current_form_3", float(explosion_definition.hp), 3)
+			run.boss_hp = 0.0
+			run.stage_phase = ChargeState.StagePhase.CLEAR
+			start_final_defeat_sequence()
+		"final_explosion":
+			campaign_route.true_end_seen = true
+			campaign_route.final_boss_defeated = true
+			campaign_route.phase = CampaignRoute.RoutePhase.FINAL_END
 			var final_definition := StageCatalog.boss("prime_current_form_3")
 			run.begin_final_boss_form("prime_current_form_3", float(final_definition.hp), 3)
 			run.boss_hp = 0.0
@@ -778,6 +862,145 @@ func configure_debug_battle() -> bool:
 	if not event_id.is_empty():
 		start_story_event_once(event_id)
 	return true
+
+
+func configure_encounter_lab() -> void:
+	run.reset()
+	campaign_route.reset()
+	encounter_lab_open = true
+	encounter_lab_selected = clampi(encounter_lab_selected, 0, ENCOUNTER_LAB_IDS.size() - 1)
+	encounter_lab_text_enabled = audio_settings.story_dialogue_enabled
+	encounter_lab_last_action = loc("敵と確認項目を選択してください", "SELECT AN ENCOUNTER AND A PREVIEW STATE")
+	encounter_lab_freeze_combat = false
+	title_screen_open = false
+	settings_open = false
+	clear_comms()
+
+
+func prepare_encounter_lab_build() -> void:
+	run.reset()
+	campaign_route.reset()
+	for definition in StageCatalog.STAGES:
+		run.grant_beast_core(str(definition.core_id))
+	for definition in StageCatalog.BOSSES:
+		run.grant_boss_core(str(definition.core_id))
+	run.unlock_overlimit_system()
+	for definition in GearCatalog.SKILLS:
+		run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
+	for definition in GearCatalog.OVERLIMITS:
+		run.upgrade_levels[str(definition.id)] = 1
+	run.credits = 240000000.0
+	run.refresh_stats()
+
+
+func encounter_lab_selected_id() -> String:
+	return str(ENCOUNTER_LAB_IDS[clampi(encounter_lab_selected, 0, ENCOUNTER_LAB_IDS.size() - 1)])
+
+
+func encounter_lab_name(encounter_id: String) -> String:
+	var definition := StageCatalog.stage(encounter_id)
+	if definition.is_empty():
+		definition = StageCatalog.boss(encounter_id)
+	return str(definition.get("name_ja" if is_japanese else "name_en", encounter_id))
+
+
+func configure_encounter_lab_battle(hp_ratio: float) -> bool:
+	var encounter_id := encounter_lab_selected_id()
+	var stage_definition := StageCatalog.stage(encounter_id)
+	var boss_definition := StageCatalog.boss(encounter_id)
+	if stage_definition.is_empty() and boss_definition.is_empty():
+		return false
+	prepare_encounter_lab_build()
+	if not stage_definition.is_empty():
+		campaign_route.phase = CampaignRoute.RoutePhase.STAGE
+		campaign_route.current_stage_id = encounter_id
+		var hp := StageCatalog.stage_hp(encounter_id, 5)
+		run.begin_stage(encounter_id, str(stage_definition.build_tag), 1.0, hp, 5)
+	else:
+		campaign_route.current_boss_id = encounter_id
+		if encounter_id in StageCatalog.final_boss_ids():
+			campaign_route.phase = CampaignRoute.RoutePhase.FINAL_BOSS
+			campaign_route.final_boss_form = int(boss_definition.get("form", 1))
+			run.begin_final_boss_form(encounter_id, float(boss_definition.hp), campaign_route.final_boss_form)
+		else:
+			var singularity := encounter_id == str(StageCatalog.TRUE_BOSS.id)
+			campaign_route.phase = CampaignRoute.RoutePhase.SINGULARITY if singularity else CampaignRoute.RoutePhase.BOSS
+			run.begin_campaign_boss(encounter_id, float(boss_definition.hp), false, singularity)
+	run.boss_hp = run.boss_max_hp * clampf(hp_ratio, 0.001, 1.0)
+	encounter_lab_open = false
+	encounter_lab_freeze_combat = true
+	defeat_preview_open = false
+	story_event_open = false
+	clear_comms()
+	var player_dialogue_setting: bool = bool(audio_settings.story_dialogue_enabled)
+	audio_settings.story_dialogue_enabled = encounter_lab_text_enabled
+	queue_encounter_intro(encounter_id)
+	audio_settings.story_dialogue_enabled = player_dialogue_setting
+	encounter_lab_last_action = loc("戦闘画面を固定表示中 — F8でラボへ", "COMBAT STATE FROZEN — PRESS F8 FOR LAB")
+	bgm_key = ""
+	refresh_music()
+	queue_redraw()
+	return true
+
+
+func open_encounter_lab_story(defeat: bool) -> bool:
+	var encounter_id := encounter_lab_selected_id()
+	var event_id := story_encounter_event_id(encounter_id)
+	if defeat:
+		event_id = "prime.aftermath" if encounter_id == "prime_current_form_3" else story_defeat_event_id(encounter_id)
+	if event_id.is_empty():
+		encounter_lab_last_action = loc("この状態に専用会話はありません", "NO AUTHORED SCENE FOR THIS STATE")
+		queue_redraw()
+		return false
+	if not encounter_lab_text_enabled:
+		encounter_lab_last_action = loc("テキストOFF：%s を即時スキップ" % event_id, "TEXT OFF: %s SKIPPED IMMEDIATELY" % event_id)
+		synth.click()
+		queue_redraw()
+		return true
+	encounter_lab_open = false
+	if not start_story_event(event_id, true):
+		encounter_lab_open = true
+		return false
+	story_event_from_lab = false
+	story_event_from_encounter_lab = true
+	return true
+
+
+func start_encounter_defeat_preview(encounter_id: String, return_to_lab := true, duration := 4.8) -> void:
+	defeat_preview_encounter_id = encounter_id
+	defeat_preview_time = 0.0
+	defeat_preview_open = true
+	defeat_preview_return_to_lab = return_to_lab
+	defeat_preview_burst_stage = 0
+	defeat_preview_duration = maxf(1.8, duration)
+	encounter_lab_open = false
+	encounter_lab_freeze_combat = true
+	message_time = 0.0
+	clear_comms()
+	end_charge()
+	screen_flash = 0.85
+	screen_shake = 0.72
+	var kind := "phase" if encounter_id in StageCatalog.final_boss_ids() else "boss" if encounter_id not in StageCatalog.stage_ids() else "hunt"
+	play_defeat_jingle(kind)
+	synth.boss_collapse_burst(1)
+	queue_redraw()
+
+
+func finish_encounter_defeat_preview() -> void:
+	var resolve_campaign := pending_campaign_defeat_resolution
+	defeat_preview_open = false
+	defeat_preview_time = 0.0
+	defeat_preview_encounter_id = ""
+	defeat_preview_burst_stage = 0
+	defeat_preview_duration = 4.8
+	if defeat_preview_return_to_lab:
+		encounter_lab_open = true
+		encounter_lab_last_action = loc("撃破アニメーションを確認しました", "DEFEAT ANIMATION PREVIEWED")
+	defeat_preview_return_to_lab = false
+	if resolve_campaign:
+		pending_campaign_defeat_resolution = false
+		resolve_campaign_enemy_defeat()
+	queue_redraw()
 
 func configure_art_preview_state() -> void:
 	var preview_id := art_preview_encounter if not art_preview_encounter.is_empty() else "gearmaw"
@@ -913,6 +1136,23 @@ func _process(delta: float) -> void:
 	if achievement_notice_time > 0.0:
 		achievement_notice_time -= delta
 	update_comms(delta)
+	if defeat_preview_open:
+		defeat_preview_time += delta
+		var next_preview_burst := mini(3, int(defeat_preview_time / 0.85))
+		while defeat_preview_burst_stage < next_preview_burst:
+			defeat_preview_burst_stage += 1
+			synth.boss_collapse_burst(defeat_preview_burst_stage + 1)
+			screen_flash = maxf(screen_flash, 0.72)
+			screen_shake = maxf(screen_shake, 0.62 + float(defeat_preview_burst_stage) * 0.08)
+		if defeat_preview_time >= defeat_preview_duration:
+			finish_encounter_defeat_preview()
+		update_effects(delta)
+		queue_redraw()
+		return
+	if encounter_lab_open:
+		update_effects(delta)
+		queue_redraw()
+		return
 	if tutorial_open:
 		update_effects(delta)
 		queue_redraw()
@@ -949,6 +1189,10 @@ func _process(delta: float) -> void:
 		return
 	autosave_timer -= delta
 	if art_preview_enabled:
+		update_effects(delta)
+		queue_redraw()
+		return
+	if encounter_lab_enabled and encounter_lab_freeze_combat:
 		update_effects(delta)
 		queue_redraw()
 		return
@@ -1003,6 +1247,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Consume the event so a click/confirm that closes one screen cannot also
 	# activate a control on the next screen in the same frame.
 	get_viewport().set_input_as_handled()
+	if encounter_lab_enabled and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F8:
+		return_to_encounter_lab()
+		return
+	if encounter_lab_enabled and not encounter_lab_open and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and encounter_lab_return_rect.has_point(event.position):
+		return_to_encounter_lab()
+		return
+	if encounter_lab_enabled and not encounter_lab_open and event is InputEventScreenTouch and event.pressed and encounter_lab_return_rect.has_point(event.position):
+		return_to_encounter_lab()
+		return
+	if defeat_preview_open:
+		handle_defeat_preview_input(event)
+		return
+	if encounter_lab_open:
+		handle_encounter_lab_input(event)
+		return
 	if tutorial_open:
 		handle_tutorial_input(event)
 		return
@@ -1447,11 +1706,21 @@ func close_credits() -> void:
 	synth.click()
 	queue_redraw()
 
+func start_final_defeat_sequence() -> void:
+	end_charge()
+	gear_tree_open = false
+	message_time = 0.0
+	clear_comms()
+	# The last will now lands while the defeated seraph is still visible. With
+	# dialogue disabled, start_story_event performs the after-action immediately.
+	if not start_story_event_once("prime.defeat", "start_final_defeat_cinematic"):
+		start_final_defeat_cinematic()
+
+
 func start_final_defeat_cinematic() -> void:
 	final_defeat_cinematic_open = true
 	final_defeat_cinematic_time = 0.0
 	final_defeat_burst_stage = 0
-	final_defeat_dialogue_started = false
 	message_time = 0.0
 	clear_comms()
 	end_charge()
@@ -1472,8 +1741,6 @@ func update_final_defeat_cinematic(delta: float) -> void:
 		synth.boss_collapse_burst(final_defeat_burst_stage)
 		screen_flash = maxf(screen_flash, 0.78 if final_defeat_burst_stage < 4 else 1.0)
 		screen_shake = maxf(screen_shake, 0.72 + float(final_defeat_burst_stage) * 0.08)
-	if final_defeat_cinematic_time >= 3.25 and not final_defeat_dialogue_started:
-		final_defeat_dialogue_started = true
 	if final_defeat_cinematic_time >= FINAL_DEFEAT_CINEMATIC_SECONDS:
 		finish_final_defeat_cinematic()
 
@@ -1483,10 +1750,9 @@ func finish_final_defeat_cinematic() -> void:
 	final_defeat_cinematic_open = false
 	final_defeat_cinematic_time = 0.0
 	final_defeat_burst_stage = 0
-	final_defeat_dialogue_started = false
 	clear_comms()
 	synth.true_clear()
-	queue_story_event_once("prime.defeat")
+	queue_story_event_once("prime.aftermath")
 	queue_story_event_once("ending.true_dawn", "true_epilogue")
 
 func handle_final_defeat_input(event: InputEvent) -> void:
@@ -2028,7 +2294,7 @@ func complete_stage_and_return_to_route() -> bool:
 	save_progress()
 	return true
 
-func complete_campaign_boss() -> bool:
+func complete_campaign_boss(defeat_jingle_already_played := false) -> bool:
 	var defeated_id: String = str(campaign_route.current_boss_id)
 	var defeated_definition := StageCatalog.boss(campaign_route.current_boss_id)
 	var defeated_final_form: bool = bool(run.final_boss)
@@ -2042,11 +2308,11 @@ func complete_campaign_boss() -> bool:
 	screen_flash = 1.0
 	screen_shake = 0.75
 	if defeated_final_form and campaign_route.phase == CampaignRoute.RoutePhase.FINAL_END:
-		start_final_defeat_cinematic()
+		start_final_defeat_sequence()
 	elif defeated_final_form:
 		play_defeat_jingle("phase")
 		synth.phase_transition(campaign_route.final_boss_form)
-	else:
+	elif not defeat_jingle_already_played:
 		play_defeat_jingle("boss")
 	var defeat_event_id := story_defeat_event_id(defeated_id)
 	if not defeated_final_form and not defeat_event_id.is_empty():
@@ -2655,8 +2921,24 @@ func toggle_auto(play_sound: bool = true) -> bool:
 func handle_enemy_defeated() -> void:
 	end_charge()
 	gear_tree_open = false
+	var defeated_id := str(run.current_boss_id)
+	if encounter_lab_enabled:
+		start_encounter_defeat_preview(defeated_id, true)
+		return
+	# PRIME form transitions retain their bespoke pacing. Every beast, abyssal
+	# boss and ARCH kill now receives the authored short collapse first.
+	if not run.final_boss:
+		pending_campaign_defeat_resolution = true
+		var duration := 3.8 if defeated_id not in StageCatalog.stage_ids() else 2.8
+		start_encounter_defeat_preview(defeated_id, false, duration)
+		return
+	resolve_campaign_enemy_defeat()
+
+
+func resolve_campaign_enemy_defeat() -> void:
+	end_charge()
+	gear_tree_open = false
 	var defeated_stage_id: String = str(run.current_stage_id)
-	var standalone_jingle: bool = campaign_route.phase in [CampaignRoute.RoutePhase.STAGE, CampaignRoute.RoutePhase.INFINITE]
 	if campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
 		var completed_wave: int = int(campaign_route.infinite_wave)
 		var reward: int = infinite_reward_for_wave(completed_wave)
@@ -2669,11 +2951,9 @@ func handle_enemy_defeated() -> void:
 		if not defeat_event_id.is_empty():
 			queue_story_event_once(defeat_event_id)
 	else:
-		complete_campaign_boss()
+		complete_campaign_boss(true)
 	screen_flash = 1.0
 	screen_shake = 0.7
-	if standalone_jingle:
-		play_defeat_jingle("hunt")
 	save_progress()
 
 func try_purchase(index: int, play_sound: bool = true) -> bool:
@@ -2877,6 +3157,7 @@ func start_story_event(event_id: String, from_lab := false, from_log := false, a
 	story_event_line_index = 0
 	story_event_from_lab = from_lab
 	story_event_from_log = from_log
+	story_event_from_encounter_lab = false
 	story_event_after_action = after_action
 	story_event_open = true
 	story_lab_open = false
@@ -2938,6 +3219,7 @@ func close_story_event(skipped := false) -> void:
 		return
 	var return_to_lab := story_event_from_lab and story_lab_available()
 	var return_to_log := story_event_from_log
+	var return_to_encounter_lab_screen := story_event_from_encounter_lab
 	var after_action := story_event_after_action
 	story_event_open = false
 	story_event_id = ""
@@ -2945,14 +3227,16 @@ func close_story_event(skipped := false) -> void:
 	story_event_line_index = 0
 	story_event_from_lab = false
 	story_event_from_log = false
+	story_event_from_encounter_lab = false
 	story_event_after_action = ""
 	story_lab_open = return_to_lab
 	story_log_open = return_to_log
+	encounter_lab_open = return_to_encounter_lab_screen
 	if skipped:
 		synth.click()
 	else:
 		synth.confirm()
-	if not return_to_lab and not return_to_log:
+	if not return_to_lab and not return_to_log and not return_to_encounter_lab_screen:
 		if not after_action.is_empty():
 			perform_story_after_action(after_action)
 		if not story_event_open and not story_event_queue.is_empty():
@@ -2971,6 +3255,8 @@ func perform_story_after_action(action: String) -> void:
 			launch_current_campaign_boss()
 		"true_epilogue":
 			open_true_epilogue()
+		"start_final_defeat_cinematic":
+			start_final_defeat_cinematic()
 
 
 func story_encounter_event_id(encounter_id: String) -> String:
@@ -3009,6 +3295,127 @@ func check_singularity_story_phase() -> void:
 		queue_story_event_once("arch.phase_2")
 	elif story_singularity_phase == 3:
 		queue_story_event_once("arch.phase_3")
+
+
+func encounter_lab_row_rect(index: int) -> Rect2:
+	var column := index / 6
+	var row := index % 6
+	return Rect2(52 + column * 354, 144 + row * 76, 330, 62)
+
+
+func return_to_encounter_lab() -> void:
+	if not encounter_lab_enabled:
+		return
+	story_event_open = false
+	story_event_definition.clear()
+	story_event_queue.clear()
+	story_event_from_lab = false
+	story_event_from_log = false
+	story_event_from_encounter_lab = false
+	tutorial_open = false
+	settings_open = false
+	gear_tree_open = false
+	defeat_preview_open = false
+	final_defeat_cinematic_open = false
+	epilogue_open = false
+	title_screen_open = false
+	encounter_lab_freeze_combat = false
+	encounter_lab_open = true
+	message_time = 0.0
+	clear_comms()
+	end_charge()
+	bgm_key = ""
+	refresh_music()
+	synth.click()
+	queue_redraw()
+
+
+func handle_encounter_lab_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		for index in range(ENCOUNTER_LAB_IDS.size()):
+			if encounter_lab_row_rect(index).has_point(event.position):
+				encounter_lab_selected = index
+				break
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+			return
+		if encounter_lab_text_rect.has_point(event.position):
+			encounter_lab_text_enabled = not encounter_lab_text_enabled
+			encounter_lab_last_action = loc("会話表示を切り替えました（ラボ内のみ）", "DIALOGUE PREVIEW TOGGLED (LAB ONLY)")
+			synth.click()
+			queue_redraw()
+			return
+		if encounter_lab_close_rect.has_point(event.position):
+			encounter_lab_open = false
+			title_screen_open = true
+			queue_redraw()
+			return
+		for index in range(ENCOUNTER_LAB_IDS.size()):
+			if encounter_lab_row_rect(index).has_point(event.position):
+				encounter_lab_selected = index
+				synth.click()
+				queue_redraw()
+				return
+		for index in range(encounter_lab_action_rects.size()):
+			if encounter_lab_action_rects[index].has_point(event.position):
+				activate_encounter_lab_action(index)
+				return
+	elif event is InputEventScreenTouch and event.pressed:
+		var mouse_event := InputEventMouseButton.new()
+		mouse_event.button_index = MOUSE_BUTTON_LEFT
+		mouse_event.pressed = true
+		mouse_event.position = event.position
+		handle_encounter_lab_input(mouse_event)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_L:
+			toggle_language()
+		elif event.keycode == KEY_T:
+			encounter_lab_text_enabled = not encounter_lab_text_enabled
+			synth.click()
+		elif event.keycode == KEY_ESCAPE:
+			encounter_lab_open = false
+			title_screen_open = true
+		elif event.keycode in [KEY_UP, KEY_W]:
+			encounter_lab_selected = (encounter_lab_selected / 6) * 6 + wrapi(encounter_lab_selected % 6 - 1, 0, 6)
+			synth.click()
+		elif event.keycode in [KEY_DOWN, KEY_S]:
+			encounter_lab_selected = (encounter_lab_selected / 6) * 6 + wrapi(encounter_lab_selected % 6 + 1, 0, 6)
+			synth.click()
+		elif event.keycode in [KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D]:
+			encounter_lab_selected = wrapi(encounter_lab_selected + 6, 0, 12)
+			synth.click()
+		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
+			activate_encounter_lab_action(event.keycode - KEY_1)
+		queue_redraw()
+
+
+func activate_encounter_lab_action(index: int) -> void:
+	match index:
+		0:
+			open_encounter_lab_story(false)
+		1:
+			configure_encounter_lab_battle(0.5)
+		2:
+			configure_encounter_lab_battle(0.01)
+		3:
+			start_encounter_defeat_preview(encounter_lab_selected_id(), true)
+		4:
+			open_encounter_lab_story(true)
+
+
+func handle_defeat_preview_input(event: InputEvent) -> void:
+	var skip := false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		skip = epilogue_skip_rect.has_point(event.position)
+	elif event is InputEventScreenTouch and event.pressed:
+		skip = epilogue_skip_rect.has_point(event.position)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		skip = event.keycode in [KEY_ESCAPE, KEY_ENTER, KEY_SPACE]
+	elif event is InputEventJoypadButton and event.pressed:
+		skip = event.button_index in [controller_button("back"), controller_button("primary")]
+	if skip and defeat_preview_time >= 0.5:
+		finish_encounter_defeat_preview()
 
 
 func handle_story_event_input(event: InputEvent) -> void:
@@ -3574,6 +3981,12 @@ func tutorial_hint() -> String:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color("060b16"))
 	draw_background()
+	if defeat_preview_open:
+		draw_encounter_defeat_preview()
+		return
+	if encounter_lab_open:
+		draw_encounter_lab()
+		return
 	if tutorial_open:
 		draw_tutorial_overlay()
 		return
@@ -3583,7 +3996,7 @@ func _draw() -> void:
 	if story_log_open:
 		draw_story_log()
 		return
-	if story_event_open and (story_event_from_lab or story_event_from_log):
+	if story_event_open and (story_event_from_lab or story_event_from_log or story_event_from_encounter_lab):
 		draw_story_preview_stage()
 		draw_story_event_overlay()
 		return
@@ -3613,6 +4026,8 @@ func _draw() -> void:
 		shake_offset = Vector2(sin(animation_time * 73.0), cos(animation_time * 91.0)) * screen_shake * 9.0 * audio_settings.screen_shake_intensity
 	draw_set_transform(shake_offset)
 	draw_header()
+	if encounter_lab_enabled and not encounter_lab_open:
+		draw_campaign_button(encounter_lab_return_rect, "F8  DEV LAB", Palette.VIOLET, false)
 	if campaign_screen_visible():
 		draw_campaign_screen()
 	else:
@@ -3637,6 +4052,103 @@ func _draw() -> void:
 		draw_achievement_toast()
 	if story_event_open:
 		draw_story_event_overlay()
+
+
+func draw_encounter_lab() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.003, 0.008, 0.02, 0.96))
+	draw_rect(Rect2(0, 0, 1280, 7), Palette.VIOLET)
+	draw_string(DisplayFont, Vector2(48, 54), "DEV // ENCOUNTER LAB", HORIZONTAL_ALIGNMENT_LEFT, 720, 25, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(50, 82), loc("全敵・会話・撃破演出をセーブへ触れずに検証", "PREVIEW EVERY ENEMY, SCENE AND DEFEAT WITHOUT TOUCHING SAVES"), HORIZONTAL_ALIGNMENT_LEFT, 720, 12, Palette.MUTED)
+	draw_campaign_button(story_language_rect, loc("日本語 / EN", "EN / 日本語"), Palette.CYAN, false)
+	for index in range(ENCOUNTER_LAB_IDS.size()):
+		var encounter_id := str(ENCOUNTER_LAB_IDS[index])
+		var rect := encounter_lab_row_rect(index)
+		var selected := index == encounter_lab_selected
+		var definition := StageCatalog.stage(encounter_id)
+		if definition.is_empty():
+			definition = StageCatalog.boss(encounter_id)
+		var accent := Color(str(definition.get("accent", "4deeea")))
+		draw_machine_plate(rect, Palette.with_alpha(Palette.PANEL, 0.94), Palette.with_alpha(accent, 0.95 if selected else 0.28), 8.0, 3.0 if selected else 1.0)
+		if MechanicalBeastTextures.has(encounter_id):
+			draw_texture_rect(MechanicalBeastTextures[encounter_id], Rect2(rect.position + Vector2(8, 5), Vector2(52, 52)), false, Color.WHITE)
+		draw_string(DisplayFont, rect.position + Vector2(68, 25), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, 34, 11, accent)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(104, 27), encounter_lab_name(encounter_id), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 112, 14, Palette.PAPER)
+		draw_string(Palette.UI_FONT, rect.position + Vector2(68, 48), encounter_id.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 76, 9, Palette.with_alpha(accent, 0.74))
+	var selected_id := encounter_lab_selected_id()
+	var selected_definition := StageCatalog.stage(selected_id)
+	if selected_definition.is_empty():
+		selected_definition = StageCatalog.boss(selected_id)
+	var selected_accent := Color(str(selected_definition.get("accent", "4deeea")))
+	var panel := Rect2(788, 128, 412, 474)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.INK, 0.98), Palette.with_alpha(selected_accent, 0.66), 14.0, 2.0)
+	draw_string(DisplayFont, Vector2(824, 166), encounter_lab_name(selected_id), HORIZONTAL_ALIGNMENT_LEFT, 352, 18, selected_accent)
+	var action_labels := [
+		loc("1  戦闘開始会話", "1  ENCOUNTER SCENE"),
+		loc("2  戦闘画面・HP 50%", "2  COMBAT STATE · HP 50%"),
+		loc("3  戦闘画面・HP 1%", "3  COMBAT STATE · HP 1%"),
+		loc("4  撃破アニメーション", "4  DEFEAT ANIMATION"),
+		loc("5  撃破後会話", "5  DEFEAT SCENE"),
+	]
+	for index in range(encounter_lab_action_rects.size()):
+		draw_campaign_button(encounter_lab_action_rects[index], str(action_labels[index]), selected_accent if index == 3 else Palette.CYAN, false)
+	var text_label := loc("T  会話表示：ON", "T  DIALOGUE: ON") if encounter_lab_text_enabled else loc("T  会話表示：OFF（即時スキップ）", "T  DIALOGUE: OFF · IMMEDIATE SKIP")
+	draw_campaign_button(encounter_lab_text_rect, text_label, Palette.MINT if encounter_lab_text_enabled else Palette.CORAL, false)
+	draw_campaign_button(encounter_lab_close_rect, loc("終了", "EXIT"), Palette.MUTED, false)
+	draw_string(Palette.UI_FONT, Vector2(52, 642), encounter_lab_last_action, HORIZONTAL_ALIGNMENT_LEFT, 900, 12, Palette.AMBER)
+	draw_string(Palette.UI_FONT, Vector2(52, 682), loc("上下・左右：敵選択　1〜5：状態表示　T：会話切替　F8：いつでもラボへ戻る", "ARROWS: ENEMY · 1–5: STATE · T: DIALOGUE · F8: RETURN ANY TIME"), HORIZONTAL_ALIGNMENT_LEFT, 1060, 11, Palette.MUTED)
+
+
+func draw_encounter_defeat_preview() -> void:
+	var encounter_id := defeat_preview_encounter_id
+	var definition := StageCatalog.stage(encounter_id)
+	if definition.is_empty():
+		definition = StageCatalog.boss(encounter_id)
+	var accent := Color(str(definition.get("accent", "4deeea")))
+	var duration := defeat_preview_duration
+	var progress := clampf(defeat_preview_time / duration, 0.0, 1.0)
+	var effect_time := progress * 4.8
+	var center := Vector2(640, 330)
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.001, 0.003, 0.012, 0.90))
+	for index in range(26):
+		var angle := float(index) * TAU / 26.0 + animation_time * (0.03 if index % 2 == 0 else -0.025)
+		var radius := 110.0 + float(index % 7) * 34.0 + progress * 90.0
+		draw_circle(center + Vector2.from_angle(angle) * radius, 1.0 + float(index % 3), Palette.with_alpha(accent, (1.0 - progress) * 0.38))
+	var tremor_strength := 2.0 + clampf((effect_time - 0.6) / 2.0, 0.0, 1.0) * 12.0
+	var tremor := Vector2(sin(effect_time * 47.0), cos(effect_time * 61.0)) * tremor_strength
+	var enemy_alpha := clampf(1.0 - maxf(0.0, progress - 0.46) / 0.38, 0.0, 1.0)
+	var fracture_progress := clampf(effect_time / 1.25, 0.0, 1.0)
+	var fracture_alpha := minf(fracture_progress, clampf((2.45 - effect_time) / 0.55, 0.0, 1.0))
+	var fracture_size := Vector2.ONE * lerpf(110.0, 206.0, fracture_progress)
+	# PixelLab authored a complete core housing around the useful six-way crack.
+	# Crop to its circular center and keep it translucent so the defeated beast
+	# remains readable instead of being replaced by a square machine plate.
+	draw_texture_rect_region(DefeatVFX.fracture, Rect2(center - fracture_size * 0.5, fracture_size), Rect2(48, 48, 160, 160), Color(1.0, 1.0, 1.0, fracture_alpha * 0.48))
+	var halo_progress := clampf((effect_time - 1.15) / 1.65, 0.0, 1.0)
+	var halo_alpha := sin(halo_progress * PI) * 0.86
+	var halo_size := Vector2.ONE * lerpf(150.0, 500.0, halo_progress)
+	draw_texture_rect(DefeatVFX.halo, Rect2(center - halo_size * 0.5, halo_size), false, Color(1.0, 1.0, 1.0, halo_alpha * 0.34))
+	# The two intact mechanical plates sit behind the enemy. Native crack rays
+	# carry their cyan/violet motif over the body without obscuring its silhouette.
+	if MechanicalBeastTextures.has(encounter_id):
+		var enemy_size := Vector2(318, 318) * (1.0 + progress * 0.07)
+		draw_texture_rect(MechanicalBeastTextures[encounter_id], Rect2(center + tremor - enemy_size * 0.5, enemy_size), false, Color(1.0, 1.0, 1.0, enemy_alpha))
+	for crack_index in range(6):
+		var crack_angle := float(crack_index) * TAU / 6.0 + 0.12
+		var crack_start := center + Vector2.from_angle(crack_angle) * (12.0 + fracture_progress * 9.0)
+		var crack_end := center + Vector2.from_angle(crack_angle + sin(float(crack_index) * 2.3) * 0.05) * (34.0 + fracture_progress * 86.0)
+		var crack_color := Palette.CYAN if crack_index % 2 == 0 else Palette.VIOLET
+		draw_line(crack_start, crack_end, Palette.with_alpha(crack_color, fracture_alpha * enemy_alpha * 0.88), 2.0)
+	var shard_progress := clampf((effect_time - 1.9) / 2.3, 0.0, 1.0)
+	var shard_alpha := sin(shard_progress * PI) * 0.96
+	var shard_size := Vector2.ONE * lerpf(170.0, 460.0, shard_progress)
+	draw_texture_rect(DefeatVFX.shards, Rect2(center - shard_size * 0.5, shard_size), false, Color(1.0, 1.0, 1.0, shard_alpha))
+	var whiteout := maxf(0.0, 1.0 - absf(effect_time - 2.05) / 0.24)
+	if whiteout > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, VIEW), Palette.with_alpha(Palette.PAPER, whiteout * 0.58 * audio_settings.flash_intensity))
+	draw_rect(Rect2(0, 0, 1280, 82), Color(0.002, 0.005, 0.016, 0.95))
+	draw_string(DisplayFont, Vector2(44, 42), loc("機核崩壊 // ", "CORE COLLAPSE // ") + encounter_lab_name(encounter_id), HORIZONTAL_ALIGNMENT_LEFT, 920, 22, Palette.PAPER)
+	draw_string(Palette.UI_FONT, Vector2(44, 66), loc("PixelLab三層VFX・Godot時間差合成", "PIXELLAB THREE-LAYER VFX · GODOT TIMING COMPOSITE"), HORIZONTAL_ALIGNMENT_LEFT, 760, 11, accent)
+	draw_campaign_button(epilogue_skip_rect, loc("スキップ", "SKIP"), Palette.MUTED, false)
 
 
 func draw_tutorial_overlay() -> void:
@@ -3962,7 +4474,7 @@ func draw_credits_roll() -> void:
 		[loc("開発・ゲームデザイン支援", "DEVELOPMENT & DESIGN SUPPORT"), "OPENAI CODEX", Palette.VIOLET, 15],
 		[loc("ピクセルアート生成", "PIXEL ART GENERATION"), "PIXELLAB\nART DIRECTION & SELECTION — TAKAHIRO SAEKI", Palette.MINT, 15],
 		[loc("シネマティックアート生成", "CINEMATIC ART GENERATION"), "OPENAI IMAGE GENERATION\nART DIRECTION & SELECTION — TAKAHIRO SAEKI", Palette.CYAN, 15],
-		[loc("オリジナル音楽", "ORIGINAL MUSIC"), "NEON LAMENT / SUNO\nSUBTERRANEAN HUNT · PISTON HUNT LOOP\nFORGE OF BREAKPOINTS · ARCH SINGULARITY · CORE OF DAWN", Palette.AMBER, 15],
+		[loc("オリジナル音楽", "ORIGINAL MUSIC"), "NEON LAMENT / SUNO · 18 ORIGINAL TRACKS\nAWAKENING BELOW · SIX-CORE DESCENT\nARCH SINGULARITY · NOMAD VICTORY SIGNAL · CORE OF DAWN", Palette.AMBER, 15],
 		[loc("ゲームエンジン", "GAME ENGINE"), "GODOT ENGINE", Palette.CYAN, 15],
 		[loc("書体", "TYPEFACES"), "DOTGOTHIC16 · NOTO SANS JP\nSIL OPEN FONT LICENSE 1.1", Palette.MINT, 15],
 		[loc("スペシャルサンクス", "SPECIAL THANKS"), loc("AI BROWSER GAME JAM 4のプレイヤーと審査員のみなさま", "THE PLAYERS AND JUDGES OF AI BROWSER GAME JAM 4"), Palette.VIOLET, 15],
@@ -4005,6 +4517,20 @@ func draw_final_defeat_cinematic() -> void:
 		var ghost_offset := Vector2(sin(final_defeat_cinematic_time * 17.0 + ghost), cos(final_defeat_cinematic_time * 19.0 + ghost)) * float(ghost) * (2.0 + collapse * 5.0)
 		draw_texture_rect(texture, Rect2(center + tremor + ghost_offset - body_size * 0.5, body_size), false, Color(0.45, 0.55, 1.0, body_alpha * 0.10))
 	draw_texture_rect(texture, Rect2(center + tremor - body_size * 0.5, body_size), false, Color(1.0, 1.0, 1.0, body_alpha))
+	# PixelLab supplies three authored mechanical layers; Godot owns their timing,
+	# scale and translucency so the boss remains readable until the final burst.
+	var fracture_progress := clampf(final_defeat_cinematic_time / 2.8, 0.0, 1.0)
+	var fracture_alpha := minf(fracture_progress, clampf((5.2 - final_defeat_cinematic_time) / 1.1, 0.0, 1.0))
+	var fracture_size := Vector2.ONE * lerpf(120.0, 300.0, fracture_progress)
+	draw_texture_rect_region(DefeatVFX.fracture, Rect2(center + tremor - fracture_size * 0.5, fracture_size), Rect2(48, 48, 160, 160), Color(1.0, 1.0, 1.0, fracture_alpha * 0.18))
+	var voltage_progress := clampf((final_defeat_cinematic_time - 2.4) / 3.2, 0.0, 1.0)
+	var voltage_alpha := sin(voltage_progress * PI) * 0.78
+	var voltage_size := Vector2.ONE * lerpf(170.0, 580.0, voltage_progress)
+	draw_texture_rect(DefeatVFX.halo, Rect2(center - voltage_size * 0.5, voltage_size), false, Color(1.0, 1.0, 1.0, voltage_alpha * 0.16))
+	var authored_shard_progress := clampf((final_defeat_cinematic_time - 4.3) / 3.4, 0.0, 1.0)
+	var authored_shard_alpha := sin(authored_shard_progress * PI) * 0.96
+	var authored_shard_size := Vector2.ONE * lerpf(180.0, 620.0, authored_shard_progress)
+	draw_texture_rect(DefeatVFX.shards, Rect2(center - authored_shard_size * 0.5, authored_shard_size), false, Color(1.0, 1.0, 1.0, authored_shard_alpha))
 	var shard_count := 18 + final_defeat_burst_stage * 12
 	for index in range(shard_count):
 		var angle := float(index) * TAU / float(shard_count) + sin(float(index) * 2.17) * 0.22

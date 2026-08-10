@@ -1,8 +1,8 @@
 # VOLT NOMAD — Suno BGM制作ブリーフ
 
-## 採用・実装結果（2026-08-09）
+## 採用・実装結果（2026-08-10）
 
-全17曲の採用案をユーザーが試聴して確定した。六体の機械魔獣、二体の通常ボス、真ボス、PRIME CURRENTの三形態はすべて固有BGMを持ち、タイトル、地図・ツリー、通常エンディング、真エンディング、アートワークにも独立した曲を割り当てている。ゲーム内では約0.85秒のクロスフェードで切り替え、全曲をループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
+全18曲を実装済み。六体の機械魔獣、二体の通常ボス、真ボス、PRIME CURRENTの三形態はすべて固有BGMを持ち、タイトル、地図・ツリー、通常エンディング、真エンディング、アートワークにも独立した曲を割り当てている。加えて、全敵共通の短い撃破ジングルを独立したMusicレイヤーとして持つ。ゲーム内では約0.85秒のクロスフェードで切り替え、BGMはループ再生する。`M`キーで即時ミュートでき、タイトルまたはヘッダーの設定画面からMaster / BGM / SFXを個別調整できる。設定は端末へ保存される。
 
 | 用途 | 採用曲 | 案 | Suno原曲 | ゲーム用ファイル | 長さ |
 |---|---|---:|---|---|---:|
@@ -23,8 +23,11 @@
 | PRIME CURRENT 第2形態 | Null Cathedral Rotation | A | [17d510cb](https://suno.com/song/17d510cb-565b-4590-a0f5-810e9a3c7ea6) | `prime_current_null_cathedral.mp3` | 3:33 |
 | PRIME CURRENT 第3形態 | Fallen Seraph Current | A | [300a310f](https://suno.com/song/300a310f-b4f6-457e-856c-8062181b2da3) | `prime_current_fallen_seraph.mp3` | 2:59 |
 | アートワーク | Recovered Memory Archive | A | [892c19b0](https://suno.com/song/892c19b0-3412-4d35-b3c0-4585b2647a40) | `recovered_memory_archive.mp3` | 3:39 |
+| 全敵撃破ジングル | Nomad Victory Signal | A | [d301e263](https://suno.com/song/d301e263-5aa5-4c1b-a6c1-9350fdee262f) | `nomad_victory_signal.mp3` | 0:13（冒頭1.75〜2.75秒を使用） |
 
-初期11曲は48 kHz / 16-bit / stereo WAV原音に固定ゲインを適用して約 -18 LUFSへ揃え、Vorbis quality 5へ変換した。2026-08-08以降の追加7曲はSunoの正規配信元から取得した48 kHz / stereo MP3をそのまま保持し、Godot側でループを有効化している。全曲の作者名は `NeoN Lament`。元WAVはリポジトリへ含めず、曲名、Suno song ID、採用案、ランタイム割り当てを本書に記録する。
+初期11曲は48 kHz / 16-bit / stereo WAV原音に固定ゲインを適用して約 -18 LUFSへ揃え、Vorbis quality 5へ変換した。2026-08-08以降の追加8曲はSunoの正規配信元から取得した48 kHz / stereo MP3をそのまま保持している。初期地図曲 `Subterranean Hunt` は `Six-Core Descent` へ差し替えたため、保管マスターは19曲、実際のランタイム割り当ては18曲となる。BGMにはGodot側でループを有効化し、短い勝利ジングルだけは抜粋再生する。全曲の作者名は `NeoN Lament`。元WAVはリポジトリへ含めず、曲名、Suno song ID、採用案、ランタイム割り当てを本書に記録する。
+
+撃破ジングルは2026-08-10にSuno v5.5 / Advanced / Instrumentalで13秒と16秒の二案を生成した。即時着音と短いゲーム進行を優先して13秒のAを採用。Godot側では種別に応じて冒頭を1.75〜2.75秒だけ鳴らし、0.38秒でフェードアウトする。BGMを12dBダックするため、射撃音や次画面の操作音とも競合しない。予備Bは[9e6e2fd6](https://suno.com/song/9e6e2fd6-9066-439b-95b1-773eb87fc604)（0:16）。
 
 ## 共通方針
 

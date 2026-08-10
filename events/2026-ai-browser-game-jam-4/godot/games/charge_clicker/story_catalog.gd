@@ -342,13 +342,22 @@ static var EVENTS: Array[Dictionary] = [
 	},
 	{
 		"id": "prime.defeat", "chapter": "prime",
-		"title_ja": "原初電流停止 // 最後の遺言", "title_en": "PRIME CURRENT HALTED // LAST WILL",
-		"context_ja": "三つの器を失った原初電流が、消滅の直前に一つの記憶を託す。",
-		"context_en": "After losing all three vessels, the prime current entrusts one memory before it fades.",
+		"title_ja": "原初電流停止 // 爆発前通信", "title_en": "PRIME CURRENT HALTED // LAST TRANSMISSION",
+		"context_ja": "三つの器を失った原初電流が、機核崩壊の直前に一つの記憶を託す。",
+		"context_en": "With all three vessels lost, the prime current transmits one memory before its core collapses.",
 		"lines": [
 			line("enemy", "プライム・カレント", "PRIME CURRENT", "停止は消滅ではない。私の最初の記憶を……地上へ。", "CESSATION IS NOT OBLIVION. CARRY MY FIRST MEMORY... TO THE SURFACE.", "prime_current_form_3"),
 			line("player", "ヴォルト・ノマド", "VOLT NOMAD", "命令ではなく、遺言として受け取る。", "I ACCEPT IT — NOT AS AN ORDER, BUT AS YOUR LAST WILL."),
+		],
+	},
+	{
+		"id": "prime.aftermath", "chapter": "prime",
+		"title_ja": "原初電流停止 // 爆発残響", "title_en": "PRIME CURRENT HALTED // AFTERSHOCK",
+		"context_ja": "機天使の外殻が爆散し、C6は静まりゆく残留電流から最後の記録を回収する。",
+		"context_en": "The seraph shell detonates. C6 recovers a final record from the fading residual current.",
+		"lines": [
 			line("support", "C6", "C6", "原初記録を保存。内容は……地上で初めて朝日を見た、機械の記憶です。", "PRIME RECORD SAVED. IT IS... THE MEMORY OF A MACHINE SEEING SUNRISE FOR THE FIRST TIME."),
+			line("player", "ヴォルト・ノマド", "VOLT NOMAD", "なら連れて帰る。今度は記録じゃなく、同じ朝を見るために。", "THEN WE TAKE IT HOME — NOT AS A RECORD, BUT SO IT CAN SEE THAT MORNING WITH US."),
 		],
 	},
 	{

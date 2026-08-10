@@ -231,13 +231,13 @@ func test_charge_clicker_v5() -> void:
 	game.debug_show_dialogue("試験話者", "TEST SPEAKER", "任意本文", "ARBITRARY BODY", 8.0)
 	check(game.comms_speaker_ja == "試験話者" and game.comms_text_en == "ARBITRARY BODY" and is_equal_approx(game.comms_time, 8.0), "debug tooling can display an arbitrary localized dialogue box without mutating campaign state")
 	game.clear_comms()
-	check(ChargeStoryCatalog.validate().is_empty() and ChargeStoryCatalog.event_ids().size() == 32, "the complete campaign story catalog has thirty-two bilingual scenes")
+	check(ChargeStoryCatalog.validate().is_empty() and ChargeStoryCatalog.event_ids().size() == 33, "the complete campaign story catalog has thirty-three bilingual scenes")
 	var all_progression_story_ids_exist := true
 	for stage_id in ChargeStageCatalog.stage_ids():
 		all_progression_story_ids_exist = all_progression_story_ids_exist and not ChargeStoryCatalog.event("hunt.%s.encounter" % stage_id).is_empty() and not ChargeStoryCatalog.event("hunt.%s.defeat" % stage_id).is_empty()
 	for boss_id in ChargeStageCatalog.boss_ids():
 		all_progression_story_ids_exist = all_progression_story_ids_exist and not ChargeStoryCatalog.event("boss.%s.encounter" % boss_id).is_empty() and not ChargeStoryCatalog.event("boss.%s.defeat" % boss_id).is_empty()
-	for required_story_id in ["arch.encounter", "arch.phase_2", "arch.phase_3", "arch.defeat", "prime.signal_answer", "prime.form_1", "prime.form_2", "prime.form_3", "prime.defeat", "ending.true_dawn"]:
+	for required_story_id in ["arch.encounter", "arch.phase_2", "arch.phase_3", "arch.defeat", "prime.signal_answer", "prime.form_1", "prime.form_2", "prime.form_3", "prime.defeat", "prime.aftermath", "ending.true_dawn"]:
 		all_progression_story_ids_exist = all_progression_story_ids_exist and not ChargeStoryCatalog.event(required_story_id).is_empty()
 	check(all_progression_story_ids_exist, "every freely ordered hunt, boss phase, route choice and ending resolves to an authored scene")
 	var story_session_before: float = float(game.run.session_elapsed)
@@ -257,9 +257,10 @@ func test_charge_clicker_v5() -> void:
 	game.close_story_log()
 	var campaign_seen_before_preview: int = game.campaign_route.story_event_ids.size()
 	game.unlock_story_archive_for_preview()
-	check(game.achievements.story_archive_ids.size() == ChargeStoryCatalog.event_ids().size(), "the local QA helper unlocks all thirty-two story-log memories in memory")
+	check(game.achievements.story_archive_ids.size() == ChargeStoryCatalog.event_ids().size(), "the local QA helper unlocks all thirty-three story-log memories in memory")
 	check(game.campaign_route.story_event_ids.size() == campaign_seen_before_preview, "the local QA helper does not mark campaign progression events as seen")
 	check(game.synth.has_method("defeat_jingle"), "enemy defeats route to a dedicated short musical victory motif")
+	check(game.VictoryJingleStream != null and str(game.VictoryJingleStream.resource_path).ends_with("nomad_victory_signal.mp3"), "the generated Suno victory signal is integrated as the authored defeat cue")
 
 	var tutorial_game := ChargeClickerGame.new()
 	tutorial_game.persistence_enabled = false
@@ -298,6 +299,30 @@ func test_charge_clicker_v5() -> void:
 	check(debug_battle_game.run.current_boss_id == "prime_current_form_2" and debug_battle_game.run.final_boss_form == 2 and debug_battle_game.run.boss_max_hp == 3600000000.0, "direct QA selects the requested final-boss form and production HP")
 	check(debug_battle_game.run.skill_points_bought() == 317 and debug_battle_game.run.overlimit_count() == 1 and not debug_battle_game.persistence_enabled, "direct QA supplies a complete standard build, selectable OVERLIMIT count and no persistence")
 	debug_battle_game.free()
+
+	var encounter_lab_game := ChargeClickerGame.new()
+	encounter_lab_game.persistence_enabled = false
+	root.add_child(encounter_lab_game)
+	encounter_lab_game.encounter_lab_enabled = true
+	check(encounter_lab_game.ENCOUNTER_LAB_IDS.size() == 12 and encounter_lab_game.ENCOUNTER_LAB_IDS == ["gearmaw", "vaultback", "pyre_wyrm", "relay_hydra", "swarm_matriarch", "phase_mantis", "grid_leech", "thermal_titan", "arch_singularity", "prime_current_form_1", "prime_current_form_2", "prime_current_form_3"], "Encounter Lab exposes all six beasts, both normal bosses, ARCH and every PRIME form")
+	encounter_lab_game.configure_encounter_lab()
+	check(encounter_lab_game.encounter_lab_open and not encounter_lab_game.title_screen_open, "Encounter Lab opens without touching player persistence")
+	check(encounter_lab_game.configure_encounter_lab_battle(0.5) and is_equal_approx(encounter_lab_game.run.boss_hp, encounter_lab_game.run.boss_max_hp * 0.5), "Encounter Lab can freeze the selected enemy at exactly fifty percent HP")
+	encounter_lab_game.return_to_encounter_lab()
+	encounter_lab_game.encounter_lab_selected = 11
+	check(encounter_lab_game.configure_encounter_lab_battle(0.001) and encounter_lab_game.run.current_boss_id == "prime_current_form_3", "Encounter Lab can jump directly to PRIME CURRENT form three at a defeat-ready HP state")
+	encounter_lab_game.return_to_encounter_lab()
+	encounter_lab_game.encounter_lab_text_enabled = false
+	check(encounter_lab_game.open_encounter_lab_story(false) and not encounter_lab_game.story_event_open and encounter_lab_game.encounter_lab_open, "Encounter Lab text-off preview skips a blocking scene immediately")
+	encounter_lab_game.start_encounter_defeat_preview("prime_current_form_3", true, 1.8)
+	check(encounter_lab_game.defeat_preview_open and not encounter_lab_game.encounter_lab_open, "Encounter Lab can launch the authored PixelLab defeat animation in isolation")
+	encounter_lab_game.finish_encounter_defeat_preview()
+	check(encounter_lab_game.encounter_lab_open and not encounter_lab_game.defeat_preview_open, "defeat previews return cleanly to Encounter Lab")
+	var defeat_vfx_ready := true
+	for texture in encounter_lab_game.DefeatVFX.values():
+		defeat_vfx_ready = defeat_vfx_ready and texture != null
+	check(defeat_vfx_ready, "all three reviewed PixelLab defeat-VFX layers import successfully")
+	encounter_lab_game.free()
 	check(game.BGMStreams.size() == 18 and game.desired_bgm_key() == "map", "music routing includes separate title/map slots, independent endings, artwork and all three PRIME CURRENT forms")
 	check(str(game.BGMStreams["title"].resource_path).ends_with("awakening_below.mp3") and str(game.BGMStreams["map"].resource_path).ends_with("six_core_descent.mp3"), "selected Awakening Below A and Six-Core Descent B masters are assigned to title and map")
 	var final_form_stream_paths := {}
@@ -363,12 +388,14 @@ func test_charge_clicker_v5() -> void:
 	game.campaign_route.phase = game.CampaignRoute.RoutePhase.MAP
 	game.campaign_route.current_boss_id = ""
 	check(music_routes_match, "campaign phases select hunt, boss, three final forms and ending music deterministically")
-	game.start_final_defeat_cinematic()
-	check(game.final_defeat_cinematic_open and not game.epilogue_open and game.desired_bgm_key() == "prime_current_form_3", "real-final victory enters a timed collapse cinematic before the true ending")
-	game.finish_final_defeat_cinematic()
-	check(not game.final_defeat_cinematic_open and game.story_event_open and game.story_event_id == "prime.defeat", "finishing the explosion sequence opens the final bilingual conversation before the ending")
+	game.start_final_defeat_sequence()
+	check(game.story_event_open and game.story_event_id == "prime.defeat" and not game.final_defeat_cinematic_open, "real-final victory gives PRIME CURRENT its last transmission before the shell explodes")
 	game.close_story_event(true)
-	check(game.story_event_open and game.story_event_id == "ending.true_dawn", "the final conversation flows into the two-voice dawn scene")
+	check(game.final_defeat_cinematic_open and not game.epilogue_open and game.desired_bgm_key() == "prime_current_form_3", "closing the last transmission enters the timed PixelLab collapse cinematic")
+	game.finish_final_defeat_cinematic()
+	check(not game.final_defeat_cinematic_open and game.story_event_open and game.story_event_id == "prime.aftermath", "finishing the explosion sequence opens the bilingual aftershock conversation")
+	game.close_story_event(true)
+	check(game.story_event_open and game.story_event_id == "ending.true_dawn", "the aftershock conversation flows into the two-voice dawn scene")
 	game.close_story_event(true)
 	check(game.epilogue_open and game.desired_bgm_key() == "ending_true", "the completed story sequence crossfades into the dedicated true-ending presentation")
 	game.epilogue_open = false

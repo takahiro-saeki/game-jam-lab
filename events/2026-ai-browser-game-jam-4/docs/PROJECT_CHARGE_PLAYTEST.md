@@ -1,11 +1,23 @@
-# VOLT NOMAD v7 プレイテストガイド
+# VOLT NOMAD リリース候補 プレイテストガイド
 
-> 対象ビルド: PURE COMMAND / RECORDS / INFINITE版
-> 目的: 恒久PURE COMMAND、Tier II/III追加分、実績、Infinite Mode、通常/真ルート所要時間を確認する
+> 対象ビルド: 会話33イベント / Encounter Lab / 撃破VFX / Suno勝利ジングルを含むリリース候補
+> 目的: 通常プレイ、完全クリア、会話OFF、全敵演出、セーブ復帰、音量バランスを提出前に確認する
+
+## 開発用の直接確認
+
+ローカルWebビルドでは、次のURLだけセーブ読み書きを無効にして検証できる。公開itch.ioホストではパラメータを付けても有効にならない。
+
+- `http://127.0.0.1:<PORT>/?encounter_lab=1&mute_test=1` — 全12敵。開始会話、HP 50%、HP 1%、PixelLab撃破演出、撃破後会話を個別表示。F8で戻る、Tで会話ON/OFF。`mute_test=1` はローカル検証中だけ音声をメモリ上で無音化し、保存設定を変更しない
+- `http://127.0.0.1:<PORT>/?story_archive=all` — 33件のプレイヤー向け会話記録を全開放
+- `http://127.0.0.1:<PORT>/?debug_battle=prime_1` — PRIME CURRENT第1形態へ直行。`prime_2` / `prime_3`も使用可能
+- `http://127.0.0.1:<PORT>/?campaign_preview=final_defeat` — 最後の言葉→機核爆発→残響→真エンドを通し確認
+- `http://127.0.0.1:<PORT>/?campaign_preview=final_explosion` — 爆発演出のみ直接確認
+
+日本語・英語の台詞をまとめて校正する場合は `docs/VOLT_NOMAD_TEXT_REVIEW.md` を使う。
 
 ## 最初にすること
 
-1. `http://127.0.0.1:6670/game/` を開く。
+1. 起動案内で表示された `http://127.0.0.1:<PORT>/` を開く。
 2. 以前の表示が残る場合は再読み込みする。完全な新規テストは左上の初期化を3秒以内に2回押す。
 3. 六体から直感で好きな三体を選ぶ。
 4. **CHARGE攻撃**で敵を攻撃し、同時に得たCHARGEを画面下の5ギアへ使う。
@@ -99,6 +111,13 @@
 ```bash
 godot --headless --path events/2026-ai-browser-game-jam-4/godot \
   -s res://tests/project_charge_benchmark.gd
+```
+
+リリース経路の網羅監査は次で実行する。六獣の全720順序 × 通常ボス2択＝1,440通りを、通常エンド、ARCH、PRIME三形態、真クレジット、セーブ復元まで通す。
+
+```bash
+godot --headless --path events/2026-ai-browser-game-jam-4/godot \
+  -s res://tests/release_audit.gd
 ```
 
 固定seedの現行基準は、効率的な5入力/秒で通常約6.4分・真約10.7分、安定した2入力/秒で通常約14.6分・真約21.9分。5入力/秒では317ランク完成、2入力/秒では291/317で真エンドへ到達するため、後者の残りはInfinite Modeで完成できる。自動購入は説明や迷いを含まないため、人間の目標時間とは分けて評価する。
