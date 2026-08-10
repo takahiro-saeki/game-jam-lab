@@ -38,6 +38,7 @@ var final_credits_seen := false
 var infinite_wave := 0
 var infinite_best_wave := 0
 var story_event_ids: Array[String] = []
+var tutorial_completed := false
 
 func reset() -> void:
 	phase = RoutePhase.MAP
@@ -57,6 +58,7 @@ func reset() -> void:
 	infinite_wave = 0
 	infinite_best_wave = 0
 	story_event_ids.clear()
+	tutorial_completed = false
 
 func has_seen_story_event(event_id: String) -> bool:
 	return event_id in story_event_ids
@@ -219,7 +221,7 @@ func complete_final_credits() -> bool:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 5,
+		"version": 6,
 		"phase": phase,
 		"current_stage_id": current_stage_id,
 		"current_boss_id": current_boss_id,
@@ -237,11 +239,12 @@ func snapshot() -> Dictionary:
 		"infinite_wave": infinite_wave,
 		"infinite_best_wave": infinite_best_wave,
 		"story_event_ids": story_event_ids.duplicate(),
+		"tutorial_completed": tutorial_completed,
 	}
 
 func restore_snapshot(data: Dictionary) -> bool:
 	var version := int(data.get("version", 0))
-	if version not in [2, 3, 4, 5]:
+	if version not in [2, 3, 4, 5, 6]:
 		return false
 	reset()
 	var valid_stages := Catalog.stage_ids()
@@ -279,6 +282,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		var event_id := str(value)
 		if not event_id.is_empty() and event_id not in story_event_ids:
 			story_event_ids.append(event_id)
+	tutorial_completed = bool(data.get("tutorial_completed", not completed_stage_ids.is_empty()))
 	phase = clampi(int(data.get("phase", RoutePhase.MAP)), RoutePhase.MAP, RoutePhase.POSTGAME)
 	if version <= 3 and phase == RoutePhase.TRUE_END:
 		phase = RoutePhase.POST_TRUE_CHOICE

@@ -210,6 +210,7 @@ var bgm_players: Array[AudioStreamPlayer] = []
 var bgm_active_index := -1
 var bgm_key := ""
 var bgm_crossfade: Tween
+var bgm_jingle_duck: Tween
 var music_enabled := true
 var music_volume_before_mute := 0.72
 var run
@@ -232,6 +233,8 @@ var art_preview_encounter := ""
 var art_preview_tree_gear := ""
 var art_preview_tree_tier := 3
 var campaign_preview_screen := ""
+var debug_battle_id := ""
+var debug_battle_overlimit_count := 5
 
 var animation_time := 0.0
 var charge_held := false
@@ -314,6 +317,8 @@ var story_log_return_to_title := false
 var story_preview_event_id := ""
 var story_archive_preview_all := false
 var story_singularity_phase := 1
+var tutorial_open := false
+var tutorial_page := 0
 
 var charge_rect := Rect2(70, 502, 284, 88)
 var mode_toggle_rect := Rect2(70, 598, 284, 44)
@@ -350,14 +355,16 @@ var title_button_rects: Array[Rect2] = [
 	Rect2(726, 510, 410, 48),
 ]
 var settings_row_rects: Array[Rect2] = [
-	Rect2(356, 202, 568, 52),
-	Rect2(356, 274, 568, 52),
-	Rect2(356, 346, 568, 52),
-	Rect2(356, 438, 568, 52),
-	Rect2(356, 510, 568, 52),
+	Rect2(356, 170, 568, 48),
+	Rect2(356, 226, 568, 48),
+	Rect2(356, 282, 568, 48),
+	Rect2(356, 338, 568, 48),
+	Rect2(356, 394, 568, 48),
+	Rect2(356, 450, 568, 48),
 ]
 var settings_close_rect := Rect2(704, 610, 220, 48)
 var settings_reset_rect := Rect2(356, 610, 220, 48)
+var settings_tutorial_rect := Rect2(480, 536, 320, 46)
 var campaign_credits_rect := Rect2(326, 632, 292, 48)
 var campaign_ending_return_rect := Rect2(662, 632, 292, 48)
 var credits_close_rect := Rect2(1032, 642, 190, 46)
@@ -383,6 +390,8 @@ var story_language_rect := Rect2(832, 28, 172, 44)
 var story_log_rect := Rect2(862, 616, 140, 42)
 var story_log_close_rect := Rect2(1034, 28, 188, 44)
 var story_log_replay_rect := Rect2(828, 598, 368, 48)
+var tutorial_next_rect := Rect2(778, 590, 392, 54)
+var tutorial_skip_rect := Rect2(92, 590, 220, 48)
 
 func _ready() -> void:
 	apply_web_art_preview()
@@ -409,7 +418,9 @@ func _ready() -> void:
 		run.unlock_overlimit_system()
 	title_has_saved_campaign = resumed
 	title_screen_open = not art_preview_enabled
-	if art_preview_enabled:
+	if not debug_battle_id.is_empty():
+		configure_debug_battle()
+	elif art_preview_enabled:
 		if campaign_preview_screen.is_empty():
 			campaign_route.reset()
 			campaign_route.select_stage("gearmaw")
@@ -421,7 +432,9 @@ func _ready() -> void:
 		campaign_selected = first_available_stage_index()
 	elif campaign_route.phase == CampaignRoute.RoutePhase.BOSS_SELECT:
 		campaign_selected = 0
-	if resumed:
+	if not debug_battle_id.is_empty():
+		show_message(loc("開発検証：PRIME CURRENT直行 // セーブ無効", "LOCAL QA: PRIME CURRENT DIRECT // SAVE DISABLED"), 4.0)
+	elif resumed:
 		show_message(loc("保存したキャンペーンを再開", "CAMPAIGN RESUMED"), 3.0)
 	else:
 		show_message(loc("討伐地図から最初の機械魔獣を選択", "SELECT YOUR FIRST MECHANICAL BEAST"), 5.0)
@@ -526,6 +539,22 @@ func refresh_music(force := false) -> void:
 				previous_player.stop()
 		)
 
+
+func play_defeat_jingle(kind: String) -> void:
+	# When the encounter keeps the same track (normal hunts), briefly duck it so
+	# the victory motif reads clearly. Boss route changes already crossfade the
+	# old track out and therefore need no competing volume tween.
+	if music_enabled and bgm_active_index >= 0 and desired_bgm_key() == bgm_key:
+		if bgm_jingle_duck != null and bgm_jingle_duck.is_valid():
+			bgm_jingle_duck.kill()
+		var player := bgm_players[bgm_active_index]
+		var hold := 0.62 if kind == "hunt" else 0.92
+		bgm_jingle_duck = create_tween()
+		bgm_jingle_duck.tween_property(player, "volume_db", BGM_VOLUME_DB - 10.0, 0.07)
+		bgm_jingle_duck.tween_interval(hold)
+		bgm_jingle_duck.tween_property(player, "volume_db", BGM_VOLUME_DB, 0.34)
+	synth.defeat_jingle(kind)
+
 func toggle_music() -> void:
 	if audio_settings == null:
 		return
@@ -571,13 +600,18 @@ func apply_web_art_preview() -> void:
 	var values := parse_query_string(str(window.location.search))
 	var preview_hostname := str(window.location.hostname).to_lower()
 	var is_local_preview_host := preview_hostname in ["127.0.0.1", "localhost", "::1"]
-	campaign_preview_screen = str(values.get("campaign_preview", ""))
+	campaign_preview_screen = str(values.get("campaign_preview", "")) if is_local_preview_host else ""
+	debug_battle_id = str(values.get("debug_battle", "")) if is_local_preview_host else ""
+	var overlimit_value := str(values.get("overlimits", "all"))
+	debug_battle_overlimit_count = 5 if overlimit_value == "all" else clampi(int(overlimit_value), 0, 5)
 	story_preview_event_id = str(values.get("story_preview", "")) if OS.is_debug_build() else ""
 	story_archive_preview_all = is_local_preview_host and str(values.get("story_archive", "")) == "all"
 	debug_dialogue_requested = str(values.get("debug_dialogue", "")) == "1"
 	if story_archive_preview_all:
 		# Release exports are used for browser QA, so gate this by hostname rather
 		# than OS.is_debug_build(). Never read or mutate the player's real save.
+		persistence_enabled = false
+	if not debug_battle_id.is_empty():
 		persistence_enabled = false
 	if debug_dialogue_requested:
 		pending_debug_dialogue = {
@@ -696,6 +730,54 @@ func configure_campaign_preview() -> void:
 			title_screen_open = false
 		_:
 			campaign_selected = 0
+
+
+func configure_debug_battle() -> bool:
+	var aliases := {
+		"prime_1": "prime_current_form_1",
+		"prime_2": "prime_current_form_2",
+		"prime_3": "prime_current_form_3",
+		"prime_sequence": "prime_current_form_1",
+	}
+	var encounter_id := str(aliases.get(debug_battle_id, debug_battle_id))
+	if encounter_id not in StageCatalog.final_boss_ids():
+		debug_battle_id = ""
+		return false
+	run.reset()
+	campaign_route.reset()
+	for definition in StageCatalog.STAGES:
+		var stage_id := str(definition.id)
+		var core_id := str(definition.core_id)
+		campaign_route.completed_stage_ids.append(stage_id)
+		campaign_route.stage_rewards[stage_id] = core_id
+		run.grant_beast_core(core_id)
+	for definition in StageCatalog.BOSSES:
+		var boss_id := str(definition.id)
+		campaign_route.defeated_boss_ids.append(boss_id)
+		run.grant_boss_core(str(definition.core_id))
+	campaign_route.first_boss_id = str(StageCatalog.BOSSES[0].id)
+	campaign_route.normal_end_seen = true
+	campaign_route.true_end_seen = true
+	campaign_route.deep_signal_answered = true
+	campaign_route.tutorial_completed = true
+	run.unlock_overlimit_system()
+	for definition in GearCatalog.SKILLS:
+		run.upgrade_levels[str(definition.id)] = int(definition.max_rank)
+	for index in range(mini(debug_battle_overlimit_count, GearCatalog.OVERLIMITS.size())):
+		run.upgrade_levels[str(GearCatalog.OVERLIMITS[index].id)] = 1
+	run.credits = 240000000.0
+	run.refresh_stats()
+	var final_definition := StageCatalog.boss(encounter_id)
+	var form := int(final_definition.get("form", 1))
+	campaign_route.final_boss_form = form
+	campaign_route.current_boss_id = encounter_id
+	campaign_route.phase = CampaignRoute.RoutePhase.FINAL_BOSS
+	run.begin_final_boss_form(encounter_id, float(final_definition.hp), form)
+	title_screen_open = false
+	var event_id := story_encounter_event_id(encounter_id)
+	if not event_id.is_empty():
+		start_story_event_once(event_id)
+	return true
 
 func configure_art_preview_state() -> void:
 	var preview_id := art_preview_encounter if not art_preview_encounter.is_empty() else "gearmaw"
@@ -831,6 +913,10 @@ func _process(delta: float) -> void:
 	if achievement_notice_time > 0.0:
 		achievement_notice_time -= delta
 	update_comms(delta)
+	if tutorial_open:
+		update_effects(delta)
+		queue_redraw()
+		return
 	if story_event_open or story_lab_open or story_log_open:
 		update_effects(delta)
 		queue_redraw()
@@ -917,6 +1003,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Consume the event so a click/confirm that closes one screen cannot also
 	# activate a control on the next screen in the same frame.
 	get_viewport().set_input_as_handled()
+	if tutorial_open:
+		handle_tutorial_input(event)
+		return
 	if story_lab_available() and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F9:
 		toggle_story_lab()
 		return
@@ -1513,6 +1602,8 @@ func handle_audio_settings_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_ESCAPE, KEY_F1]:
 			close_audio_settings()
+		elif event.keycode == KEY_R:
+			open_tutorial(true)
 		elif event.keycode in [KEY_UP, KEY_W]:
 			settings_selected = wrapi(settings_selected - 1, 0, settings_row_rects.size())
 			synth.click()
@@ -1558,10 +1649,16 @@ func handle_audio_settings_point(point: Vector2) -> void:
 		synth.confirm()
 		queue_redraw()
 		return
+	if settings_tutorial_rect.has_point(point):
+		open_tutorial(true)
+		return
 	for index in range(settings_row_rects.size()):
 		var row := settings_row_rects[index]
 		if row.has_point(point):
 			settings_selected = index
+			if index == 5:
+				set_audio_setting(index, 0.0 if audio_settings.story_dialogue_enabled else 1.0)
+				return
 			var slider_left := row.position.x + 230.0
 			var ratio := clampf((point.x - slider_left) / 280.0, 0.0, 1.0)
 			set_audio_setting(index, ratio)
@@ -1570,6 +1667,9 @@ func handle_audio_settings_point(point: Vector2) -> void:
 func adjust_audio_setting(index: int, direction: int) -> void:
 	var values := audio_setting_values()
 	if index < 0 or index >= values.size():
+		return
+	if index == 5:
+		set_audio_setting(index, 0.0 if audio_settings.story_dialogue_enabled else 1.0)
 		return
 	var step := 0.1 if index < 3 else 0.25
 	set_audio_setting(index, clampf(float(values[index]) + float(direction) * step, 0.0, 1.0))
@@ -1588,6 +1688,8 @@ func set_audio_setting(index: int, value: float) -> void:
 			audio_settings.screen_shake_intensity = value
 		4:
 			audio_settings.flash_intensity = value
+		5:
+			audio_settings.story_dialogue_enabled = value >= 0.5
 	var was_enabled := music_enabled
 	audio_settings.save_settings()
 	music_enabled = audio_settings.music_volume > 0.001
@@ -1604,6 +1706,7 @@ func audio_setting_values() -> Array[float]:
 		audio_settings.sfx_volume,
 		audio_settings.screen_shake_intensity,
 		audio_settings.flash_intensity,
+		1.0 if audio_settings.story_dialogue_enabled else 0.0,
 	]
 
 func handle_campaign_input(event: InputEvent) -> void:
@@ -1637,7 +1740,7 @@ func handle_campaign_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_T and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
 			open_gear_tree(0)
 		elif event.keycode == KEY_ESCAPE:
-			return_to_menu.emit()
+			return_to_title_safely()
 		elif event.keycode in [KEY_LEFT, KEY_A]:
 			navigate_campaign_selection(Vector2i.LEFT)
 		elif event.keycode in [KEY_RIGHT, KEY_D]:
@@ -1670,7 +1773,7 @@ func handle_campaign_input(event: InputEvent) -> void:
 				elif event.button_index == controller_button("menu") and campaign_route.phase in [CampaignRoute.RoutePhase.MAP, CampaignRoute.RoutePhase.TRUE_MAP]:
 					open_gear_tree(selected_gear_index)
 				elif event.button_index == controller_button("back"):
-					return_to_menu.emit()
+					return_to_title_safely()
 	elif event is InputEventJoypadMotion:
 		var direction := controller_motion_direction(event)
 		if direction != Vector2i.ZERO:
@@ -1681,7 +1784,7 @@ func handle_campaign_point(point: Vector2) -> void:
 		open_story_log(false)
 		return
 	if menu_rect.has_point(point):
-		return_to_menu.emit()
+		return_to_title_safely()
 		return
 	if campaign_ending_return_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.NORMAL_END, CampaignRoute.RoutePhase.POST_TRUE_CHOICE, CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
 		if campaign_route.phase in [CampaignRoute.RoutePhase.FINAL_END, CampaignRoute.RoutePhase.POSTGAME]:
@@ -1689,7 +1792,7 @@ func handle_campaign_point(point: Vector2) -> void:
 			title_has_saved_campaign = true
 			save_progress()
 		else:
-			return_to_menu.emit()
+			return_to_title_safely()
 		return
 	if campaign_credits_rect.has_point(point) and campaign_route.phase == CampaignRoute.RoutePhase.NORMAL_END:
 		open_credits(false, "normal")
@@ -1701,7 +1804,7 @@ func handle_campaign_point(point: Vector2) -> void:
 		open_achievements()
 		return
 	if campaign_secondary_rect.has_point(point) and campaign_route.phase in [CampaignRoute.RoutePhase.ENHANCED_BOSS, CampaignRoute.RoutePhase.SINGULARITY]:
-		return_to_menu.emit()
+		return_to_title_safely()
 		return
 	if language_rect.has_point(point):
 		toggle_language()
@@ -1819,8 +1922,12 @@ func start_stage_by_index(index: int) -> bool:
 	reward_selected = 0
 	show_message(loc("討伐開始：", "HUNT STARTED: ") + stage_name(definition), 2.2)
 	var encounter_event_id := story_encounter_event_id(id)
-	if encounter_event_id.is_empty() or not start_story_event_once(encounter_event_id):
+	var tutorial_needed: bool = encounter_order == 0 and not campaign_route.tutorial_completed
+	var tutorial_action := "open_tutorial" if tutorial_needed else ""
+	if encounter_event_id.is_empty() or not start_story_event_once(encounter_event_id, tutorial_action):
 		queue_encounter_intro(id)
+		if tutorial_needed:
+			open_tutorial()
 	synth.play_chord([164.81, 246.94, 329.63], 0.28, -22.0)
 	save_progress()
 	return true
@@ -1937,9 +2044,10 @@ func complete_campaign_boss() -> bool:
 	if defeated_final_form and campaign_route.phase == CampaignRoute.RoutePhase.FINAL_END:
 		start_final_defeat_cinematic()
 	elif defeated_final_form:
+		play_defeat_jingle("phase")
 		synth.phase_transition(campaign_route.final_boss_form)
 	else:
-		synth.play_chord([130.81, 196.0, 261.63, 392.0, 523.25], 0.75, -17.0)
+		play_defeat_jingle("boss")
 	var defeat_event_id := story_defeat_event_id(defeated_id)
 	if not defeated_final_form and not defeat_event_id.is_empty():
 		queue_story_event_once(defeat_event_id)
@@ -2042,7 +2150,7 @@ func handle_key(event: InputEventKey) -> void:
 		return
 	match event.keycode:
 		KEY_ESCAPE:
-			return_to_menu.emit()
+			return_to_title_safely()
 		KEY_ENTER, KEY_X:
 			perform_charge()
 		KEY_A:
@@ -2093,11 +2201,11 @@ func handle_controller_button(event: InputEventJoypadButton) -> void:
 	elif event.button_index == controller_button("language"):
 		toggle_language()
 	elif event.button_index == controller_button("back"):
-		return_to_menu.emit()
+		return_to_title_safely()
 
 func handle_point(point: Vector2) -> void:
 	if menu_rect.has_point(point):
-		return_to_menu.emit()
+		return_to_title_safely()
 	elif language_rect.has_point(point):
 		toggle_language()
 	elif reset_rect.has_point(point):
@@ -2160,7 +2268,7 @@ func handle_completion_input(event: InputEvent) -> void:
 		elif event.button_index == controller_button("language"):
 			toggle_language()
 		elif event.button_index == controller_button("back"):
-			return_to_menu.emit()
+			return_to_title_safely()
 	elif event is InputEventJoypadMotion and run.stage_phase == ChargeState.StagePhase.REWARD:
 		var direction := controller_motion_direction(event)
 		if direction != Vector2i.ZERO:
@@ -2189,7 +2297,7 @@ func handle_completion_point(point: Vector2) -> void:
 	if clear_menu_rect.has_point(point) and campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
 		leave_infinite_mode()
 	elif menu_rect.has_point(point) or clear_menu_rect.has_point(point):
-		return_to_menu.emit()
+		return_to_title_safely()
 	elif language_rect.has_point(point):
 		toggle_language()
 	elif run.stage_phase == ChargeState.StagePhase.REWARD:
@@ -2257,6 +2365,13 @@ func save_progress() -> void:
 	evaluate_achievements(true)
 	if persistence_enabled and save_manager != null:
 		save_manager.save_bundle(run, campaign_route, achievements)
+
+
+func return_to_title_safely() -> void:
+	# Save synchronously before main.gd frees this node. This closes the gap
+	# between five-second autosaves, including story choices and boss launches.
+	save_progress()
+	return_to_menu.emit()
 
 func evaluate_achievements(show_notice: bool = true) -> void:
 	if achievements == null or run == null or campaign_route == null:
@@ -2541,6 +2656,7 @@ func handle_enemy_defeated() -> void:
 	end_charge()
 	gear_tree_open = false
 	var defeated_stage_id: String = str(run.current_stage_id)
+	var standalone_jingle: bool = campaign_route.phase in [CampaignRoute.RoutePhase.STAGE, CampaignRoute.RoutePhase.INFINITE]
 	if campaign_route.phase == CampaignRoute.RoutePhase.INFINITE:
 		var completed_wave: int = int(campaign_route.infinite_wave)
 		var reward: int = infinite_reward_for_wave(completed_wave)
@@ -2556,7 +2672,8 @@ func handle_enemy_defeated() -> void:
 		complete_campaign_boss()
 	screen_flash = 1.0
 	screen_shake = 0.7
-	synth.enemy_defeat()
+	if standalone_jingle:
+		play_defeat_jingle("hunt")
 	save_progress()
 
 func try_purchase(index: int, play_sound: bool = true) -> bool:
@@ -2640,6 +2757,104 @@ func show_message(text: String, duration: float) -> void:
 	message_time = duration
 
 
+func open_tutorial(force := false) -> bool:
+	if campaign_route == null or (campaign_route.tutorial_completed and not force):
+		return false
+	tutorial_open = true
+	tutorial_page = 0
+	settings_open = false
+	message_time = 0.0
+	clear_comms()
+	end_charge()
+	synth.confirm()
+	queue_redraw()
+	return true
+
+
+func close_tutorial() -> void:
+	if not tutorial_open:
+		return
+	tutorial_open = false
+	tutorial_page = 0
+	campaign_route.tutorial_completed = true
+	save_progress()
+	synth.confirm()
+	queue_redraw()
+
+
+func advance_tutorial() -> void:
+	if tutorial_page >= 2:
+		close_tutorial()
+		return
+	tutorial_page += 1
+	synth.click()
+	queue_redraw()
+
+
+func handle_tutorial_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+		elif tutorial_skip_rect.has_point(event.position):
+			close_tutorial()
+		elif tutorial_next_rect.has_point(event.position):
+			advance_tutorial()
+	elif event is InputEventScreenTouch and event.pressed:
+		if story_language_rect.has_point(event.position):
+			toggle_language()
+		elif tutorial_skip_rect.has_point(event.position):
+			close_tutorial()
+		else:
+			advance_tutorial()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_L:
+			toggle_language()
+		elif event.keycode == KEY_ESCAPE:
+			close_tutorial()
+		elif event.keycode in [KEY_ENTER, KEY_SPACE, KEY_X, KEY_A]:
+			advance_tutorial()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == controller_button("language"):
+			toggle_language()
+		elif event.button_index == controller_button("back"):
+			close_tutorial()
+		elif event.button_index == controller_button("primary"):
+			advance_tutorial()
+
+
+func tutorial_page_copy() -> Dictionary:
+	var pages := [
+		{
+			"eyebrow_ja": "STEP 01 // 攻撃とCHARGE",
+			"eyebrow_en": "STEP 01 // ATTACK & CHARGE",
+			"title_ja": "押すたび、敵を削り、力を得る",
+			"title_en": "EVERY COMMAND DEALS DAMAGE AND BUILDS POWER",
+			"body_ja": "CHARGE ATTACKをクリックするか、SPACE / ENTER / Aを押すと1回攻撃します。\n攻撃するたびに強化資源CHARGEを獲得。AUTO砲は最初から常時稼働します。",
+			"body_en": "CLICK CHARGE ATTACK OR PRESS SPACE / ENTER / A FOR ONE MANUAL HIT.\nEVERY COMMAND EARNS CHARGE. THE AUTO CANNON FIRES FROM THE START.",
+			"accent": Palette.CYAN,
+		},
+		{
+			"eyebrow_ja": "STEP 02 // 5つのギア",
+			"eyebrow_en": "STEP 02 // FIVE GEAR TREES",
+			"title_ja": "CHARGEを、次の一撃へ還元する",
+			"title_en": "TURN CHARGE INTO A FASTER HUNT",
+			"body_ja": "画面下のギアを開き、CHARGEで能力を購入します。\n手動、獲得量、AUTO、群制、機核。複数系統を組み合わせるほど加速します。",
+			"body_en": "OPEN A GEAR AT THE BOTTOM AND SPEND CHARGE ON ITS SKILL TREE.\nMIX MANUAL, ECONOMY, AUTO, SWARM AND CORE SYSTEMS TO ACCELERATE.",
+			"accent": Palette.VIOLET,
+		},
+		{
+			"eyebrow_ja": "STEP 03 // 討伐経路",
+			"eyebrow_en": "STEP 03 // HUNT ROUTE",
+			"title_ja": "三体で帰還、六体で深層へ",
+			"title_en": "THREE FOR AN ENDING. SIX FOR THE DEEPEST SIGNAL.",
+			"body_ja": "六体から好きな三体を倒すと通常ボスへ進めます。そこで帰還しても構いません。\n残る三体とすべての深層ボスを倒せば、本当のラスボスへの道が開きます。",
+			"body_en": "DEFEAT ANY THREE OF SIX BEASTS TO FACE A NORMAL BOSS AND REACH AN ENDING.\nHUNT ALL SIX AND EVERY DEEP BOSS TO OPEN THE PATH TO THE REAL FINAL ENEMY.",
+			"accent": Palette.AMBER,
+		},
+	]
+	return Dictionary(pages[clampi(tutorial_page, 0, pages.size() - 1)])
+
+
 func story_lab_available() -> bool:
 	return OS.is_debug_build()
 
@@ -2648,6 +2863,15 @@ func start_story_event(event_id: String, from_lab := false, from_log := false, a
 	var definition := StoryCatalog.event(event_id)
 	if definition.is_empty():
 		return false
+	if not from_lab and not from_log and not audio_settings.story_dialogue_enabled:
+		# Narrative can be disabled without losing route progression or the
+		# permanent archive. Gameplay warnings and the tutorial remain visible.
+		campaign_route.mark_story_event_seen(event_id)
+		achievements.archive_story_event(event_id)
+		save_progress()
+		if not after_action.is_empty():
+			perform_story_after_action(after_action)
+		return true
 	story_event_id = event_id
 	story_event_definition = definition
 	story_event_line_index = 0
@@ -2739,6 +2963,8 @@ func close_story_event(skipped := false) -> void:
 
 func perform_story_after_action(action: String) -> void:
 	match action:
+		"open_tutorial":
+			open_tutorial()
 		"world_credits":
 			open_credits(true, "world")
 		"launch_campaign_boss":
@@ -3036,10 +3262,12 @@ func handle_story_log_input(event: InputEvent) -> void:
 func debug_show_dialogue(speaker_ja: String, speaker_en: String, text_ja: String, text_en: String, duration := 12.0, role := "support") -> void:
 	clear_comms()
 	message_time = 0.0
-	queue_comms(speaker_ja, speaker_en, text_ja, text_en, clampf(duration, 1.0, 60.0), role if role in ["support", "player", "enemy"] else "support")
+	queue_comms(speaker_ja, speaker_en, text_ja, text_en, clampf(duration, 1.0, 60.0), role if role in ["support", "player", "enemy"] else "support", true)
 	queue_redraw()
 
-func queue_comms(speaker_ja: String, speaker_en: String, text_ja: String, text_en: String, duration := 3.2, role := "auto") -> void:
+func queue_comms(speaker_ja: String, speaker_en: String, text_ja: String, text_en: String, duration := 3.2, role := "auto", force := false) -> void:
+	if not force and audio_settings != null and not audio_settings.story_dialogue_enabled:
+		return
 	comms_queue.append({
 		"speaker_ja": speaker_ja,
 		"speaker_en": speaker_en,
@@ -3346,6 +3574,9 @@ func tutorial_hint() -> String:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color("060b16"))
 	draw_background()
+	if tutorial_open:
+		draw_tutorial_overlay()
+		return
 	if story_lab_open:
 		draw_story_lab()
 		return
@@ -3406,6 +3637,31 @@ func _draw() -> void:
 		draw_achievement_toast()
 	if story_event_open:
 		draw_story_event_overlay()
+
+
+func draw_tutorial_overlay() -> void:
+	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.004, 0.01, 0.025, 0.94))
+	for ring in range(7):
+		draw_arc(Vector2(1100, 350), 130.0 + ring * 45.0, -PI * 0.82, PI * 0.72, 64, Palette.with_alpha(Palette.CYAN if ring % 2 == 0 else Palette.VIOLET, 0.10), 2.0)
+	var page := tutorial_page_copy()
+	var accent: Color = Color(page.accent)
+	draw_rect(Rect2(0, 0, 1280, 7), accent)
+	draw_string(DisplayFont, Vector2(82, 76), "VOLT NOMAD // FIELD MANUAL", HORIZONTAL_ALIGNMENT_LEFT, 720, 20, Palette.MUTED)
+	draw_campaign_button(story_language_rect, loc("日本語 / EN", "EN / 日本語"), Palette.CYAN, false)
+	var panel := Rect2(76, 112, 1128, 438)
+	draw_machine_plate(panel, Palette.with_alpha(Palette.INK, 0.97), Palette.with_alpha(accent, 0.78), 20.0, 2.0)
+	draw_string(DisplayFont, Vector2(118, 166), str(page.get("eyebrow_ja" if is_japanese else "eyebrow_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 850, 15, accent)
+	draw_string(DisplayFont, Vector2(118, 224), str(page.get("title_ja" if is_japanese else "title_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 1000, 27, Palette.PAPER)
+	draw_multiline_string(Palette.UI_FONT, Vector2(120, 286), str(page.get("body_ja" if is_japanese else "body_en", "")), HORIZONTAL_ALIGNMENT_LEFT, 900, 18, 5, Palette.PAPER)
+	var visual_y := 426.0
+	for index in range(3):
+		var node := Rect2(148 + index * 330, visual_y, 260, 72)
+		var active := index == tutorial_page
+		draw_machine_plate(node, Palette.with_alpha(Palette.PANEL, 0.9), Palette.with_alpha(accent if active else Palette.MUTED, 0.85 if active else 0.22), 9.0, 2.0 if active else 1.0)
+		draw_string(DisplayFont, node.position + Vector2(0, 29), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_CENTER, node.size.x, 13, accent if active else Palette.MUTED)
+		draw_string(Palette.UI_FONT, node.position + Vector2(0, 54), [loc("攻撃", "ATTACK"), loc("強化", "UPGRADE"), loc("経路", "ROUTE")][index], HORIZONTAL_ALIGNMENT_CENTER, node.size.x, 11, Palette.PAPER if active else Palette.MUTED)
+	draw_campaign_button(tutorial_skip_rect, loc("ESC　閉じる", "ESC  CLOSE"), Palette.MUTED, false)
+	draw_campaign_button(tutorial_next_rect, loc("決定　開始する", "CONFIRM  START HUNT") if tutorial_page >= 2 else loc("決定　次へ", "CONFIRM  NEXT"), Palette.MINT, true)
 
 
 func draw_story_lab() -> void:
@@ -3844,29 +4100,35 @@ func draw_audio_settings_overlay() -> void:
 	var panel := Rect2(300, 70, 680, 620)
 	draw_machine_plate(panel, Color(0.025, 0.055, 0.11, 0.98), Palette.VIOLET, 24.0, 2.0)
 	draw_string(DisplayFont, Vector2(356, 122), loc("システム設定", "SYSTEM SETTINGS"), HORIZONTAL_ALIGNMENT_LEFT, 568, 30, Palette.PAPER)
-	draw_string(Palette.UI_FONT, Vector2(356, 154), loc("音響と画面効果は即時反映・自動保存されます", "AUDIO AND VISUAL COMFORT CHANGES APPLY AND SAVE IMMEDIATELY"), HORIZONTAL_ALIGNMENT_LEFT, 568, 12, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(356, 148), loc("音響・画面効果・会話設定は即時反映されます", "AUDIO, VISUAL AND STORY OPTIONS APPLY IMMEDIATELY"), HORIZONTAL_ALIGNMENT_LEFT, 568, 11, Palette.MUTED)
 	var labels := [
 		loc("マスター音量", "MASTER VOLUME"),
 		loc("BGM音量", "MUSIC VOLUME"),
 		loc("効果音量", "SFX VOLUME"),
 		loc("画面の揺れ", "SCREEN SHAKE"),
 		loc("画面フラッシュ", "SCREEN FLASH"),
+		loc("ストーリー会話", "STORY DIALOGUE"),
 	]
 	var values := audio_setting_values()
 	for index in range(settings_row_rects.size()):
 		var row := settings_row_rects[index]
 		var selected := settings_selected == index
-		var accent := Palette.CYAN if index < 3 else Palette.VIOLET
+		var accent := Palette.CYAN if index < 3 else Palette.VIOLET if index < 5 else Palette.MINT
 		draw_machine_plate(row, Palette.with_alpha(Palette.INK, 0.76), Palette.with_alpha(accent, 0.9 if selected else 0.22), 8.0, 2.0 if selected else 1.0)
 		draw_string(Palette.UI_FONT, row.position + Vector2(18, 32), str(labels[index]), HORIZONTAL_ALIGNMENT_LEFT, 196, 13, Palette.PAPER if selected else Palette.MUTED)
+		if index == 5:
+			var enabled: bool = audio_settings.story_dialogue_enabled
+			draw_string(DisplayFont, row.position + Vector2(230, 32), loc("表示する", "SHOW") if enabled else loc("非表示（記録には回収）", "HIDE · STILL ARCHIVED"), HORIZONTAL_ALIGNMENT_LEFT, 310, 13, accent if enabled else Palette.MUTED)
+			continue
 		var slider := Rect2(row.position + Vector2(230, 20), Vector2(280, 12))
 		draw_rect(slider, Palette.with_alpha(Palette.MUTED, 0.18))
 		draw_rect(Rect2(slider.position, Vector2(slider.size.x * float(values[index]), slider.size.y)), accent)
 		draw_circle(slider.position + Vector2(slider.size.x * float(values[index]), slider.size.y * 0.5), 8.0, Palette.PAPER)
 		draw_string(DisplayFont, row.position + Vector2(518, 34), "%d" % int(round(float(values[index]) * 100.0)), HORIZONTAL_ALIGNMENT_RIGHT, 36, 13, accent)
+	draw_campaign_button(settings_tutorial_rect, loc("R　チュートリアルを再表示", "R  REPLAY TUTORIAL"), Palette.AMBER, false)
 	draw_campaign_button(settings_reset_rect, loc("初期設定へ戻す", "RESTORE DEFAULTS"), Palette.CORAL, false)
 	draw_campaign_button(settings_close_rect, loc("閉じる", "CLOSE"), Palette.MINT, true)
-	draw_string(Palette.UI_FONT, Vector2(356, 588), loc("上下：項目　左右：調整　ESC / B：閉じる", "UP/DOWN: SELECT · LEFT/RIGHT: ADJUST · ESC/B: CLOSE"), HORIZONTAL_ALIGNMENT_LEFT, 568, 11, Palette.MUTED)
+	draw_string(Palette.UI_FONT, Vector2(356, 598), loc("上下：項目　左右：調整　R：説明　ESC / B：閉じる", "UP/DOWN: SELECT · LEFT/RIGHT: ADJUST · R: TUTORIAL · ESC/B: CLOSE"), HORIZONTAL_ALIGNMENT_LEFT, 568, 10, Palette.MUTED)
 
 func draw_achievements_overlay() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.002, 0.008, 0.02, 0.94))

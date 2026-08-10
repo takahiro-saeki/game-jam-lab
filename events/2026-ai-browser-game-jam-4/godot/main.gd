@@ -29,6 +29,10 @@ func launch_project_charge() -> void:
 func return_to_title() -> void:
 	if active_game == null:
 		return
+	# A title transition destroys and recreates the game node. Persist first so
+	# route choices made during the last autosave interval cannot be lost.
+	if active_game.has_method("save_progress"):
+		active_game.call("save_progress")
 	active_game.queue_free()
 	active_game = null
 	call_deferred("launch_project_charge")

@@ -197,7 +197,10 @@ const FINAL_BOSS_FORMS := [
 # Encounter-order inflation deliberately outruns the build's multiplicative
 # Tier/core growth. The first hunt remains the onboarding baseline; later hunts
 # stay alive long enough for their unique mechanics to matter.
-const ENCOUNTER_SCALING := [1.0, 3.5, 7.5, 250.0, 40000.0, 500000.0]
+# Preserve the dramatic true-route jump without letting the sixth hunt outrank
+# the world engine or PRIME CURRENT. At the largest beast base HP this yields:
+# fifth <= 520M, sixth <= 585M, ARCH 600M, PRIME form one 900M.
+const ENCOUNTER_SCALING := [1.0, 3.5, 7.5, 250.0, 40000.0, 45000.0]
 
 static func stage(id: String) -> Dictionary:
 	for definition in STAGES:

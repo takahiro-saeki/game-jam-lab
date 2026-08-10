@@ -10,6 +10,7 @@ var music_volume := 0.72
 var sfx_volume := 0.88
 var screen_shake_intensity := 1.0
 var flash_intensity := 1.0
+var story_dialogue_enabled := true
 
 func load_settings() -> void:
 	var config := ConfigFile.new()
@@ -22,6 +23,7 @@ func load_settings() -> void:
 			music_volume = 0.0
 		screen_shake_intensity = clampf(float(config.get_value("accessibility", "screen_shake", screen_shake_intensity)), 0.0, 1.0)
 		flash_intensity = clampf(float(config.get_value("accessibility", "flash_intensity", flash_intensity)), 0.0, 1.0)
+		story_dialogue_enabled = bool(config.get_value("accessibility", "story_dialogue_enabled", story_dialogue_enabled))
 	apply()
 
 func save_settings() -> Error:
@@ -32,6 +34,7 @@ func save_settings() -> Error:
 	config.set_value("audio", "music_enabled", music_volume > 0.001)
 	config.set_value("accessibility", "screen_shake", screen_shake_intensity)
 	config.set_value("accessibility", "flash_intensity", flash_intensity)
+	config.set_value("accessibility", "story_dialogue_enabled", story_dialogue_enabled)
 	var error := config.save(SETTINGS_PATH)
 	apply()
 	return error
@@ -49,6 +52,7 @@ func reset_defaults() -> void:
 	sfx_volume = 0.88
 	screen_shake_intensity = 1.0
 	flash_intensity = 1.0
+	story_dialogue_enabled = true
 	save_settings()
 
 func ensure_bus(bus_name: String) -> void:

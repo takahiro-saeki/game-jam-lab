@@ -5,13 +5,13 @@ const MIX_RATE := 22050.0
 
 var variation_index := 0
 
-func play_tone(frequency: float, duration: float = 0.1, volume_db: float = -16.0, waveform: int = 0) -> void:
+func play_tone(frequency: float, duration: float = 0.1, volume_db: float = -16.0, waveform: int = 0, bus_name: String = "SFX") -> void:
 	# Headless CI has no audio consumer; skipping synthesis avoids playback objects
 	# remaining alive when a short smoke-test process exits immediately.
 	if DisplayServer.get_name() == "headless":
 		return
 	var player := AudioStreamPlayer.new()
-	player.bus = "SFX"
+	player.bus = bus_name
 	# AudioStreamGenerator is a live stream, not a preloaded sample. Godot's Web
 	# backend otherwise follows the project default and rejects it as unsampleable.
 	player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
@@ -43,11 +43,11 @@ func play_tone(frequency: float, duration: float = 0.1, volume_db: float = -16.0
 		playback.push_frame(Vector2.ONE * sample * envelope * 0.32)
 	get_tree().create_timer(duration + 0.12).timeout.connect(player.queue_free)
 
-func play_sweep(start_frequency: float, end_frequency: float, duration: float = 0.12, volume_db: float = -20.0, waveform: int = 0) -> void:
+func play_sweep(start_frequency: float, end_frequency: float, duration: float = 0.12, volume_db: float = -20.0, waveform: int = 0, bus_name: String = "SFX") -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	var player := AudioStreamPlayer.new()
-	player.bus = "SFX"
+	player.bus = bus_name
 	player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	var generator := AudioStreamGenerator.new()
 	generator.mix_rate = MIX_RATE
@@ -78,9 +78,9 @@ func play_sweep(start_frequency: float, end_frequency: float, duration: float = 
 		playback.push_frame(Vector2.ONE * sample * attack * release * 0.26)
 	get_tree().create_timer(duration + 0.12).timeout.connect(player.queue_free)
 
-func play_chord(frequencies: Array[float], duration: float = 0.18, volume_db: float = -22.0) -> void:
+func play_chord(frequencies: Array[float], duration: float = 0.18, volume_db: float = -22.0, bus_name: String = "SFX") -> void:
 	for frequency in frequencies:
-		play_tone(frequency, duration, volume_db, 3)
+		play_tone(frequency, duration, volume_db, 3, bus_name)
 
 func click() -> void:
 	variation_index += 1
@@ -193,6 +193,36 @@ func warning() -> void:
 func enemy_defeat() -> void:
 	play_sweep(92.5, 46.25, 0.34, -18.0, 4)
 	play_chord([196.0, 293.66, 392.0, 587.33], 0.42, -22.0)
+
+func defeat_jingle(kind: String = "hunt") -> void:
+	# A short composed victory motif, distinct from the impact SFX. Keeping it
+	# under two seconds preserves clicker pacing while making a kill feel final.
+	if DisplayServer.get_name() == "headless":
+		return
+	var notes: Array[float]
+	var spacing := 0.11
+	var sustain := 0.24
+	match kind:
+		"phase":
+			notes = [220.0, 329.63, 493.88, 659.25]
+			spacing = 0.09
+			sustain = 0.20
+		"boss":
+			notes = [196.0, 293.66, 392.0, 523.25, 783.99, 1046.5]
+			spacing = 0.13
+			sustain = 0.34
+		_:
+			notes = [293.66, 392.0, 523.25, 659.25, 783.99]
+	play_sweep(82.41, 41.2, 0.28 if kind == "hunt" else 0.42, -14.0, 4, "Music")
+	for index in range(notes.size()):
+		get_tree().create_timer(float(index) * spacing).timeout.connect(
+			Callable(self, "_play_defeat_jingle_note").bind(notes[index], sustain, index == notes.size() - 1)
+		)
+
+func _play_defeat_jingle_note(frequency: float, sustain: float, final_note: bool) -> void:
+	play_tone(frequency, sustain * (1.65 if final_note else 1.0), -8.0 if final_note else -13.0, 3, "Music")
+	if final_note:
+		play_tone(frequency * 0.5, sustain * 1.7, -14.0, 0, "Music")
 
 func boss_engage() -> void:
 	play_sweep(55.0, 110.0, 0.42, -19.0, 4)

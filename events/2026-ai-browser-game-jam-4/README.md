@@ -30,6 +30,8 @@ VOLT NOMAD is an active mechanical-beast clicker where every attack produces its
 - Press `Esc`, gamepad `B`, or use **Title** to return to the title screen.
 - Japanese is selected automatically on Japanese devices. Use the language switch or press `L` / gamepad `View/Share` to change between Japanese and English.
 - Story scenes pause combat and can be advanced, skipped, or switched between Japanese and English at any line. Press `J` on the hunt map or choose **Story Log** on the title screen to replay recovered conversations; unrecovered scenes remain spoiler-hidden.
+- The first selected beast opens a skippable three-page field manual covering attack/CHARGE, the five gear trees, and the short/true route structure. It can be replayed from Settings at any time.
+- Settings can hide optional story scenes and combat chatter without hiding tutorials, enemy rules, or combat warnings. Hidden scenes are still recovered into the Story Log for later reading.
 
 - Choose any three of six mechanical beasts, defeat one of two abyssal bosses, and reach the normal ending. Continue with the same build through the remaining hunts, enhanced boss, and ARCH SINGULARITY. After its credits, Continue returns to a persistent choice between ascending and answering the deeper signal.
 - Press the large **CHARGE ATTACK** button, `Space`, `Enter` / `X`, right-click, or the configured gamepad action. One input always produces exactly one manual command; holding a key never creates hidden auto-clicks.
@@ -48,6 +50,9 @@ VOLT NOMAD is an active mechanical-beast clicker where every attack produces its
 - Every defeated beast grants a named core automatically. Its rule becomes a permanent player ability for later battles.
 - GRID LEECH opens a short eight-click shatter window. THERMAL TITAN exposes its furnace after twenty clicks. ARCH rotates through three bonus-driven trials. The optional PRIME CURRENT then fights across Crownless Engine, Null Cathedral, and First Current forms.
 - Progress, CHARGE, upgrade ranks, acquired cores, enemy HP, and the current hunt save automatically and resume after closing the browser.
+- Every route back to the title screen performs an immediate synchronous save before the gameplay node is replaced, including the pre-PRIME choice and all three final forms.
+- Encounter-order HP now preserves narrative escalation: the sixth hunt is capped below ARCH SINGULARITY, followed by PRIME CURRENT forms one, two, and three. Player upgrades remain unchanged.
+- Enemy defeats play a short composed victory motif on the Music bus. Hunt music briefly ducks beneath it; boss phase changes naturally crossfade into the next track.
 - Defeating the real final boss permanently reveals `ARTWORK` on the title screen. Its four true-ending illustrations support fullscreen viewing, three zoom levels, hidden UI, controller/touch input, and complete true-ending replay.
 - Use the arrow keys, D-pad, or left stick on maps and the skill tree. Ending results can be copied with `C` or the configured active-ability button.
 - The header tracks total session time. Normal and true endings expose a detailed JSON report and append it locally, while the deterministic benchmark runner records comparable automated clear times.
@@ -93,12 +98,23 @@ events/2026-ai-browser-game-jam-4/tools/build-itch-project-charge.sh
 For a complete Story Log review in the local browser export, open:
 
 ```text
-http://127.0.0.1:6680/?story_archive=all
+http://127.0.0.1:6681/?story_archive=all
 ```
 
 This localhost-only QA mode temporarily unlocks all 32 recovered memories,
 opens the Story Log directly, and disables save loading and writing. The query
 does nothing on itch.io or any other non-local hostname.
+
+Directly test PRIME CURRENT with a production-strength completed build. These
+localhost-only URLs disable persistence and accept `overlimits=0` through `5`
+or `all`:
+
+```text
+http://127.0.0.1:6681/?debug_battle=prime_1&overlimits=all
+http://127.0.0.1:6681/?debug_battle=prime_2&overlimits=3
+http://127.0.0.1:6681/?debug_battle=prime_3&overlimits=1
+http://127.0.0.1:6681/?debug_battle=prime_sequence&overlimits=all
+```
 
 ## AI and asset disclosure
 
@@ -113,4 +129,4 @@ Image-generation prompts and original asset provenance are recorded in [`docs/AS
 
 ## Status
 
-VOLT NOMAD v8 contains six direct mechanical-beast battles, always-on AUTO fire, five dedicated gear trees with 86 standard nodes and 317 ranks, five permanent simultaneous OVERLIMIT rewrites, PURE COMMAND evolution, eight stolen cores, normal and world-engine endings, a three-form PRIME CURRENT final chapter, an eight-scene skippable true-ending slideshow, persistent achievements, optional Infinite Mode, bilingual UI/results, atomic saves, playtest telemetry, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the original normal/full routes in about 6.4/10.7 minutes at five inputs per second; PRIME CURRENT takes about 11.6–12.8 minutes with one OVERLIMIT or 2.7 minutes with all five in the maximum-rank benchmark. Fifteen PixelLab final-boss proposals and their reviews are recorded locally; Volt Nomad remains the approved protagonist art.
+VOLT NOMAD v11 contains six direct mechanical-beast battles, always-on AUTO fire, a three-step field manual, five dedicated gear trees with 86 standard nodes and 317 ranks, five permanent simultaneous OVERLIMIT rewrites, PURE COMMAND evolution, eight stolen cores, normal and world-engine endings, a three-form PRIME CURRENT final chapter, an eight-scene skippable true-ending slideshow, persistent achievements, optional Infinite Mode, bilingual UI/results, atomic saves, playtest telemetry, and mouse/touch/keyboard/remappable-gamepad navigation. Deterministic simulations complete the original normal/full routes in about 7.0/11.5 minutes at five inputs per second; PRIME CURRENT takes about 7.4–12.8 minutes with one OVERLIMIT or 1.5 minutes with all five in the maximum-rank benchmark. Fifteen PixelLab final-boss proposals and their reviews are recorded locally; Volt Nomad remains the approved protagonist art.

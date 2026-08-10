@@ -194,7 +194,10 @@ func test_charge_clicker_v5() -> void:
 	game.is_japanese = true
 	check(game.title_screen_open and game.title_button_rects.size() == 7 and game.title_button_count() == 6, "VOLT NOMAD opens on a complete title screen with a player-facing story log and no retired Game Lab action")
 	game.open_audio_settings()
-	check(game.settings_open and game.settings_row_rects.size() == 5 and AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0, "settings expose saved audio and visual-comfort controls on separate buses")
+	check(game.settings_open and game.settings_row_rects.size() == 6 and game.audio_setting_values().size() == 6 and AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0, "settings expose audio, visual comfort and story-dialogue controls")
+	game.audio_settings.story_dialogue_enabled = false
+	check(game.audio_setting_values()[5] == 0.0, "story dialogue can be disabled independently from gameplay warnings")
+	game.audio_settings.story_dialogue_enabled = true
 	game.close_audio_settings()
 	game.open_credits(true)
 	check(game.credits_open and game.desired_bgm_key() == "ending_normal", "title and endings can open the full scrolling credits roll")
@@ -256,6 +259,45 @@ func test_charge_clicker_v5() -> void:
 	game.unlock_story_archive_for_preview()
 	check(game.achievements.story_archive_ids.size() == ChargeStoryCatalog.event_ids().size(), "the local QA helper unlocks all thirty-two story-log memories in memory")
 	check(game.campaign_route.story_event_ids.size() == campaign_seen_before_preview, "the local QA helper does not mark campaign progression events as seen")
+	check(game.synth.has_method("defeat_jingle"), "enemy defeats route to a dedicated short musical victory motif")
+
+	var tutorial_game := ChargeClickerGame.new()
+	tutorial_game.persistence_enabled = false
+	root.add_child(tutorial_game)
+	tutorial_game.audio_settings.story_dialogue_enabled = true
+	check(tutorial_game.start_stage_by_index(0) and tutorial_game.story_event_open, "the first selected beast opens its encounter scene before onboarding")
+	tutorial_game.close_story_event(true)
+	check(tutorial_game.tutorial_open and tutorial_game.tutorial_page == 0, "the first hunt opens the three-page field manual after its encounter scene")
+	tutorial_game.advance_tutorial()
+	tutorial_game.advance_tutorial()
+	tutorial_game.advance_tutorial()
+	check(not tutorial_game.tutorial_open and tutorial_game.campaign_route.tutorial_completed, "finishing onboarding is campaign-persistent and returns to combat")
+	check(tutorial_game.open_tutorial(true), "the settings-facing tutorial replay can reopen completed onboarding")
+	tutorial_game.close_tutorial()
+	tutorial_game.free()
+
+	var hidden_story_game := ChargeClickerGame.new()
+	hidden_story_game.persistence_enabled = false
+	root.add_child(hidden_story_game)
+	hidden_story_game.audio_settings.story_dialogue_enabled = false
+	check(hidden_story_game.start_stage_by_index(0) and not hidden_story_game.story_event_open and hidden_story_game.tutorial_open, "hidden narrative skips the blocking scene but preserves first-hunt onboarding")
+	check(hidden_story_game.campaign_route.has_seen_story_event("hunt.gearmaw.encounter") and hidden_story_game.achievements.has_story_event("hunt.gearmaw.encounter"), "hidden narrative still marks scenes seen and recoverable in the Story Log")
+	hidden_story_game.close_tutorial()
+	hidden_story_game.queue_comms("敵", "ENEMY", "本文", "BODY")
+	check(hidden_story_game.comms_time <= 0.0 and hidden_story_game.comms_queue.is_empty(), "story-dialogue hiding suppresses optional combat chatter")
+	hidden_story_game.debug_show_dialogue("試験", "TEST", "強制", "FORCED")
+	check(hidden_story_game.comms_time > 0.0, "developer dialogue preview remains available while player dialogue is hidden")
+	hidden_story_game.free()
+
+	var debug_battle_game := ChargeClickerGame.new()
+	debug_battle_game.persistence_enabled = false
+	root.add_child(debug_battle_game)
+	debug_battle_game.debug_battle_id = "prime_2"
+	debug_battle_game.debug_battle_overlimit_count = 1
+	check(debug_battle_game.configure_debug_battle(), "localhost QA can configure a direct PRIME CURRENT battle")
+	check(debug_battle_game.run.current_boss_id == "prime_current_form_2" and debug_battle_game.run.final_boss_form == 2 and debug_battle_game.run.boss_max_hp == 3600000000.0, "direct QA selects the requested final-boss form and production HP")
+	check(debug_battle_game.run.skill_points_bought() == 317 and debug_battle_game.run.overlimit_count() == 1 and not debug_battle_game.persistence_enabled, "direct QA supplies a complete standard build, selectable OVERLIMIT count and no persistence")
+	debug_battle_game.free()
 	check(game.BGMStreams.size() == 18 and game.desired_bgm_key() == "map", "music routing includes separate title/map slots, independent endings, artwork and all three PRIME CURRENT forms")
 	check(str(game.BGMStreams["title"].resource_path).ends_with("awakening_below.mp3") and str(game.BGMStreams["map"].resource_path).ends_with("six_core_descent.mp3"), "selected Awakening Below A and Six-Core Descent B masters are assigned to title and map")
 	var final_form_stream_paths := {}
@@ -353,7 +395,12 @@ func test_charge_clicker_v5() -> void:
 		check(route.select_stage(id), "route can select beast %s" % id)
 		check(route.complete_current_stage(str(ChargeStageCatalog.stage(id).core_id)), "route records defeated beast %s" % id)
 	check(route.phase == route.RoutePhase.BOSS_SELECT, "any three beast defeats unlock normal boss selection")
-	check(ChargeStageCatalog.stage_hp("gearmaw", 0) == 12000.0 and ChargeStageCatalog.stage_hp("vaultback", 1) == 43750.0 and ChargeStageCatalog.stage_hp("phase_mantis", 5) == 5900000000.0, "encounter-order HP inflation preserves the first hunt and prevents late-route instant clears")
+	var maximum_sixth_hunt_hp := 0.0
+	for stage_id in ChargeStageCatalog.stage_ids():
+		maximum_sixth_hunt_hp = maxf(maximum_sixth_hunt_hp, ChargeStageCatalog.stage_hp(stage_id, 5))
+	var prime_one_hp := float(ChargeStageCatalog.boss("prime_current_form_1").hp)
+	check(ChargeStageCatalog.stage_hp("gearmaw", 0) == 12000.0 and ChargeStageCatalog.stage_hp("vaultback", 1) == 43750.0 and maximum_sixth_hunt_hp == 585000000.0, "encounter-order HP inflation preserves onboarding while capping the sixth hunt at 585M")
+	check(maximum_sixth_hunt_hp < float(ChargeStageCatalog.TRUE_BOSS.hp) and float(ChargeStageCatalog.TRUE_BOSS.hp) < prime_one_hp and prime_one_hp < float(ChargeStageCatalog.boss("prime_current_form_2").hp) and float(ChargeStageCatalog.boss("prime_current_form_2").hp) < float(ChargeStageCatalog.boss("prime_current_form_3").hp), "campaign HP hierarchy remains sixth hunt < ARCH < PRIME forms one through three")
 	check(route.choose_first_boss("grid_leech") and route.defeat_current_boss(), "one normal boss produces a complete normal ending")
 	check(route.continue_true_route(), "normal ending can continue into the true route")
 	for id in route.available_stage_ids():
@@ -424,6 +471,52 @@ func test_charge_clicker_v5() -> void:
 	check("impact_guidance" in restored_state.beast_cores and restored_state.lifetime_charge == state.lifetime_charge and restored_route.phase == restored_route.RoutePhase.SINGULARITY, "save preserves CHARGE, repeatable upgrades, cores and route position")
 	check(restored_achievements.is_unlocked("all_skills") and restored_achievements.artwork_gallery_unlocked, "achievement and artwork records persist independently of campaign state")
 	check(restored_route.has_seen_story_event("arch.encounter") and restored_achievements.has_story_event("arch.encounter"), "campaign story triggers and the permanent conversation archive both survive save restoration")
+
+	var title_save_path := "/tmp/volt_nomad_title_transition_smoke.cfg"
+	var title_save_game := ChargeClickerGame.new()
+	title_save_game.persistence_enabled = false
+	root.add_child(title_save_game)
+	title_save_game.save_manager = ChargeClickerSave.new(title_save_path)
+	title_save_game.persistence_enabled = true
+	title_save_game.campaign_route.true_end_seen = true
+	title_save_game.campaign_route.deep_signal_answered = true
+	title_save_game.campaign_route.final_boss_form = 1
+	title_save_game.campaign_route.current_boss_id = "prime_current_form_1"
+	title_save_game.campaign_route.phase = title_save_game.CampaignRoute.RoutePhase.FINAL_BOSS
+	title_save_game.campaign_route.tutorial_completed = true
+	title_save_game.run.begin_final_boss_form("prime_current_form_1", 900000000.0, 1)
+	title_save_game.run.boss_hp = 765432100.0
+	title_save_game.return_to_title_safely()
+	var title_restored_run := ChargeClickerState.new()
+	var title_restored_route := ChargeCampaignRoute.new()
+	var title_restored_achievements := ChargeAchievements.new()
+	var title_transition_save := ChargeClickerSave.new(title_save_path)
+	check(title_transition_save.load_bundle_into(title_restored_run, title_restored_route, title_restored_achievements), "returning to title performs a synchronous campaign save")
+	check(title_restored_route.phase == title_restored_route.RoutePhase.FINAL_BOSS and title_restored_route.current_boss_id == "prime_current_form_1" and title_restored_run.boss_hp == 765432100.0, "pre-PRIME route, form and exact enemy HP survive a title transition")
+	check(title_restored_route.tutorial_completed, "the one-time tutorial flag survives save and resume")
+	title_transition_save.clear()
+	title_save_game.free()
+
+	var all_final_forms_restore := true
+	var form_save_path := "/tmp/volt_nomad_final_forms_smoke.cfg"
+	var form_save := ChargeClickerSave.new(form_save_path)
+	for form in range(1, 4):
+		var form_definition: Dictionary = ChargeStageCatalog.FINAL_BOSS_FORMS[form - 1]
+		var form_run := ChargeClickerState.new()
+		var form_route := ChargeCampaignRoute.new()
+		form_route.true_end_seen = true
+		form_route.deep_signal_answered = true
+		form_route.final_boss_form = form
+		form_route.current_boss_id = str(form_definition.id)
+		form_route.phase = form_route.RoutePhase.FINAL_BOSS
+		form_run.begin_final_boss_form(str(form_definition.id), float(form_definition.hp), form)
+		form_run.boss_hp *= 0.61
+		form_save.save_bundle(form_run, form_route, ChargeAchievements.new())
+		var loaded_form_run := ChargeClickerState.new()
+		var loaded_form_route := ChargeCampaignRoute.new()
+		all_final_forms_restore = all_final_forms_restore and form_save.load_bundle_into(loaded_form_run, loaded_form_route, ChargeAchievements.new()) and loaded_form_route.final_boss_form == form and loaded_form_route.current_boss_id == str(form_definition.id) and is_equal_approx(loaded_form_run.boss_hp, float(form_definition.hp) * 0.61)
+	check(all_final_forms_restore, "all three PRIME CURRENT forms save and resume independently")
+	form_save.clear()
 	var telemetry := ChargeClickerState.new()
 	telemetry.set_playtest_mode("benchmark")
 	telemetry.begin_stage("gearmaw", "manual", 1.0, 1.0, 0)
