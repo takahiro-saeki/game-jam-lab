@@ -261,3 +261,14 @@ Suno v5.5 / Advanced / Instrumentalで生成し、短尺になったAutoおよ�
 |---|---:|---:|---|---|
 | `Awakening Below` | **A** | 2:59 | [1834be76](https://suno.com/song/1834be76-8b50-4502-974b-278c5b7adf7b) | `awakening_below.mp3` |
 | `Six-Core Descent` | **B** | 3:00 | [025d6f4d](https://suno.com/song/025d6f4d-5323-4494-9370-bdd7f6af6150) | `six_core_descent.mp3` |
+
+## itch.io公式トレイラー専用曲（2026-08-10）
+
+ゲーム本編の18曲とは別に、63秒の公式トレイラーへ同期する専用インストゥルメンタルをSuno v5.5 / Advanced / Instrumental / Custom `1:04`で2案生成した。地図、通常戦、スキルツリー、ARCH、PRIME CURRENT、崩壊、ロゴの各映像ビートに対応する明確な強弱があったA案をCodexが採用し、原音から4 dB下げて映像へミックスした。B案も比較用マスターとして保持している。
+
+| 候補 | 尺 | Suno | 用途 |
+|---|---:|---|---|
+| **A（採用）** | 1:03 | [27da6b2a](https://suno.com/song/27da6b2a-4bd7-4735-9efb-f61ccb26f5ad) | 公式トレイラー最終ミックス |
+| B | 1:03 | [7ccdff3d](https://suno.com/song/7ccdff3d-e72c-4b82-915d-6f432c15df31) | 比較用マスター |
+
+完全な生成プロンプト、映像ビート表、最終MP4は[`submission/trailer/README.md`](../submission/trailer/README.md)に記録している。

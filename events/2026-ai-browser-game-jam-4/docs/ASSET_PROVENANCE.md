@@ -78,6 +78,10 @@ On August 9, 2026, the standalone VOLT NOMAD release received two final 3-minute
 
 On August 10, 2026, two short instrumental victory-stinger candidates were generated for a distinct end-of-encounter punctuation. The 13-second A candidate, `Nomad Victory Signal`, was selected for its immediate transient and concise four-note Volt motif. The game plays authored excerpts with encounter-specific pitch and duration, ducks the active BGM, and retains a synthesized fallback for headless tests. This brings the shipped soundtrack to eighteen unique tracks.
 
+On August 10–11, 2026, a separate itch.io marketing pass used OpenAI's built-in image generation to create three high-resolution, text-free VOLT NOMAD compositions. The selected master depicts the recovery automaton beneath six distinct mechanical beasts; a second selected composition depicts PRIME CURRENT as a world-scale fallen machine seraph. Platform crops were derived locally at 3840×2160, 1920×1080, 1920×640, and 630×500 without introducing generated typography. The untouched concepts, selected masters, crops, and usage notes are preserved in `submission/key-art/` and `submission/trailer/`.
+
+The same marketing pass generated two custom-duration 63-second instrumental Suno candidates titled `VOLT NOMAD — Six-Core Transmission Trailer 64s`. Candidate A was selected for its clearly separated map, combat, world-engine, seraph, collapse, and logo dynamics. It was mixed 4 dB below the source master beneath a Godot-rendered trailer and is not part of the in-game eighteen-track runtime soundtrack. Exact URLs, prompt, MP3 masters, timing, and final H.264/AAC deliverable are recorded in `submission/trailer/README.md`.
+
 - Untouched masters: 48 kHz / 16-bit / stereo WAV downloads retained outside the repository by the user.
 - Shipped derivatives: `godot/assets/audio/project_charge/*.ogg` and the seven selected later-production `*.mp3` masters.
 - Processing: fixed per-track gain to approximately -18 LUFS, Ogg Vorbis quality 5, no stems, remixing, or generated vocals.
