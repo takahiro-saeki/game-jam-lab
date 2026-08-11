@@ -3,7 +3,8 @@
 ## Published surfaces
 
 - Channel: https://www.youtube.com/@tsgamestudio
-- Current public VOLT NOMAD trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
+- Current public VOLT NOMAD trailer: https://www.youtube.com/watch?v=NXwh3yVr4UA
+- Legacy V1 trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
 - itch.io page with trailer embed: https://tsgamestudio.itch.io/volt-nomad
 - Channel ID: `UCzHOZvrRXiGkz7xI7lwIF8Q`
 

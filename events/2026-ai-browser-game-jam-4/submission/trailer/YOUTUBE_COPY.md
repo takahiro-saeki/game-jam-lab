@@ -3,12 +3,13 @@
 ## Published URLs
 
 - Channel: https://www.youtube.com/@tsgamestudio
-- Current public trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
+- Current public trailer: https://www.youtube.com/watch?v=NXwh3yVr4UA
+- Legacy V1 trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
 - itch.io: https://tsgamestudio.itch.io/volt-nomad
 
-The gameplay-first V2 master is `volt-nomad-official-trailer-v2.mp4`. Upload it
-to the same channel, then replace the current public trailer URL here and in
-the itch.io **Gameplay video or trailer** field.
+The gameplay-first V2 master is `volt-nomad-official-trailer-v2.mp4`. It was
+published on 2026-08-11 and installed in the itch.io **Gameplay video or
+trailer** field after YouTube reported no copyright issues.
 
 The trailer was published on 2026-08-11 and passed YouTube's copyright check
 with no issues detected. A one-time channel verification is still required to
