@@ -8,6 +8,7 @@ const ChargeCampaignRoute = preload("res://games/charge_clicker/charge_route.gd"
 const ChargeGearCatalog = preload("res://games/charge_clicker/gear_catalog.gd")
 const ChargeAchievements = preload("res://games/charge_clicker/charge_achievements.gd")
 const ChargeStoryCatalog = preload("res://games/charge_clicker/story_catalog.gd")
+const ChargeAudioSettings = preload("res://shared/project_charge_audio_settings.gd")
 const Launcher = preload("res://main.gd")
 const ControllerConfig = preload("res://shared/controller_bindings.gd")
 
@@ -102,6 +103,8 @@ func test_launcher() -> void:
 
 func test_charge_clicker_v5() -> void:
 	print("\nVOLT NOMAD V8 — OVERLIMIT / PRIME CURRENT / TRUE ENDING")
+	var default_audio := ChargeAudioSettings.new()
+	check(default_audio.master_volume <= 0.72 and default_audio.music_volume <= 0.55 and default_audio.sfx_volume <= 0.72, "fresh installs start at respectful music and effects levels")
 	var state := ChargeClickerState.new()
 	state.rng.seed = 404
 	check(state.auto_enabled and state.stage_phase == state.StagePhase.BOSS, "v8 starts with AUTO fire online and direct enemy combat")

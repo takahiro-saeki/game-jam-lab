@@ -4,10 +4,13 @@ extends RefCounted
 const SETTINGS_PATH := "user://project_charge_audio.cfg"
 const BUS_MUSIC := "Music"
 const BUS_SFX := "SFX"
+const DEFAULT_MASTER_VOLUME := 0.72
+const DEFAULT_MUSIC_VOLUME := 0.55
+const DEFAULT_SFX_VOLUME := 0.72
 
-var master_volume := 0.85
-var music_volume := 0.72
-var sfx_volume := 0.88
+var master_volume := DEFAULT_MASTER_VOLUME
+var music_volume := DEFAULT_MUSIC_VOLUME
+var sfx_volume := DEFAULT_SFX_VOLUME
 var screen_shake_intensity := 1.0
 var flash_intensity := 1.0
 var story_dialogue_enabled := true
@@ -47,9 +50,9 @@ func apply() -> void:
 	set_bus_linear(BUS_SFX, sfx_volume)
 
 func reset_defaults() -> void:
-	master_volume = 0.85
-	music_volume = 0.72
-	sfx_volume = 0.88
+	master_volume = DEFAULT_MASTER_VOLUME
+	music_volume = DEFAULT_MUSIC_VOLUME
+	sfx_volume = DEFAULT_SFX_VOLUME
 	screen_shake_intensity = 1.0
 	flash_intensity = 1.0
 	story_dialogue_enabled = true

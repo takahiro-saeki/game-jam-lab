@@ -14,7 +14,7 @@ Prepared for **AI Browser Game Jam 4**. The jam requires a free, browser-playabl
 - **Suggested tags:** `Incremental`, `Clicker`, `Boss battle`, `Pixel Art`, `Sci-fi`, `Robots`, `Singleplayer`, `Short`, `Controller`, `Japanese`
 - **Made with:** Godot
 - **Languages:** English, Japanese
-- **Average session:** A short normal route plus an optional extended true route
+- **Average session:** About 10–20 minutes to a normal ending; 20–40 minutes for the complete route, depending on build and reading time
 - **Viewport:** 1280 × 720, embedded; enable fullscreen
 - **Mobile friendly:** Leave unchecked until a real phone pass is complete
 
@@ -29,6 +29,8 @@ Hunt six machine beasts, inherit their cores, and turn every click of CHARGE int
 VOLT NOMAD is a compact incremental boss rush about a lone recovery automaton descending into a subterranean world engine. Every manual command deals damage and generates **CHARGE**. Spend it across five interconnected gear trees, evolve your automatic weapons, and inherit the cores of the machine beasts you defeat.
 
 Choose any three of six hunts to reach a fast normal ending. If the build has you hooked, return for the remaining beasts, the second abyssal boss, ARCH SINGULARITY, and the signal waiting below the world engine.
+
+**Expected playtime:** roughly 10–20 minutes to a normal ending, or 20–40 minutes for the complete route, depending on your build and reading time.
 
 ### What makes a run
 
