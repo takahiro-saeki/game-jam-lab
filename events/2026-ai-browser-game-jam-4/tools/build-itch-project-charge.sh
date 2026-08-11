@@ -6,11 +6,12 @@ event_root="$(cd "$script_dir/.." && pwd)"
 godot_root="$event_root/godot"
 output_dir="$event_root/build/itch/volt-nomad"
 archive_path="$event_root/build/itch/volt-nomad-web.zip"
+log_path="${TMPDIR:-/tmp}/volt-nomad-itch-export.log"
 
 mkdir -p "$output_dir"
 find "$output_dir" -mindepth 1 -maxdepth 1 -type f -delete
 
-godot --headless --path "$godot_root" \
+godot --headless --log-file "$log_path" --path "$godot_root" \
   --export-release "Itch Volt Nomad" "$output_dir/index.html"
 
 (

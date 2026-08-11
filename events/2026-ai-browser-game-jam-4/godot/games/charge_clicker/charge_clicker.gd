@@ -273,6 +273,10 @@ var floating_texts: Array[Dictionary] = []
 var resource_packets: Array[Dictionary] = []
 var shard_pulse := 0.0
 var protagonist_action_pulse := 0.0
+var manual_impact_pulse := 0.0
+var manual_impact_critical := false
+var manual_impact_generating := false
+var auto_impact_pulse := 0.0
 var auto_effect_timer := 0.0
 var autosave_timer := 0.0
 var reward_selected := 0
@@ -1071,6 +1075,11 @@ func reset_run() -> void:
 	story_event_queue.clear()
 	story_log_open = false
 	shard_pulse = 0.0
+	protagonist_action_pulse = 0.0
+	manual_impact_pulse = 0.0
+	manual_impact_critical = false
+	manual_impact_generating = false
+	auto_impact_pulse = 0.0
 	charge_held = false
 	gear_tree_open = false
 	screen_flash = 0.0
@@ -1125,6 +1134,10 @@ func _process(delta: float) -> void:
 		shard_pulse = maxf(0.0, shard_pulse - delta * 1.7)
 	if protagonist_action_pulse > 0.0:
 		protagonist_action_pulse = maxf(0.0, protagonist_action_pulse - delta * 5.2)
+	if manual_impact_pulse > 0.0:
+		manual_impact_pulse = maxf(0.0, manual_impact_pulse - delta * 6.2)
+	if auto_impact_pulse > 0.0:
+		auto_impact_pulse = maxf(0.0, auto_impact_pulse - delta * 7.5)
 	if message_time > 0.0:
 		message_time -= delta
 	if result_copied_time > 0.0:
@@ -1209,6 +1222,7 @@ func _process(delta: float) -> void:
 	var tick_result: Dictionary = run.tick(delta, false)
 	check_singularity_story_phase()
 	if int(tick_result.auto_hits) > 0:
+		auto_impact_pulse = 1.0
 		auto_effect_timer -= delta
 		if auto_effect_timer <= 0.0:
 			auto_effect_timer = 0.10
@@ -2856,6 +2870,9 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 	var result: Dictionary = run.manual_attack(critical_mode)
 	protagonist_action_pulse = 1.0
 	var generating := bool(result.get("generating", false))
+	manual_impact_pulse = 1.0
+	manual_impact_critical = bool(result.critical)
+	manual_impact_generating = generating
 	var attack_origin := charge_rect.get_center()
 	var target := Vector2(1038, 248)
 	var hit_color := Palette.MINT if generating else Palette.AMBER if bool(result.critical) else Palette.CYAN
@@ -2877,6 +2894,8 @@ func perform_charge(play_sound: bool = true, critical_mode: int = -1) -> Diction
 	if bool(result.critical):
 		add_floating(target + Vector2(0, -62), loc("クリティカル", "CRITICAL"), Palette.AMBER, 18)
 		screen_shake = maxf(screen_shake, 0.18)
+	elif not generating:
+		screen_shake = maxf(screen_shake, 0.07)
 	match str(result.mechanic):
 		"armor_break":
 			show_message(loc("装甲破砕！ 12回目のクリックが4倍", "ARMOR BREAK! THE 12TH CLICK HITS FOR 4×"), 1.4)
@@ -3972,10 +3991,16 @@ func format_time(seconds: float) -> String:
 	return "%02d:%02d" % [total / 60, total % 60]
 
 func tutorial_hint() -> String:
-	if run.manual_inputs == 0:
-		return loc("CHARGE ATTACKを押すと即ダメージ＋CHARGE獲得", "PRESS CHARGE ATTACK FOR INSTANT DAMAGE + CHARGE")
-	if run.purchases == 0 and run.credits > 0:
-		return loc("獲得したCHARGEで下の5ギアを開き、ツリーを強化", "OPEN ONE OF FIVE GEARS AND SPEND CHARGE IN ITS TREE")
+	var first_hunt: bool = campaign_route != null and campaign_route.completed_stage_ids.is_empty()
+	if first_hunt and run.manual_inputs < 3:
+		return loc("実戦ナビ 1/3　CHARGE ATTACKで攻撃＋発電　%d/3入力" % run.manual_inputs, "FIELD GUIDE 1/3  ATTACK + GENERATE WITH CHARGE  %d/3 INPUTS" % run.manual_inputs)
+	if first_hunt and run.purchases == 0:
+		var first_cost := cheapest_upgrade_cost()
+		if run.credits < float(first_cost):
+			return loc("実戦ナビ 2/3　最初の強化までCHARGE %s / %s" % [format_number(run.credits), format_number(first_cost)], "FIELD GUIDE 2/3  BUILD CHARGE FOR YOUR FIRST UPGRADE  %s / %s" % [format_number(run.credits), format_number(first_cost)])
+		return loc("実戦ナビ 2/3　点灯したギアを開き、最初の能力を購入", "FIELD GUIDE 2/3  OPEN A GLOWING GEAR AND BUY YOUR FIRST NODE")
+	if first_hunt and run.purchases < 2:
+		return loc("実戦ナビ 3/3　強化接続完了 — 手動とAUTOを同時に育てる", "FIELD GUIDE 3/3  UPGRADE ONLINE — SCALE MANUAL AND AUTO TOGETHER")
 	return current_rule_copy()
 
 func _draw() -> void:
@@ -5238,6 +5263,9 @@ func draw_direct_attack_combat_panel() -> void:
 	if run.stage_phase == ChargeState.StagePhase.BOSS:
 		var enemy_texture := current_enemy_texture()
 		var enemy_center := enemy_click_rect.get_center()
+		var manual_hit_strength := manual_impact_pulse if not manual_impact_generating else 0.0
+		var enemy_hit_strength := maxf(manual_hit_strength, auto_impact_pulse * 0.34)
+		var enemy_display_center := enemy_center + Vector2(enemy_hit_strength * 11.0, sin(animation_time * 1.7) * 2.0)
 		var enemy_pulse := 0.96 + sin(animation_time * 2.4) * 0.035
 		var hovered := enemy_click_rect.has_point(mouse_position)
 		var is_fallen_seraph: bool = run.current_boss_id == "prime_current_form_3"
@@ -5247,13 +5275,16 @@ func draw_direct_attack_combat_panel() -> void:
 			draw_prime_current_form_three_aura(enemy_center, damage_ratio)
 		draw_circle(enemy_center, enemy_radius, Palette.with_alpha(Palette.CORAL, 0.05 + (0.05 if hovered else 0.0)))
 		draw_arc(enemy_center, enemy_radius + 4.0, -PI * 0.5, -PI * 0.5 + TAU * (1.0 - run.objective_ratio()), 64 if is_fallen_seraph else 56, Palette.with_alpha(Palette.CORAL, 0.58 if is_fallen_seraph else 0.48), 4.0)
+		draw_manual_attack_path(enemy_display_center - Vector2(enemy_radius * 0.72, 0.0))
 		var enemy_size := Vector2(292, 292) if is_fallen_seraph else Vector2(232, 232)
-		draw_texture_rect(enemy_texture, Rect2(enemy_center - enemy_size * 0.5 + Vector2(0, sin(animation_time * 1.7) * 2.0), enemy_size), false, Color(enemy_pulse, enemy_pulse, enemy_pulse, 1.0))
+		var hit_boost := enemy_hit_strength * 0.34
+		draw_texture_rect(enemy_texture, Rect2(enemy_display_center - enemy_size * 0.5, enemy_size), false, Color(enemy_pulse + hit_boost, enemy_pulse + hit_boost, enemy_pulse + hit_boost * 0.55, 1.0))
+		draw_enemy_impact_overlay(enemy_display_center - Vector2(enemy_radius * 0.72, 0.0), manual_hit_strength, auto_impact_pulse)
 		if hovered:
 			draw_string(DisplayFont, Vector2(enemy_click_rect.position.x, enemy_click_rect.end.y + 15), loc("クリックで攻撃", "CLICK TO ATTACK"), HORIZONTAL_ALIGNMENT_CENTER, enemy_click_rect.size.x, 13, Palette.AMBER)
 		var tracer_progress := fmod(animation_time / maxf(0.15, run.auto_interval), 1.0)
 		var tracer_start := Vector2(810, 350)
-		var tracer_end := enemy_center - Vector2(88, 0)
+		var tracer_end := enemy_display_center - Vector2(88, 0)
 		draw_line(tracer_start, tracer_end, Palette.with_alpha(Palette.VIOLET, 0.12), 2.0)
 		draw_auto_projectile(tracer_start, tracer_end, tracer_progress)
 
@@ -5273,6 +5304,36 @@ func draw_direct_attack_combat_panel() -> void:
 		draw_line(Vector2(rail_x, rack_rect.position.y + 8), Vector2(rail_x + 92, rack_rect.position.y + 8), Palette.with_alpha(Palette.CYAN, 0.11), 2.0)
 		draw_circle(Vector2(rail_x, rack_rect.end.y - 9), 2.0, Palette.with_alpha(Palette.CYAN, 0.20))
 	draw_gear_rack()
+
+
+func draw_manual_attack_path(target: Vector2) -> void:
+	if manual_impact_pulse <= 0.0 or manual_impact_generating:
+		return
+	var intensity := pow(manual_impact_pulse, 0.58)
+	var start := Vector2(350, 266)
+	var color := Palette.AMBER if manual_impact_critical else Palette.CYAN
+	var command_progress := clampf(1.0 - manual_impact_pulse, 0.0, 1.0)
+	var projectile_position := start.lerp(target, ease(command_progress, -1.8))
+	draw_line(start, target, Palette.with_alpha(color, intensity * 0.20), 7.0)
+	draw_line(start, target, Palette.with_alpha(Palette.PAPER, intensity * 0.78), 2.0)
+	draw_circle(projectile_position, 7.0 + intensity * 4.0, Palette.with_alpha(color, 0.92))
+	draw_circle(projectile_position, 3.0, Palette.PAPER)
+
+
+func draw_enemy_impact_overlay(target: Vector2, manual_strength: float, automatic_strength: float) -> void:
+	var strength := maxf(manual_strength, automatic_strength * 0.46)
+	if strength <= 0.0:
+		return
+	var color := Palette.AMBER if manual_impact_critical and manual_strength > 0.0 else Palette.CYAN if manual_strength > 0.0 else Palette.VIOLET
+	var expansion := 1.0 - strength
+	draw_circle(target, 6.0 + expansion * 16.0, Palette.with_alpha(Palette.PAPER, strength * 0.56))
+	for ring in range(2):
+		draw_arc(target, 12.0 + expansion * 30.0 + ring * 9.0, -PI * 0.82 + ring * 0.7, PI * 0.82 + ring * 0.7, 20, Palette.with_alpha(color, strength * (0.92 - ring * 0.24)), 3.0 - ring)
+	for ray in range(6):
+		var angle := TAU * float(ray) / 6.0 + animation_time * 0.08
+		var ray_start := target + Vector2.from_angle(angle) * (10.0 + expansion * 7.0)
+		var ray_end := target + Vector2.from_angle(angle) * (24.0 + expansion * 24.0)
+		draw_line(ray_start, ray_end, Palette.with_alpha(color, strength * 0.76), 2.0)
 
 func draw_prime_current_form_three_aura(center: Vector2, damage_ratio: float) -> void:
 	var pressure := clampf(damage_ratio, 0.0, 1.0)
@@ -5450,7 +5511,11 @@ func draw_gear_rack() -> void:
 		var level: int = run.gear_level(str(gear.id))
 		var maximum := GearCatalog.max_ranks_for_gear(str(gear.id))
 		var gear_texture: Texture2D = GearTextures.get(str(gear.id))
-		draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.92 if selected else 0.78), Palette.with_alpha(color, 1.0 if selected or hovered else 0.40), 9.0, 2.0 if selected or hovered else 1.0)
+		var first_cost := first_gear_node_cost(str(gear.id))
+		var onboarding_ready: bool = campaign_route != null and campaign_route.completed_stage_ids.is_empty() and run.purchases == 0 and first_cost > 0 and run.credits >= float(first_cost)
+		var ready_pulse := 0.72 + sin(animation_time * 6.0 + index * 0.8) * 0.22 if onboarding_ready else 0.0
+		var border_alpha := 1.0 if selected or hovered else ready_pulse if onboarding_ready else 0.40
+		draw_machine_plate(rect, Palette.with_alpha(Palette.INK, 0.92 if selected else 0.78), Palette.with_alpha(Palette.AMBER if onboarding_ready else color, border_alpha), 9.0, 3.0 if selected or hovered or onboarding_ready else 1.0)
 		draw_rect(Rect2(rect.position + Vector2(7, 7), Vector2(rect.size.x - 14, 4)), Palette.with_alpha(color, 0.75 if level > 0 else 0.25))
 		draw_texture_rect(gear_texture, Rect2(rect.position + Vector2(9, 16), Vector2(44, 44)), false, Color(1.0, 1.0, 1.0, 0.98 if level > 0 or selected else 0.68))
 		draw_string(Palette.UI_FONT, rect.position + Vector2(120, 25), "%02d" % (index + 1), HORIZONTAL_ALIGNMENT_RIGHT, 18, 9, color)
@@ -5470,7 +5535,17 @@ func draw_gear_rack() -> void:
 			draw_rect(Rect2(rect.position.x + 34, tier_y + 2, 96, 6), Palette.with_alpha(color, 0.10 if tier_unlocked else 0.035))
 			draw_rect(Rect2(rect.position.x + 34, tier_y + 2, 96 * tier_ratio, 6), Palette.AMBER if tier_level >= tier_max else color)
 		draw_string(DisplayFont, rect.position + Vector2(12, 137), "LV %d / %d" % [level, maximum], HORIZONTAL_ALIGNMENT_LEFT, 124, 11, color if level > 0 else Palette.MUTED)
-		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 154), loc("ツリーを開く", "OPEN TREE"), HORIZONTAL_ALIGNMENT_RIGHT, 124, 11, Palette.PAPER if hovered or selected else Palette.MUTED)
+		var footer_copy := loc("購入可能", "READY TO BUY") if onboarding_ready else loc("ツリーを開く", "OPEN TREE")
+		draw_string(Palette.UI_FONT, rect.position + Vector2(12, 154), footer_copy, HORIZONTAL_ALIGNMENT_RIGHT, 124, 11, Palette.AMBER if onboarding_ready else Palette.PAPER if hovered or selected else Palette.MUTED)
+
+
+func first_gear_node_cost(gear_id: String) -> int:
+	var cheapest := 2147483647
+	for definition in GearCatalog.skills_for_gear_tier(gear_id, 1):
+		var id := str(definition.id)
+		if str(definition.get("parent", "")).is_empty() and run.skill_unlocked(id) and run.upgrade_level(id) < run.skill_max_rank(id):
+			cheapest = mini(cheapest, run.upgrade_cost(id))
+	return 0 if cheapest == 2147483647 else cheapest
 
 func draw_gear_tree_overlay() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEW), Color(0.008, 0.016, 0.038, 0.975))

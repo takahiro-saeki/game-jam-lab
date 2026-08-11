@@ -275,6 +275,13 @@ func test_charge_clicker_v5() -> void:
 	check(not tutorial_game.tutorial_open and tutorial_game.campaign_route.tutorial_completed, "finishing onboarding is campaign-persistent and returns to combat")
 	check(tutorial_game.open_tutorial(true), "the settings-facing tutorial replay can reopen completed onboarding")
 	tutorial_game.close_tutorial()
+	check("1/3" in tutorial_game.tutorial_hint(), "the first hunt begins with an in-combat attack milestone")
+	for onboarding_click in range(3):
+		tutorial_game.perform_charge(false, 0)
+	check("2/3" in tutorial_game.tutorial_hint() and tutorial_game.manual_impact_pulse > 0.0, "manual attacks advance onboarding and trigger readable impact feedback")
+	tutorial_game.run.credits = float(tutorial_game.first_gear_node_cost("striker"))
+	check(tutorial_game.first_gear_node_cost("striker") == 10 and "2/3" in tutorial_game.tutorial_hint(), "the first affordable gear is exposed at the exact root-node price")
+	check(tutorial_game.try_purchase_skill("impact_coil", tutorial_game.SHARD_SOCKET_CENTER, false) and "3/3" in tutorial_game.tutorial_hint(), "the first purchase completes the visible click-to-upgrade learning loop")
 	tutorial_game.free()
 
 	var hidden_story_game := ChargeClickerGame.new()

@@ -3,23 +3,28 @@
 ## Published URLs
 
 - Channel: https://www.youtube.com/@tsgamestudio
-- Trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
+- Current public trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
 - itch.io: https://tsgamestudio.itch.io/volt-nomad
+
+The gameplay-first V2 master is `volt-nomad-official-trailer-v2.mp4`. Upload it
+to the same channel, then replace the current public trailer URL here and in
+the itch.io **Gameplay video or trailer** field.
 
 The trailer was published on 2026-08-11 and passed YouTube's copyright check
 with no issues detected. A one-time channel verification is still required to
 replace the generated thumbnail with the custom key art and enable clickable
 external links in the description.
 
-## Title
+## V2 title
 
-VOLT NOMAD — Official Trailer | AI Browser Game Jam 4
+VOLT NOMAD — Gameplay Trailer | AI Browser Game Jam 4
 
-## Description
+## V2 description
 
 Every attack becomes the power for your next machine.
 
-VOLT NOMAD is a browser-based active clicker and mechanical-beast boss rush.
+VOLT NOMAD is a browser-based active clicker and mechanical-beast boss rush,
+captured directly from the playable Godot build.
 Choose your route through six hunts, rebuild five interlocking gear trees, and
 descend beyond the world engine to uncover the current waiting below.
 

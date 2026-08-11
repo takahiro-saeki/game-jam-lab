@@ -1,19 +1,20 @@
 extends Node2D
 
-# Deterministic 63-second marketing capture. Run through Godot Movie Maker:
+# Deterministic 60-second gameplay-first marketing capture. Run through Godot Movie Maker:
 # godot --path godot --scene res://tools/trailer_capture.tscn \
-#   --write-movie ../submission/trailer/volt-nomad-trailer-silent.avi \
-#   --fixed-fps 60 --disable-vsync
+#   --write-movie ../submission/trailer/volt-nomad-trailer-v2-silent.avi \
+#   --resolution 1920x1080 --fixed-fps 30 --disable-vsync --audio-driver Dummy
 #
 # The game is the real ChargeClicker node. Only progression and presentation are
 # staged; combat, UI, particles, skill trees, and defeat VFX are drawn by the game.
 
 const ChargeClicker = preload("res://games/charge_clicker/charge_clicker.gd")
+const StageCatalog = preload("res://games/charge_clicker/stage_catalog.gd")
 const DisplayFont = preload("res://assets/fonts/DotGothic16-Regular.ttf")
 const UIFont = preload("res://assets/fonts/NotoSansJP-Variable.ttf")
 
 const VIEW := Vector2(1280, 720)
-const DURATION := 63.0
+const DURATION := 60.0
 const CYAN := Color("4deeea")
 const AMBER := Color("ffbd32")
 const VIOLET := Color("b96cff")
@@ -30,17 +31,17 @@ var key_art: Texture2D
 var prime_art: Texture2D
 
 var beats := [
-	{"start": 0.0, "end": 3.5, "id": "key_art", "caption": "SIX CORES STILL ANSWER BELOW.", "accent": AMBER},
-	{"start": 3.5, "end": 8.0, "id": "title", "caption": "ABYSSAL MACHINE-HUNT ACTIVE CLICKER", "accent": CYAN},
-	{"start": 8.0, "end": 13.0, "id": "map", "caption": "CHOOSE ANY THREE BEASTS. SHAPE YOUR ROUTE.", "accent": CYAN},
-	{"start": 13.0, "end": 22.0, "id": "hunt", "caption": "EVERY CLICK DEALS DAMAGE — AND FUNDS THE NEXT UPGRADE.", "accent": AMBER},
-	{"start": 22.0, "end": 30.0, "id": "tree", "caption": "FIVE INTERLOCKING GEAR TREES. 317 RANKS TO REBUILD.", "accent": VIOLET},
-	{"start": 30.0, "end": 37.0, "id": "world_engine", "caption": "BREAK THE WORLD ENGINE.", "accent": CYAN},
-	{"start": 37.0, "end": 43.5, "id": "prime_one", "caption": "THEN ANSWER THE SIGNAL BENEATH IT.", "accent": VIOLET},
-	{"start": 43.5, "end": 50.0, "id": "prime_three", "caption": "FIVE OVERLIMITS. THREE FORMS. ONE LAST CURRENT.", "accent": Color("ff5d68")},
-	{"start": 50.0, "end": 54.5, "id": "collapse", "caption": "RECOVER EVERY MEMORY.", "accent": PAPER},
-	{"start": 54.5, "end": 57.5, "id": "prime_art", "caption": "THE WORLD ENGINE WAS NOT THE END.", "accent": VIOLET},
-	{"start": 57.5, "end": 63.0, "id": "final", "caption": "PLAY IN BROWSER", "accent": AMBER},
+	{"start": 0.0, "end": 4.5, "id": "hunt_intro", "caption": "CLICK. DEAL DAMAGE. BANK CHARGE.", "accent": CYAN},
+	{"start": 4.5, "end": 10.0, "id": "hunt_growth", "caption": "SPEND IT. BUILD AN ARSENAL THAT HUNTS WITHOUT YOU.", "accent": AMBER},
+	{"start": 10.0, "end": 16.0, "id": "tree", "caption": "FIVE INTERLOCKING GEAR TREES. 317 RANKS TO REBUILD.", "accent": VIOLET},
+	{"start": 16.0, "end": 21.0, "id": "map", "caption": "CHOOSE ANY THREE BEASTS FOR A FAST ENDING.", "accent": CYAN},
+	{"start": 21.0, "end": 27.0, "id": "hunt_alt", "caption": "EVERY BEAST CHANGES THE RHYTHM — AND LEAVES ITS CORE.", "accent": AMBER},
+	{"start": 27.0, "end": 34.0, "id": "world_engine", "caption": "HUNT ALL SIX TO BREAK THE WORLD ENGINE.", "accent": CYAN},
+	{"start": 34.0, "end": 40.0, "id": "prime_one", "caption": "THEN ANSWER THE SIGNAL BENEATH IT.", "accent": VIOLET},
+	{"start": 40.0, "end": 47.0, "id": "prime_three", "caption": "FIVE OVERLIMITS. THREE FORMS. ONE LAST CURRENT.", "accent": Color("ff5d68")},
+	{"start": 47.0, "end": 51.5, "id": "collapse", "caption": "BREAK THE LAST LAW.", "accent": PAPER},
+	{"start": 51.5, "end": 55.0, "id": "prime_art", "caption": "RECOVER EVERY MEMORY.", "accent": VIOLET},
+	{"start": 55.0, "end": 60.0, "id": "final", "caption": "PLAY IN BROWSER", "accent": AMBER},
 ]
 
 
@@ -77,10 +78,10 @@ func _process(delta: float) -> void:
 	if next_phase != phase:
 		set_phase(next_phase)
 	var id := str(beats[phase].id)
-	if id in ["hunt", "world_engine", "prime_one", "prime_three"]:
+	if id in ["hunt_intro", "hunt_growth", "hunt_alt", "world_engine", "prime_one", "prime_three"]:
 		attack_timer -= delta
 		if attack_timer <= 0.0:
-			attack_timer = 0.34 if id == "hunt" else 0.48
+			attack_timer = 0.24 if id == "hunt_intro" else 0.18 if id == "hunt_growth" else 0.32 if id == "hunt_alt" else 0.46
 			game.call("perform_charge", false, -1)
 	if elapsed >= DURATION:
 		get_tree().quit()
@@ -99,7 +100,7 @@ func set_phase(index: int) -> void:
 	phase_started = elapsed
 	attack_timer = 0.05
 	var id := str(beats[phase].id)
-	game.visible = id not in ["key_art", "prime_art", "final"]
+	game.visible = id not in ["prime_art", "final"]
 	game.set("title_screen_open", false)
 	game.set("gear_tree_open", false)
 	game.set("story_event_open", false)
@@ -108,19 +109,17 @@ func set_phase(index: int) -> void:
 	game.set("defeat_preview_open", false)
 	game.call("clear_comms")
 	match id:
-		"key_art":
-			pass
-		"title":
-			game.set("campaign_preview_screen", "title")
-			game.set("title_screen_open", true)
-			game.set("title_has_saved_campaign", false)
+		"hunt_intro":
+			configure_intro_fight()
+		"hunt_growth":
+			configure_fight("gearmaw", false)
 		"map":
 			game.set("campaign_preview_screen", "map")
 			game.get("run").call("reset")
 			game.get("campaign_route").call("reset")
 			game.set("campaign_selected", 0)
-		"hunt":
-			configure_fight("gearmaw", false)
+		"hunt_alt":
+			configure_fight("relay_hydra", false)
 		"tree":
 			configure_skill_tree()
 		"world_engine":
@@ -135,6 +134,22 @@ func set_phase(index: int) -> void:
 		"prime_art", "final":
 			pass
 	game.queue_redraw()
+
+
+func configure_intro_fight() -> void:
+	game.set("campaign_preview_screen", "")
+	game.set("art_preview_encounter", "gearmaw")
+	game.get("run").call("reset")
+	game.get("campaign_route").call("reset")
+	game.get("campaign_route").call("select_stage", "gearmaw")
+	var definition: Dictionary = StageCatalog.stage("gearmaw")
+	game.get("run").call("begin_stage", "gearmaw", str(definition.build_tag), 1.0, StageCatalog.stage_hp("gearmaw", 0), 0)
+	game.get("run").set("boss_hp", float(game.get("run").get("boss_max_hp")) * 0.82)
+	game.get("run").set("credits", 8.0)
+	game.set("title_screen_open", false)
+	game.set("gear_tree_open", false)
+	game.set("story_event_open", false)
+	game.call("clear_comms")
 
 
 func configure_fight(encounter_id: String, final_boss: bool) -> void:
@@ -171,7 +186,7 @@ func _draw() -> void:
 	var local := elapsed - float(beat.start)
 	var length := float(beat.end) - float(beat.start)
 	var progress := clampf(local / maxf(0.01, length), 0.0, 1.0)
-	if id in ["key_art", "prime_art", "final"]:
+	if id in ["prime_art", "final"]:
 		draw_art_frame(prime_art if id == "prime_art" else key_art, progress, id == "final")
 	draw_scanlines()
 	if id == "final":

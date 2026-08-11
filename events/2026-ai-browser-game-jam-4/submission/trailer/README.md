@@ -2,15 +2,27 @@
 
 ## Deliverable
 
+- `volt-nomad-official-trailer-v2.mp4` — current gameplay-first master
 - `volt-nomad-official-trailer.mp4`
-- 1280 x 720, H.264 video + AAC stereo audio
-- 30 fps, 63 seconds
+- V2: 1920 x 1080, H.264 video + AAC stereo audio, 30 fps, 60 seconds
+- V1: 1280 x 720, H.264 video + AAC stereo audio, 30 fps, 63 seconds
 - Audio is mixed 4 dB below the Suno master to leave comfortable headroom.
 
-The trailer is staged from the real Godot game scene. Combat, gear-tree UI,
+V2 opens on live combat at frame one and keeps 51.5 of its 60 seconds inside
+the real game before the cinematic and end card. Combat, gear-tree UI,
 particles, boss presentation, and defeat effects are rendered by the game;
 only progression and camera-ready states are scripted in
 `godot/tools/trailer_capture.gd`.
+
+Compose the Godot Movie Maker AVI and selected music into the upload master:
+
+```bash
+FFMPEG_BIN=/path/to/ffmpeg \
+  events/2026-ai-browser-game-jam-4/tools/compose-trailer.sh \
+  volt-nomad-trailer-v2-silent.avi \
+  music/volt-nomad-six-core-transmission-a.mp3 \
+  volt-nomad-official-trailer-v2.mp4
+```
 
 ## Music
 
@@ -42,17 +54,17 @@ PRIME CURRENT, and logo beats.
 
 | Time | Visual |
 | --- | --- |
-| 00:00 | High-resolution key art / six-core signal |
-| 00:03 | Title screen |
-| 00:08 | Six-beast route selection |
-| 00:13 | Live Gearmaw combat |
-| 00:22 | Five interlocking gear trees |
-| 00:30 | ARCH SINGULARITY |
-| 00:37 | PRIME CURRENT form I |
-| 00:43 | PRIME CURRENT form III |
-| 00:50 | Defeat-collapse effects |
-| 00:54 | PRIME CURRENT cinematic art |
-| 00:57 | Final title and itch.io URL |
+| 00:00 | Fresh Gearmaw combat: click → damage → CHARGE |
+| 00:04 | Upgraded Gearmaw combat: manual and AUTO acceleration |
+| 00:10 | Five interlocking gear trees |
+| 00:16 | Six-beast route selection |
+| 00:21 | Relay Hydra alternate hunt |
+| 00:27 | ARCH SINGULARITY |
+| 00:34 | PRIME CURRENT form I |
+| 00:40 | PRIME CURRENT form III |
+| 00:47 | PixelLab defeat-collapse effects |
+| 00:51 | PRIME CURRENT cinematic art |
+| 00:55 | Final title and itch.io URL |
 
 itch.io accepts a YouTube or Vimeo URL for its trailer field, not a direct MP4
 upload. Upload this MP4 to one of those services, then paste the resulting URL

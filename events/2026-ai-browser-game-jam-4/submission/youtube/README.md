@@ -3,9 +3,14 @@
 ## Published surfaces
 
 - Channel: https://www.youtube.com/@tsgamestudio
-- VOLT NOMAD trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
+- Current public VOLT NOMAD trailer: https://www.youtube.com/watch?v=dLLtLyEmdRA
 - itch.io page with trailer embed: https://tsgamestudio.itch.io/volt-nomad
 - Channel ID: `UCzHOZvrRXiGkz7xI7lwIF8Q`
+
+The replacement `../trailer/volt-nomad-official-trailer-v2.mp4` is a
+60-second gameplay-first cut. It opens on a live hunt, then shows the gear
+tree, route map, later bosses, PRIME CURRENT, collapse sequence, and artwork
+archive before the final play-now card.
 
 The channel and trailer were published on 2026-08-11. The trailer passed
 YouTube's copyright check with no issues detected and is marked as not made
